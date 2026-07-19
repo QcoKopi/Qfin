@@ -1,45 +1,51 @@
 <!DOCTYPE html>
-
 <html>
 <head>
-<script src="https://cdn.tailwindcss.com"></script>
+  <base target="_top">
+  <style>
+    body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+    .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    .btn { display: inline-block; padding: 10px 15px; margin: 5px; cursor: pointer; background: #ddd; border: none; border-radius: 4px; }
+    .btn.active { background: #007bff; color: white; }
+    select, input { width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
+    button.submit { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  </style>
 </head>
-<body class="bg-gray-100 p-6">
-<div class="max-w-6xl mx-auto">
-<h1 class="text-2xl font-bold mb-6">Q.co Control Center</h1>
-<!-- Tabs -->
-<div class="flex space-x-4 mb-6">
-<button onclick="showSection('entry')" class="bg-blue-600
-text-white px-4 py-2 rounded">Entry Transaksi</button>
-<button onclick="showSection('db')" class="bg-gray-600
-text-white px-4 py-2 rounded">Kelola Database</button>
-</div>
-<!-- Entry Section -->
-<div id="entry">
-<form id="transForm" class="bg-white p-6 rounded shadow">
-<select id="type" name="type" class="w-full border p-2
+<body>
+  <div class="container">
+    <h2>Q.co Financial Entry System</h2>
+    <div id="tabNav">
+      <button class="btn active" onclick="renderTab('Pembelian')">Pembelian</button>
+      <button class="btn" onclick="renderTab('Penjualan')">Penjualan</button>
+      <button class="btn" onclick="renderTab('KAS MASUK')">KAS MASUK</button>
+      <button class="btn" onclick="renderTab('Assembly')">Assembly</button>
+    </div>
+    <form id="entryForm">
+      <div id="formFields"></div>
+      <button type="button" class="submit" onclick="submitData()">Simpan Data</button>
+    </form>
+  </div>
 
-mb-4">
-
-<option value="Pembelian">Pembelian</option>
-<option value="Penjualan">Penjualan</option>
-</select>
-<input type="text" name="nama" placeholder="Nama
-Barang/Pelanggan" class="w-full border p-2 mb-4">
-<button type="button" onclick="submitEntry()"
-class="bg-green-600 text-white px-4 py-2">Save</button>
-</form>
-</div>
-</div>
-<script>
-function submitEntry() {
-var data = {
-type: document.getElementById('type').value,
-nama: document.querySelector('input[name="nama"]').value
-};
-google.script.run.withSuccessHandler(() =>
-alert('Sukses!')).processTransaction(data);
-}
-</script>
+  <script>
+    function renderTab(tabName) {
+      document.getElementById('formFields').innerHTML = 'Memuat data...';
+      google.script.run.withSuccessHandler(function(fields) {
+        let html = `<input type="hidden" name="tab" value="${tabName}">`;
+        fields.forEach(f => {
+          html += `<label>${f.label}</label><select name="${f.label}">`;
+          f.options.forEach(o => html += `<option value="${o}">${o}</option>`);
+          html += `</select>`;
+        });
+        document.getElementById('formFields').innerHTML = html;
+      }).getFieldsForTab(tabName);
+    }
+    
+    function submitData() {
+      const form = document.getElementById('entryForm');
+      google.script.run.withSuccessHandler(msg => alert(msg)).submitData(form);
+    }
+    
+    window.onload = () => renderTab('Pembelian');
+  </script>
 </body>
 </html>
