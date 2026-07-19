@@ -1,51 +1,2004 @@
 <!DOCTYPE html>
-<html>
+<html lang="id">
 <head>
-  <base target="_top">
-  <style>
-    body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
-    .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-    .btn { display: inline-block; padding: 10px 15px; margin: 5px; cursor: pointer; background: #ddd; border: none; border-radius: 4px; }
-    .btn.active { background: #007bff; color: white; }
-    select, input { width: 100%; padding: 8px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }
-    button.submit { width: 100%; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Q Entry System - QBridge</title>
+    <style>
+        :root {
+            --primary: #5D4037;
+            --primary-light: #8D6E63;
+            --accent: #A1887F;
+            --bg: #FAFAFA;
+            --card: #FFFFFF;
+            --text: #3E2723;
+            --text-light: #6D4C41;
+            --border: #D7CCC8;
+            --success: #4CAF50;
+            --warning: #FF9800;
+            --danger: #F44336;
+            --info: #2196F3;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header h1 { font-size: 24px; font-weight: 300; letter-spacing: 2px; }
+        .header p { opacity: 0.9; font-size: 13px; margin-top: 5px; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .tab-nav {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 25px;
+            background: var(--card);
+            padding: 10px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow-x: auto;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            color: var(--text-light);
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+        .tab-btn:hover { background: rgba(93,64,55,0.08); }
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 8px rgba(93,64,55,0.3);
+        }
+        .form-card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            margin-bottom: 20px;
+        }
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--border);
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .form-title {
+            font-size: 20px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-light); transform: translateY(-1px); }
+        .btn-secondary {
+            background: #ECEFF1;
+            color: var(--text);
+        }
+        .btn-secondary:hover { background: #CFD8DC; }
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        label {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        input, select, textarea {
+            padding: 12px 14px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: #FAFAFA;
+            color: var(--text);
+            width: 100%;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(93,64,55,0.1);
+        }
+        input[type="number"] { text-align: right; }
+        textarea { resize: vertical; min-height: 80px; }
+        .dynamic-section {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 2px dashed var(--border);
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .section-title {
+            font-size: 16px;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        .item-row {
+            background: #F5F5F5;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            position: relative;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+        .item-row:hover {
+            border-color: var(--border);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .item-row .row-number {
+            position: absolute;
+            top: -10px;
+            left: 15px;
+            background: var(--primary);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .remove-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        .remove-btn:hover { transform: scale(1.1); }
+        .summary-box {
+            background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        .summary-item { text-align: center; }
+        .summary-label {
+            font-size: 11px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+        .summary-value {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .status-lunas { background: #E8F5E9; color: #2E7D32; }
+        .status-piutang { background: #FFF3E0; color: #E65100; }
+        .status-belum { background: #FFEBEE; color: #C62828; }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 15px 20px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            animation: slideIn 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 300px;
+        }
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--danger); }
+        .toast.info { background: var(--info); }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255,255,255,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .loading-overlay.active { display: flex; }
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--card);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            font-size: 12px;
+        }
+        .data-table th {
+            background: var(--primary);
+            color: white;
+            padding: 10px 12px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .data-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border);
+        }
+        .data-table tr:hover { background: #F5F5F5; }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-light);
+        }
+        input[readonly], input.calculated {
+            background: #EEEEEE;
+        }
+        input.calculated {
+            background: #FFF8E1;
+            border-color: #FFD54F;
+        }
+        .gas-config {
+            background: #E3F2FD;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .gas-config h3 {
+            color: #1565C0;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        .gas-config input {
+            background: white;
+        }
+        @media (max-width: 768px) {
+            .container { padding: 10px; }
+            .form-card { padding: 20px; }
+            .form-grid { grid-template-columns: 1fr; }
+            .tab-btn { padding: 10px 15px; font-size: 12px; }
+            .form-header { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+<base target="_blank">
 </head>
 <body>
-  <div class="container">
-    <h2>Q.co Financial Entry System</h2>
-    <div id="tabNav">
-      <button class="btn active" onclick="renderTab('Pembelian')">Pembelian</button>
-      <button class="btn" onclick="renderTab('Penjualan')">Penjualan</button>
-      <button class="btn" onclick="renderTab('KAS MASUK')">KAS MASUK</button>
-      <button class="btn" onclick="renderTab('Assembly')">Assembly</button>
+    <div class="header">
+        <h1>Q ENTRY SYSTEM</h1>
+        <p>QBridge Coffee Inventory & Transaction Management</p>
     </div>
-    <form id="entryForm">
-      <div id="formFields"></div>
-      <button type="button" class="submit" onclick="submitData()">Simpan Data</button>
-    </form>
-  </div>
 
-  <script>
-    function renderTab(tabName) {
-      document.getElementById('formFields').innerHTML = 'Memuat data...';
-      google.script.run.withSuccessHandler(function(fields) {
-        let html = `<input type="hidden" name="tab" value="${tabName}">`;
-        fields.forEach(f => {
-          html += `<label>${f.label}</label><select name="${f.label}">`;
-          f.options.forEach(o => html += `<option value="${o}">${o}</option>`);
-          html += `</select>`;
+    <div class="toast-container" id="toastContainer"></div>
+
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <p>Processing...</p>
+    </div>
+
+    <div class="container">
+        <!-- GAS Config -->
+        <div class="gas-config">
+            <h3>🔧 Google Apps Script Configuration</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>GAS Web App URL</label>
+                    <input type="url" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec" 
+       value="https://script.google.com/macros/s/AKfycbwk4O0ioUg5Vi1SMqkawGOlCgrvQh4Fi3Ke267jobna5leCGqKehzDGe5TTdhX8IQ/exec">
+                </div>
+                <div class="form-group">
+                    <label>Sheet ID</label>
+                    <input type="text" id="sheetId" placeholder="1QP6ewRuamaJ4SdVLQpvQDP3zwo_Lynuv4EBqfZMBoCs"
+                           value="1QP6ewRuamaJ4SdVLQpvQDP3zwo_Lynuv4EBqfZMBoCs">
+                </div>
+            </div>
+            <p style="font-size: 12px; color: #666; margin-top: 10px;">
+                Data tersimpan di localStorage sebagai backup. Klik "Sync ke GAS" untuk push ke Google Sheets.
+            </p>
+        </div>
+
+        <!-- Tab Navigation -->
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('assembly')">☕ Assembly</button>
+            <button class="tab-btn" onclick="switchTab('pembelian')">🛒 Pembelian</button>
+            <button class="tab-btn" onclick="switchTab('kasmasuk')">💰 Kas Masuk</button>
+            <button class="tab-btn" onclick="switchTab('penjualan')">📦 Penjualan</button>
+            <button class="tab-btn" onclick="switchTab('preview')">📊 Preview</button>
+        </div>
+
+        <!-- ASSEMBLY ENTRY FORM -->
+        <div id="tab-assembly" class="tab-content">
+            <div class="form-card">
+                <div class="form-header">
+                    <div>
+                        <div class="form-title">☕ Assembly Entry - Produksi Roasting & Blending</div>
+                        <p style="font-size: 13px; color: var(--text-light); margin-top: 5px;">
+                            Entry produksi: GB → RB (Roasting) atau RB → HB (House Blend)
+                        </p>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" onclick="resetForm('assembly')">🔄 Reset</button>
+                        <button class="btn btn-primary" onclick="saveEntry('assembly')">💾 Simpan Entry</button>
+                    </div>
+                </div>
+
+                <form id="form-assembly">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tanggal Produksi</label>
+                            <input type="date" name="date" required onchange="generateBatchNo()">
+                        </div>
+                        <div class="form-group">
+                            <label>Batch No (Auto)</label>
+                            <input type="text" name="batch_no" readonly placeholder="DDMM-RBXX">
+                        </div>
+                        <div class="form-group">
+                            <label>SKU Produk</label>
+                            <select name="sku" required onchange="updateAssemblyProduct()">
+                                <option value="">Pilih SKU</option>
+                                <option value="RB01">RB01 - RB Robusta Temanggung</option>
+                                <option value="RB02">RB02 - RB Robusta Jawa Barat</option>
+                                <option value="RB05">RB05 - RB Gayo</option>
+                                <option value="RB06">RB06 - RB Arabika Natural Semendo</option>
+                                <option value="RB07">RB07 - RB Arabika Jawa Barat</option>
+                                <option value="RB08">RB08 - RB Arabika Flores Bajawa</option>
+                                <option value="RB09">RB09 - RB Arabika Brazil Cerrado</option>
+                                <option value="RB10">RB10 - RB Arabika Angling Natural</option>
+                                <option value="RB12">RB12 - RB Arabika Angling Full Wash</option>
+                                <option value="RB14">RB14 - RB Arabica Ciwidey Natural</option>
+                                <option value="RB15">RB15 - RB Arabika Bali Kintamani Natural</option>
+                                <option value="RB20">RB20 - RB Arabika Jawa Barat105</option>
+                                <option value="RB21">RB21 - RB Arabika Argopuro Natural</option>
+                                <option value="RB24">RB24 - RB Arabika Argopuro Wine</option>
+                                <option value="RB25">RB25 - RB Arabika Bali Kintamani Natural</option>
+                                <option value="HB02073070R">HB02073070R - HB 30R70A Classic</option>
+                                <option value="HB02074060R">HB02074060R - HB 40R60A Reguler</option>
+                                <option value="HB02075050R">HB02075050R - HB 50R50A Reguler</option>
+                                <option value="HB02077030R">HB02077030R - HB 70R30A Reguler</option>
+                                <option value="HB07015050KA">HB07015050KA - HB 50R50A Kembalikealam</option>
+                                <option value="HB14093565P">HB14093565P - HB 35C65B Premium</option>
+                                <option value="HB05084060">HB05084060 - HB 40G60B EDC</option>
+                                <option value="HB14054060">HB14054060 - HB 40C60G EDC</option>
+                                <option value="SIGNHB020709">SIGNHB020709 - HB Signature 7030</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Nama Produk</label>
+                            <input type="text" name="nama_barang" readonly placeholder="Auto-fill dari SKU">
+                        </div>
+                        <div class="form-group">
+                            <label>Jumlah Produksi (Kg)</label>
+                            <input type="number" name="jumlah_produksi" step="0.01" required onchange="calculateAssembly()">
+                        </div>
+                        <div class="form-group">
+                            <label>Penyusutan (%)</label>
+                            <input type="number" name="penyusutan" step="0.01" value="15" onchange="calculateAssembly()">
+                        </div>
+                        <div class="form-group">
+                            <label>No Log / Referensi</label>
+                            <input type="text" name="no_log" placeholder="Optional">
+                        </div>
+                    </div>
+
+                    <div class="dynamic-section">
+                        <div class="section-header">
+                            <div class="section-title">🌱 Raw Material / Bahan Baku</div>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="addRawMaterialRow()">➕ Tambah Bahan</button>
+                        </div>
+                        <div id="raw-material-container">
+                            <div class="item-row" data-row="1">
+                                <span class="row-number">Bahan 1</span>
+                                <button type="button" class="remove-btn" onclick="removeRow(this)">×</button>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Nama Raw Material</label>
+                                        <select name="raw_material[]" required onchange="updateRawMaterialPrice(this)">
+                                            <option value="">Pilih Bahan</option>
+                                            <optgroup label="Green Beans (GB)">
+                                                <option value="GB Arabika Jawa Barat Asalan|90000">GB Arabika Jawa Barat Asalan (Rp 90.000)</option>
+                                                <option value="GB Arabika Jawa Barat105|105000">GB Arabika Jawa Barat105 (Rp 105.000)</option>
+                                                <option value="GB Robusta Jawa Barat Asalan|68000">GB Robusta Jawa Barat Asalan (Rp 68.000)</option>
+                                                <option value="GB Robusta Temanggung|71300">GB Robusta Temanggung (Rp 71.300)</option>
+                                                <option value="GB Arabika Brazil Cerrado|110000">GB Arabika Brazil Cerrado (Rp 110.000)</option>
+                                                <option value="GB Arabika Ciwidey Natural|170240">GB Arabika Ciwidey Natural (Rp 170.240)</option>
+                                                <option value="GB Arabika Semendo Natural|110720">GB Arabika Semendo Natural (Rp 110.720)</option>
+                                                <option value="GB Flores Bajawa|160000">GB Flores Bajawa (Rp 160.000)</option>
+                                                <option value="GB Gayo|105000">GB Gayo (Rp 105.000)</option>
+                                                <option value="GB Arabika Argopuro Natural|130000">GB Arabika Argopuro Natural (Rp 130.000)</option>
+                                                <option value="GB Arabika Argopuro Wine|300000">GB Arabika Argopuro Wine (Rp 300.000)</option>
+                                                <option value="GB Arabika Bali Kintamani Natural|115000">GB Arabika Bali Kintamani (Rp 115.000)</option>
+                                                <option value="GB Arabika Pasir Angling Natural|166000">GB Arabika Pasir Angling Natural (Rp 166.000)</option>
+                                                <option value="GB Arabika Pasir Angling FW|122300">GB Arabika Pasir Angling FW (Rp 122.300)</option>
+                                            </optgroup>
+                                            <optgroup label="Roasted Beans (RB)">
+                                                <option value="RB Robusta Jawa Barat|125000">RB Robusta Jawa Barat (Rp 125.000)</option>
+                                                <option value="RB Robusta Temanggung|125000">RB Robusta Temanggung (Rp 125.000)</option>
+                                                <option value="RB Arabika Jawa Barat|145000">RB Arabika Jawa Barat (Rp 145.000)</option>
+                                                <option value="RB Arabika Jawa Barat105|150000">RB Arabika Jawa Barat105 (Rp 150.000)</option>
+                                                <option value="RB Arabika Brazil Cerrado|190000">RB Arabika Brazil Cerrado (Rp 190.000)</option>
+                                                <option value="RB Arabica Ciwidey Natural|245000">RB Arabica Ciwidey Natural (Rp 245.000)</option>
+                                                <option value="RB Arabika Natural Semendo|190000">RB Arabika Natural Semendo (Rp 190.000)</option>
+                                                <option value="RB Arabika Flores Bajawa|245000">RB Arabika Flores Bajawa (Rp 245.000)</option>
+                                                <option value="RB Gayo|180000">RB Gayo (Rp 180.000)</option>
+                                                <option value="RB Houseblend 70% Robusta 30% Arabika Reguler|150000">RB HB 70R30A Reguler (Rp 150.000)</option>
+                                                <option value="RB Houseblend 50% Robusta 50% Arabika Reguler|155000">RB HB 50R50A Reguler (Rp 155.000)</option>
+                                                <option value="RB Houseblend 40% Robusta 60% Arabika Reguler|165000">RB HB 40R60A Reguler (Rp 165.000)</option>
+                                                <option value="RB Houseblend 30% Robusta 70% Arabica (regular)|180000">RB HB 30R70A Reguler (Rp 180.000)</option>
+                                                <option value="RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)|220000">RB HB 35C65B Premium (Rp 220.000)</option>
+                                            </optgroup>
+                                            <optgroup label="Kemasan">
+                                                <option value="Botol 250ml|2000">Botol 250ml (Rp 2.000)</option>
+                                                <option value="Flat Bottom Valve 250gr|0">Flat Bottom Valve 250gr</option>
+                                                <option value="Flat Bottom Valve 500gr|0">Flat Bottom Valve 500gr</option>
+                                                <option value="Flat Bottom Valve 1000gr|0">Flat Bottom Valve 1000gr</option>
+                                                <option value="Kemasan Kopi 5kg Besar Hitam Tanpa Valve|0">Kemasan 5kg Hitam</option>
+                                                <option value="Kemasan Kopi 7kg Besar Hitam Tanpa Valve|0">Kemasan 7kg Hitam</option>
+                                                <option value="Kemasan Sample|0">Kemasan Sample</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Jumlah Raw Material (Kg/Pcs)</label>
+                                        <input type="number" name="jumlah_raw[]" step="0.01" required onchange="calculateAssembly()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Harga Satuan (Rp)</label>
+                                        <input type="number" name="harga_raw[]" step="1" readonly class="calculated">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Total Harga (Rp)</label>
+                                        <input type="number" name="total_raw[]" step="1" readonly class="calculated">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="summary-box">
+                        <div class="summary-item">
+                            <div class="summary-label">Total Raw Material</div>
+                            <div class="summary-value" id="assembly-total-raw">0 Kg</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Total Harga Material</div>
+                            <div class="summary-value" id="assembly-total-harga">Rp 0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">HPP per Kg</div>
+                            <div class="summary-value" id="assembly-hpp">Rp 0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Penyusutan</div>
+                            <div class="summary-value" id="assembly-shrinkage">0%</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- PEMBELIAN FORM -->
+        <div id="tab-pembelian" class="tab-content" style="display:none">
+            <div class="form-card">
+                <div class="form-header">
+                    <div>
+                        <div class="form-title">🛒 Entry Pembelian</div>
+                        <p style="font-size: 13px; color: var(--text-light); margin-top: 5px;">
+                            Pembelian beans, kemasan, biaya operasional, gaji, dll.
+                        </p>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" onclick="resetForm('pembelian')">🔄 Reset</button>
+                        <button class="btn btn-primary" onclick="saveEntry('pembelian')">💾 Simpan Entry</button>
+                    </div>
+                </div>
+
+                <form id="form-pembelian">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tanggal Transaksi</label>
+                            <input type="date" name="tanggal" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cost Center</label>
+                            <select name="cost_center">
+                                <option value="Q.Co">Q.Co</option>
+                                <option value="QBridge">QBridge</option>
+                                <option value="Nusa Nexus">Nusa Nexus</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Salesman / PIC</label>
+                            <select name="salesman">
+                                <option value="Umay">Umay</option>
+                                <option value="Fahmi Maulana">Fahmi Maulana</option>
+                                <option value="Rizky Syahdinar">Rizky Syahdinar</option>
+                                <option value="Arif Wardoyo">Arif Wardoyo</option>
+                                <option value="Alby">Alby</option>
+                                <option value="Azani">Azani</option>
+                                <option value="Putra">Putra</option>
+                                <option value="Reza">Reza</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>No Dokumen / FP</label>
+                            <input type="text" name="no_dokumen" placeholder="FP-XXXX">
+                        </div>
+                        <div class="form-group">
+                            <label>Kode Transaksi</label>
+                            <select name="kode_transaksi" required>
+                                <option value="">Pilih Jenis</option>
+                                <option value="Pembelian">Pembelian (Persediaan)</option>
+                                <option value="Pembelian Biaya">Pembelian Biaya (Opex)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>COA Expenses</label>
+                            <select name="coa_expenses" required>
+                                <option value="">Pilih COA</option>
+                                <optgroup label="Persediaan (125xx)">
+                                    <option value="Persediaan Barang Beans">Persediaan Barang Beans (12502)</option>
+                                    <option value="Persediaan Barang Kemasan">Persediaan Barang Kemasan (12506)</option>
+                                    <option value="Persediaan Barang Bar">Persediaan Barang Bar (12505)</option>
+                                </optgroup>
+                                <optgroup label="Biaya Operasional (710xx)">
+                                    <option value="Electricity">Electricity (71010)</option>
+                                    <option value="Pos & Meterai">Pos & Meterai (71035)</option>
+                                    <option value="Food&Transport">Food & Transport (71040)</option>
+                                    <option value="Office Facilities">Office Facilities (71060)</option>
+                                    <option value="Printing, Stationary">Printing, Stationary (71030)</option>
+                                </optgroup>
+                                <optgroup label="Biaya Lainnya">
+                                    <option value="Gaji">Gaji (70040)</option>
+                                    <option value="Komisi penjualan">Komisi Penjualan (72040)</option>
+                                    <option value="Perbaikan Gedung">Perbaikan Gedung (73040)</option>
+                                    <option value="Perbaikan Mesin">Perbaikan Mesin (73050)</option>
+                                    <option value="Inventaris Kantor Lainnya">Inventaris Kantor (15400)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Nama Supplier</label>
+                            <input type="text" name="nama_supplier" list="supplierList" required>
+                            <datalist id="supplierList">
+                                <option value="PT.Kopi Satu Nusantara">
+                                <option value="SARYADI">
+                                <option value="Sheila Ina Chairunissa">
+                                <option value="KAROMI">
+                                <option value="Laura Coffee Beans">
+                                <option value="PT. Towing Kopindo Abadi">
+                                <option value="Tokopedia">
+                                <option value="Toko Galon">
+                                <option value="PLN">
+                                <option value="BIZNET">
+                                <option value="Indomart">
+                                <option value="Transprint">
+                                <option value="Altek Solusion Machine">
+                                <option value="DIY">
+                                <option value="GOSEND">
+                                <option value="Kantin">
+                                <option value="Toko Kue">
+                                <option value="Toko Listrik">
+                                <option value="Matrial">
+                                <option value="Tukang">
+                                <option value="Canvasing">
+                                <option value="Fahmi Maulana">
+                                <option value="Rizki Syahdinar">
+                                <option value="Nanda">
+                                <option value="Razak">
+                            </datalist>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Nama Barang / Keterangan</label>
+                            <input type="text" name="nama_barang" required placeholder="Contoh: GB Robusta Temanggung, Listrik, Gaji, dll">
+                        </div>
+                        <div class="form-group">
+                            <label>Notes / Detail</label>
+                            <input type="text" name="notes" placeholder="Optional detail">
+                        </div>
+                        <div class="form-group">
+                            <label>Jumlah</label>
+                            <input type="number" name="jumlah" step="0.01" required onchange="calculatePembelian()">
+                        </div>
+                        <div class="form-group">
+                            <label>Harga Satuan (Rp)</label>
+                            <input type="number" name="harga_satuan" step="1" required onchange="calculatePembelian()">
+                        </div>
+                        <div class="form-group">
+                            <label>Total (Rp)</label>
+                            <input type="number" name="total" step="1" readonly class="calculated">
+                        </div>
+                        <div class="form-group">
+                            <label>Status Bayar</label>
+                            <select name="status_bayar" required>
+                                <option value="Lunas Transfer">Lunas Transfer</option>
+                                <option value="Lunas Cash">Lunas Cash</option>
+                                <option value="Belum Lunas">Belum Lunas</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tanggal Pembayaran</label>
+                            <input type="date" name="tanggal_pembayaran">
+                        </div>
+                        <div class="form-group">
+                            <label>Kode LOT</label>
+                            <input type="text" name="kode_lot" placeholder="XX-XXXXX-XXXX">
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- KAS MASUK FORM -->
+        <div id="tab-kasmasuk" class="tab-content" style="display:none">
+            <div class="form-card">
+                <div class="form-header">
+                    <div>
+                        <div class="form-title">💰 Entry Kas Masuk / Piutang</div>
+                        <p style="font-size: 13px; color: var(--text-light); margin-top: 5px;">
+                            Penerimaan pembayaran dari customer (pelunasan piutang).
+                        </p>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" onclick="resetForm('kasmasuk')">🔄 Reset</button>
+                        <button class="btn btn-primary" onclick="saveEntry('kasmasuk')">💾 Simpan Entry</button>
+                    </div>
+                </div>
+
+                <form id="form-kasmasuk">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tanggal Penerimaan</label>
+                            <input type="date" name="tanggal" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Sales / Collector</label>
+                            <select name="sales">
+                                <option value="Q.co">Q.co (Office)</option>
+                                <option value="Fahmi Maulana">Fahmi Maulana</option>
+                                <option value="Rizky Syahdinar">Rizky Syahdinar</option>
+                                <option value="Arif Wardoyo">Arif Wardoyo</option>
+                                <option value="Alby">Alby</option>
+                                <option value="Azani">Azani</option>
+                                <option value="Putra">Putra</option>
+                                <option value="Reza">Reza</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>No Invoice (Referensi)</label>
+                            <input type="text" name="no_dokumen" placeholder="INVXXXX" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Cash Account</label>
+                            <select name="cash_account">
+                                <option value="Cash in Bank BCA - IDR">Cash in Bank BCA - IDR</option>
+                                <option value="Cash on Hand-IDR">Cash on Hand - IDR</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Kode Transaksi</label>
+                            <input type="text" name="kode_transaksi" value="Piutang USaha" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Lawan Transaksi (Customer)</label>
+                            <input type="text" name="lawan_transaksi" list="customerList" required>
+                            <datalist id="customerList">
+                                <option value="Kembali Ke Alam Group">
+                                <option value="Kopi Popi">
+                                <option value="Kopi Kita">
+                                <option value="Arion Caffe">
+                                <option value="Eau De Coffee">
+                                <option value="Herby (Hath)">
+                                <option value="Marame Café">
+                                <option value="ONIX Serang (Renovaldi)">
+                                <option value="Sense Of Space (Jani)">
+                                <option value="Satu Kala (Albi)">
+                                <option value="Warkop Temu Jumpa (Albi)">
+                                <option value="Warkop 1001 (Albi)">
+                                <option value="Arif (Makkanya Coffee)">
+                                <option value="Arif (Halaman Baru)">
+                                <option value="Arif (Cikini)">
+                                <option value="Arif (D'Este)">
+                                <option value="Arif (Newbiq)">
+                                <option value="Arif (Butik)">
+                                <option value="Arif (Explor Rasa)">
+                                <option value="Arif (Teras Angkasa)">
+                                <option value="Arif (Makkanya Express)">
+                                <option value="Arif (Zenka Salon)">
+                                <option value="Bar">
+                                <option value="Danau Sejuk">
+                                <option value="Tujuh Coffee (Herby)">
+                                <option value="Luang Coffee">
+                                <option value="Atatu Kopi @Sawanganbaru">
+                                <option value="Sembari Ngopi (Albi)">
+                                <option value="Storia Cafe">
+                                <option value="Serenona Coffeatery">
+                                <option value="Sotaku hive">
+                                <option value="Magami Coffee">
+                                <option value="Bintang Putra Pratama">
+                                <option value="Kebutuhan USA">
+                                <option value="Royal Social House Cafe & Resto">
+                                <option value="Fays Kitchen">
+                                <option value="Kampung Belang Coffee (Albi)">
+                            </datalist>
+                        </div>
+                        <div class="form-group">
+                            <label>Jumlah Kas Masuk (Rp)</label>
+                            <input type="number" name="kas_masuk" step="1" required>
+                        </div>
+                        <div class="form-group full-width">
+                            <label>Keterangan Tambahan</label>
+                            <textarea name="keterangan" placeholder="Optional: detail pembayaran, cicilan ke-X, dll"></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- PENJUALAN FORM -->
+        <div id="tab-penjualan" class="tab-content" style="display:none">
+            <div class="form-card">
+                <div class="form-header">
+                    <div>
+                        <div class="form-title">📦 Entry Penjualan & Invoice</div>
+                        <p style="font-size: 13px; color: var(--text-light); margin-top: 5px;">
+                            Entry penjualan ke customer: invoice, jatuh tempo, pembayaran.
+                        </p>
+                    </div>
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" onclick="resetForm('penjualan')">🔄 Reset</button>
+                        <button class="btn btn-primary" onclick="saveEntry('penjualan')">💾 Simpan Entry</button>
+                    </div>
+                </div>
+
+                <form id="form-penjualan">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Tanggal Invoice</label>
+                            <input type="date" name="tanggal" required onchange="generateInvoiceNo()">
+                        </div>
+                        <div class="form-group">
+                            <label>Jatuh Tempo</label>
+                            <input type="date" name="jatuh_tempo">
+                        </div>
+                        <div class="form-group">
+                            <label>Cost Center</label>
+                            <select name="cost_center">
+                                <option value="Q.Co">Q.Co</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Salesman</label>
+                            <select name="salesman">
+                                <option value="Q.co">Q.co (Direct)</option>
+                                <option value="Fahmi Maulana">Fahmi Maulana</option>
+                                <option value="Rizky Syahdinar">Rizky Syahdinar</option>
+                                <option value="Arif Wardoyo">Arif Wardoyo</option>
+                                <option value="Alby">Alby</option>
+                                <option value="Azani">Azani</option>
+                                <option value="Putra">Putra</option>
+                                <option value="Reza">Reza</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>No Invoice (Auto)</label>
+                            <input type="text" name="no_invoice" readonly placeholder="INVXXXX">
+                        </div>
+                        <div class="form-group">
+                            <label>Kode Transaksi</label>
+                            <select name="kode_transaksi">
+                                <option value="Penjualan">Penjualan</option>
+                                <option value="Sample">Sample (Gratis)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Customer</label>
+                            <input type="text" name="customer" list="customerList" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Type Pembayaran</label>
+                            <select name="type_pembayaran">
+                                <option value="Lunas Transfer">Lunas Transfer</option>
+                                <option value="Lunas Cash">Lunas Cash</option>
+                                <option value="">Piutang (Belum Bayar)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Status</label>
+                            <select name="status">
+                                <option value="PIUTANG">PIUTANG</option>
+                                <option value="LUNAS">LUNAS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Tanggal Pembayaran</label>
+                            <input type="date" name="tanggal_pembayaran">
+                        </div>
+                        <div class="form-group">
+                            <label>Status Bayar</label>
+                            <select name="status_bayar">
+                                <option value="PIUTANG">PIUTANG</option>
+                                <option value="LUNAS">LUNAS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>No Surat Jalan</label>
+                            <input type="text" name="surat_jalan" placeholder="SJXXXX">
+                        </div>
+                        <div class="form-group">
+                            <label>Batch No (Referensi Assembly)</label>
+                            <input type="text" name="batch_no" placeholder="Contoh: 1201-RB09">
+                        </div>
+                    </div>
+
+                    <div class="dynamic-section">
+                        <div class="section-header">
+                            <div class="section-title">📋 Items / Barang Dijual</div>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="addPenjualanItem()">➕ Tambah Item</button>
+                        </div>
+                        <div id="penjualan-items-container">
+                            <div class="item-row" data-row="1">
+                                <span class="row-number">Item 1</span>
+                                <button type="button" class="remove-btn" onclick="removeRow(this)">×</button>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Nama Barang</label>
+                                        <select name="nama_barang[]" required onchange="updateHargaJual(this)">
+                                            <option value="">Pilih Produk</option>
+                                            <optgroup label="Roasted Beans (RB)">
+                                                <option value="RB Robusta Temanggung|125000">RB Robusta Temanggung - Rp 125.000</option>
+                                                <option value="RB Robusta Jawa Barat|125000">RB Robusta Jawa Barat - Rp 125.000</option>
+                                                <option value="RB Arabika Jawa Barat|145000">RB Arabika Jawa Barat - Rp 145.000</option>
+                                                <option value="RB Arabika Jawa Barat105|150000">RB Arabika Jawa Barat105 - Rp 150.000</option>
+                                                <option value="RB Arabika Brazil Cerrado|190000">RB Arabika Brazil Cerrado - Rp 190.000</option>
+                                                <option value="RB Arabica Ciwidey Natural|245000">RB Arabica Ciwidey Natural - Rp 245.000</option>
+                                                <option value="RB Arabika Natural Semendo|190000">RB Arabika Natural Semendo - Rp 190.000</option>
+                                                <option value="RB Arabika Flores Bajawa|245000">RB Arabika Flores Bajawa - Rp 245.000</option>
+                                                <option value="RB Gayo|180000">RB Gayo - Rp 180.000</option>
+                                                <option value="RB Arabika Bali Kintamani Natural|198000">RB Arabika Bali Kintamani - Rp 198.000</option>
+                                                <option value="RB Arabika Argopuro Natural|220000">RB Arabika Argopuro Natural - Rp 220.000</option>
+                                                <option value="RB Arabika Argopuro Wine|300000">RB Arabika Argopuro Wine - Rp 300.000</option>
+                                            </optgroup>
+                                            <optgroup label="House Blend (HB)">
+                                                <option value="RB Houseblend 70% Robusta 30% Arabika Reguler|150000">HB 70R30A Reguler - Rp 150.000</option>
+                                                <option value="RB Houseblend 70% Robusta 30% Arabika NEW|150000">HB 70R30A NEW - Rp 150.000</option>
+                                                <option value="RB Houseblend 70% Robusta 30% Arabika Classic|160000">HB 70R30A Classic - Rp 160.000</option>
+                                                <option value="RB Houseblend 50% Robusta 50% Arabika Reguler|155000">HB 50R50A Reguler - Rp 155.000</option>
+                                                <option value="RB Houseblend 50% Robusta 50% Arabika NEW|155000">HB 50R50A NEW - Rp 155.000</option>
+                                                <option value="RB Houseblend 50% Robusta 50% Arabika Kembalikealam|160000">HB 50R50A Kembalikealam - Rp 160.000</option>
+                                                <option value="RB Houseblend 50% Robusta 50% Arabika KembalikealamNew|160000">HB 50R50A KembalikealamNew - Rp 160.000</option>
+                                                <option value="RB Houseblend 40% Robusta 60% Arabika Reguler|165000">HB 40R60A Reguler - Rp 165.000</option>
+                                                <option value="RB Houseblend 40% Robusta 60% Arabika NEW|165000">HB 40R60A NEW - Rp 165.000</option>
+                                                <option value="RB Houseblend 30% Robusta 70% Arabica (regular)|180000">HB 30R70A Reguler - Rp 180.000</option>
+                                                <option value="RB Houseblend 30% Robusta 70% Arabica NEW|180000">HB 30R70A NEW - Rp 180.000</option>
+                                                <option value="RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)|220000">HB 35C65B Premium - Rp 220.000</option>
+                                                <option value="RB Houseblend Arabika Natural 40% Arabika Gayo 60% EDC|220000">HB 40N60G EDC - Rp 220.000</option>
+                                                <option value="RB Houseblend Signature 7030|180000">HB Signature 7030 - Rp 180.000</option>
+                                            </optgroup>
+                                            <optgroup label="Packaged (250gr)">
+                                                <option value="250 gr - RB Arabika Brazil Cerrado|60000">250g RB Brazil Cerrado - Rp 60.000</option>
+                                                <option value="250 gr - RB Arabica Ciwidey Natural|75000">250g RB Ciwidey - Rp 75.000</option>
+                                                <option value="250 gr - RB Arabika Flores Bajawa|75000">250g RB Flores Bajawa - Rp 75.000</option>
+                                                <option value="250 gr - RB Arabika Natural Semendo|60000">250g RB Semendo - Rp 60.000</option>
+                                                <option value="250 gr - RB Gayo|65000">250g RB Gayo - Rp 65.000</option>
+                                                <option value="250 gr - RB Arabika Bali Kintamani Natural|130565">250g RB Bali Kintamani - Rp 130.565</option>
+                                                <option value="250 gr - RB Arabika Argopuro Natural|220000">250g RB Argopuro Natural - Rp 220.000</option>
+                                                <option value="250 gr - RB Houseblend 50% Robusta 50% Arabika Reguler|50000">250g HB 50R50A - Rp 50.000</option>
+                                            </optgroup>
+                                            <optgroup label="Packaged (500gr)">
+                                                <option value="500 gr - RB Robusta Temanggung|70000">500g RB Robusta Temanggung - Rp 70.000</option>
+                                                <option value="500 gr - RB Gayo|95000">500g RB Gayo - Rp 95.000</option>
+                                                <option value="500 gr - RB Arabika Natural Semendo|110000">500g RB Semendo - Rp 110.000</option>
+                                                <option value="500 gr - RB Arabika Brazil Cerrado|110000">500g RB Brazil Cerrado - Rp 110.000</option>
+                                                <option value="500 gr - RB Houseblend 40% Robusta 60% Arabika Reguler|90000">500g HB 40R60A - Rp 90.000</option>
+                                                <option value="500 gr - RB Houseblend 50% Robusta 50% Arabika Reguler|85000">500g HB 50R50A - Rp 85.000</option>
+                                            </optgroup>
+                                            <optgroup label="Lainnya">
+                                                <option value="Gula Aren|55000">Gula Aren - Rp 55.000</option>
+                                                <option value="Gula Aren Kata Rasa|55000">Gula Aren Kata Rasa - Rp 55.000</option>
+                                                <option value="Sewa Mesin Kopi Faema 2 Grup + Grinder|4300000">Sewa Mesin Faema 2Grup - Rp 4.300.000</option>
+                                                <option value="Sewa Mesin Simonelli Oscar 2 + Grinder|2700000">Sewa Mesin Simonelli Oscar - Rp 2.700.000</option>
+                                                <option value="Sewa Mesin Pegaso Wega 2 Group + Grinder|3500000">Sewa Mesin Pegaso Wega - Rp 3.500.000</option>
+                                                <option value="V60 Natural Ciwidey|25000">V60 Natural Ciwidey - Rp 25.000</option>
+                                                <option value="V60 Flores Bajawa|25000">V60 Flores Bajawa - Rp 25.000</option>
+                                                <option value="Macha Green Tea|25000">Macha Green Tea - Rp 25.000</option>
+                                                <option value="Caramel Latte|25000">Caramel Latte - Rp 25.000</option>
+                                                <option value="Syrup Caramel 750ml|100000">Syrup Caramel 750ml - Rp 100.000</option>
+                                                <option value="Crimer La Gia|60000">Crimer La Gia - Rp 60.000</option>
+                                                <option value="Silicone Holder Mat Tamper|60000">Silicone Holder Mat - Rp 60.000</option>
+                                                <option value="Wadah Ampas Kopi Espresso Knock Box|70000">Knock Box - Rp 70.000</option>
+                                                <option value="Tamper Kopi Espresso 51mm|70000">Tamper 51mm - Rp 70.000</option>
+                                            </optgroup>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Jumlah (Kg/Pcs)</label>
+                                        <input type="number" name="jumlah[]" step="0.01" required onchange="calculatePenjualan()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Harga Satuan (Rp)</label>
+                                        <input type="number" name="harga_satuan[]" step="1" required onchange="calculatePenjualan()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Total (Rp)</label>
+                                        <input type="number" name="total[]" step="1" readonly class="calculated">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Diskon (Rp)</label>
+                                        <input type="number" name="diskon[]" step="1" value="0" onchange="calculatePenjualan()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Kemasan</label>
+                                        <select name="kemasan[]">
+                                            <option value="">-</option>
+                                            <option value="Flat Bottom Valve 250gr">Flat Bottom 250gr</option>
+                                            <option value="Flat Bottom Valve 500gr">Flat Bottom 500gr</option>
+                                            <option value="Flat Bottom Valve 1000gr">Flat Bottom 1kg</option>
+                                            <option value="Kemasan Kopi 5kg Besar Hitam Tanpa Valve">Kemasan 5kg Hitam</option>
+                                            <option value="Kemasan Kopi 7kg Besar Hitam Tanpa Valve">Kemasan 7kg Hitam</option>
+                                            <option value="Kemasan Sample">Kemasan Sample</option>
+                                            <option value="Botol 250ml">Botol 250ml</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Jumlah Kemasan</label>
+                                        <input type="number" name="jumlah_kemasan[]" step="1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Batch No Item</label>
+                                        <input type="text" name="batch_no_item[]" placeholder="Contoh: 1201-RB09">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-grid" style="margin-top: 20px;">
+                        <div class="form-group">
+                            <label>PPn %</label>
+                            <input type="number" name="ppn_pct" step="0.01" value="0" onchange="calculatePenjualan()">
+                        </div>
+                        <div class="form-group">
+                            <label>PPN (Rp)</label>
+                            <input type="number" name="ppn" step="1" readonly class="calculated">
+                        </div>
+                        <div class="form-group">
+                            <label>PPh %</label>
+                            <input type="number" name="pph_pct" step="0.01" value="0" onchange="calculatePenjualan()">
+                        </div>
+                        <div class="form-group">
+                            <label>PPh 23 (Rp)</label>
+                            <input type="number" name="pph23" step="1" readonly class="calculated">
+                        </div>
+                    </div>
+
+                    <div class="summary-box">
+                        <div class="summary-item">
+                            <div class="summary-label">Subtotal</div>
+                            <div class="summary-value" id="penjualan-subtotal">Rp 0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">Diskon Total</div>
+                            <div class="summary-value" id="penjualan-diskon">Rp 0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">PPN</div>
+                            <div class="summary-value" id="penjualan-ppn">Rp 0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">PPh 23</div>
+                            <div class="summary-value" id="penjualan-pph">Rp 0</div>
+                        </div>
+                        <div class="summary-item">
+                            <div class="summary-label">TOTAL TAGIHAN</div>
+                            <div class="summary-value" id="penjualan-total" style="color: var(--danger); font-size: 24px;">Rp 0</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- PREVIEW DATA TAB -->
+        <div id="tab-preview" class="tab-content" style="display:none">
+            <div class="form-card">
+                <div class="form-header">
+                    <div class="form-title">📊 Preview Data Tersimpan</div>
+                    <div class="form-actions">
+                        <button class="btn btn-secondary" onclick="loadPreviewData()">🔄 Refresh</button>
+                        <button class="btn btn-success" onclick="syncToGAS()">☁️ Sync ke Google Sheets</button>
+                        <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All</button>
+                    </div>
+                </div>
+
+                <div class="preview-section" style="margin-bottom: 30px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="color: var(--primary);">☕ Assembly Entry</h3>
+                        <span class="status-badge status-lunas" id="count-assembly">0 records</span>
+                    </div>
+                    <div id="preview-assembly" style="overflow-x: auto;">
+                        <div class="empty-state"><p>Belum ada data assembly</p></div>
+                    </div>
+                </div>
+
+                <div class="preview-section" style="margin-bottom: 30px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="color: var(--primary);">🛒 Pembelian</h3>
+                        <span class="status-badge status-lunas" id="count-pembelian">0 records</span>
+                    </div>
+                    <div id="preview-pembelian" style="overflow-x: auto;">
+                        <div class="empty-state"><p>Belum ada data pembelian</p></div>
+                    </div>
+                </div>
+
+                <div class="preview-section" style="margin-bottom: 30px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="color: var(--primary);">💰 Kas Masuk</h3>
+                        <span class="status-badge status-lunas" id="count-kasmasuk">0 records</span>
+                    </div>
+                    <div id="preview-kasmasuk" style="overflow-x: auto;">
+                        <div class="empty-state"><p>Belum ada data kas masuk</p></div>
+                    </div>
+                </div>
+
+                <div class="preview-section" style="margin-bottom: 30px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="color: var(--primary);">📦 Penjualan</h3>
+                        <span class="status-badge status-lunas" id="count-penjualan">0 records</span>
+                    </div>
+                    <div id="preview-penjualan" style="overflow-x: auto;">
+                        <div class="empty-state"><p>Belum ada data penjualan</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ========================
+        // GLOBAL STATE & CONFIG
+        // ========================
+        const STORAGE_KEYS = {
+            assembly: 'q_entry_assembly',
+            pembelian: 'q_entry_pembelian',
+            kasmasuk: 'q_entry_kasmasuk',
+            penjualan: 'q_entry_penjualan'
+        };
+
+        // Data master untuk dropdown
+        const SKU_MAP = {
+            'RB01': 'RB Robusta Temanggung',
+            'RB02': 'RB Robusta Jawa Barat',
+            'RB05': 'RB Gayo',
+            'RB06': 'RB Arabika Natural Semendo',
+            'RB07': 'RB Arabika Jawa Barat',
+            'RB08': 'RB Arabika Flores Bajawa',
+            'RB09': 'RB Arabika Brazil Cerrado',
+            'RB10': 'RB Arabika Angling Natural',
+            'RB12': 'RB Arabika Angling Full Wash',
+            'RB14': 'RB Arabica Ciwidey Natural',
+            'RB15': 'RB Arabika Bali Kintamani Natural',
+            'RB20': 'RB Arabika Jawa Barat105',
+            'RB21': 'RB Arabika Argopuro Natural',
+            'RB24': 'RB Arabika Argopuro Wine',
+            'RB25': 'RB Arabika Bali Kintamani Natural',
+            'HB02073070R': 'HB 30R70A Classic',
+            'HB02074060R': 'HB 40R60A Reguler',
+            'HB02075050R': 'HB 50R50A Reguler',
+            'HB02077030R': 'HB 70R30A Reguler',
+            'HB07015050KA': 'HB 50R50A Kembalikealam',
+            'HB14093565P': 'HB 35C65B Premium',
+            'HB05084060': 'HB 40G60B EDC',
+            'HB14054060': 'HB 40C60G EDC',
+            'SIGNHB020709': 'HB Signature 7030'
+        };
+
+        // ========================
+        // TAB NAVIGATION
+        // ========================
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab-' + tabName).style.display = 'block';
+            event.target.classList.add('active');
+
+            if (tabName === 'preview') {
+                loadPreviewData();
+            }
+        }
+
+        // ========================
+        // TOAST NOTIFICATIONS
+        // ========================
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast ' + type;
+            toast.innerHTML = type === 'success' ? '✅ ' : type === 'error' ? '❌ ' : 'ℹ️ ';
+            toast.innerHTML += message;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // ========================
+        // LOADING OVERLAY
+        // ========================
+        function showLoading(show) {
+            document.getElementById('loadingOverlay').classList.toggle('active', show);
+        }
+
+        // ========================
+        // FORM RESET
+        // ========================
+        function resetForm(type) {
+            document.getElementById('form-' + type).reset();
+            if (type === 'assembly') {
+                document.getElementById('raw-material-container').innerHTML = getRawMaterialTemplate(1);
+                calculateAssembly();
+            }
+            if (type === 'penjualan') {
+                document.getElementById('penjualan-items-container').innerHTML = getPenjualanItemTemplate(1);
+                calculatePenjualan();
+            }
+            showToast('Form ' + type + ' direset', 'info');
+        }
+
+        // ========================
+        // ASSEMBLY FUNCTIONS
+        // ========================
+        function generateBatchNo() {
+            const dateInput = document.querySelector('#form-assembly [name="date"]');
+            const skuInput = document.querySelector('#form-assembly [name="sku"]');
+            if (!dateInput.value || !skuInput.value) return;
+
+            const d = new Date(dateInput.value);
+            const dd = String(d.getDate()).padStart(2, '0');
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const sku = skuInput.value;
+            document.querySelector('#form-assembly [name="batch_no"]').value = dd + mm + '-' + sku;
+        }
+
+        function updateAssemblyProduct() {
+            const sku = document.querySelector('#form-assembly [name="sku"]').value;
+            document.querySelector('#form-assembly [name="nama_barang"]').value = SKU_MAP[sku] || '';
+            generateBatchNo();
+        }
+
+        function getRawMaterialTemplate(num) {
+            return `<div class="item-row" data-row="${num}">
+                <span class="row-number">Bahan ${num}</span>
+                <button type="button" class="remove-btn" onclick="removeRow(this)">×</button>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nama Raw Material</label>
+                        <select name="raw_material[]" required onchange="updateRawMaterialPrice(this)">
+                            <option value="">Pilih Bahan</option>
+                            <optgroup label="Green Beans (GB)">
+                                <option value="GB Arabika Jawa Barat Asalan|90000">GB Arabika Jawa Barat Asalan (Rp 90.000)</option>
+                                <option value="GB Arabika Jawa Barat105|105000">GB Arabika Jawa Barat105 (Rp 105.000)</option>
+                                <option value="GB Robusta Jawa Barat Asalan|68000">GB Robusta Jawa Barat Asalan (Rp 68.000)</option>
+                                <option value="GB Robusta Temanggung|71300">GB Robusta Temanggung (Rp 71.300)</option>
+                                <option value="GB Arabika Brazil Cerrado|110000">GB Arabika Brazil Cerrado (Rp 110.000)</option>
+                                <option value="GB Arabika Ciwidey Natural|170240">GB Arabika Ciwidey Natural (Rp 170.240)</option>
+                                <option value="GB Arabika Semendo Natural|110720">GB Arabika Semendo Natural (Rp 110.720)</option>
+                                <option value="GB Flores Bajawa|160000">GB Flores Bajawa (Rp 160.000)</option>
+                                <option value="GB Gayo|105000">GB Gayo (Rp 105.000)</option>
+                                <option value="GB Arabika Argopuro Natural|130000">GB Arabika Argopuro Natural (Rp 130.000)</option>
+                                <option value="GB Arabika Argopuro Wine|300000">GB Arabika Argopuro Wine (Rp 300.000)</option>
+                                <option value="GB Arabika Bali Kintamani Natural|115000">GB Arabika Bali Kintamani (Rp 115.000)</option>
+                                <option value="GB Arabika Pasir Angling Natural|166000">GB Arabika Pasir Angling Natural (Rp 166.000)</option>
+                                <option value="GB Arabika Pasir Angling FW|122300">GB Arabika Pasir Angling FW (Rp 122.300)</option>
+                            </optgroup>
+                            <optgroup label="Roasted Beans (RB)">
+                                <option value="RB Robusta Jawa Barat|125000">RB Robusta Jawa Barat (Rp 125.000)</option>
+                                <option value="RB Robusta Temanggung|125000">RB Robusta Temanggung (Rp 125.000)</option>
+                                <option value="RB Arabika Jawa Barat|145000">RB Arabika Jawa Barat (Rp 145.000)</option>
+                                <option value="RB Arabika Jawa Barat105|150000">RB Arabika Jawa Barat105 (Rp 150.000)</option>
+                                <option value="RB Arabika Brazil Cerrado|190000">RB Arabika Brazil Cerrado (Rp 190.000)</option>
+                                <option value="RB Arabica Ciwidey Natural|245000">RB Arabica Ciwidey Natural (Rp 245.000)</option>
+                                <option value="RB Arabika Natural Semendo|190000">RB Arabika Natural Semendo (Rp 190.000)</option>
+                                <option value="RB Arabika Flores Bajawa|245000">RB Arabika Flores Bajawa (Rp 245.000)</option>
+                                <option value="RB Gayo|180000">RB Gayo (Rp 180.000)</option>
+                                <option value="RB Houseblend 70% Robusta 30% Arabika Reguler|150000">RB HB 70R30A Reguler (Rp 150.000)</option>
+                                <option value="RB Houseblend 50% Robusta 50% Arabika Reguler|155000">RB HB 50R50A Reguler (Rp 155.000)</option>
+                                <option value="RB Houseblend 40% Robusta 60% Arabika Reguler|165000">RB HB 40R60A Reguler (Rp 165.000)</option>
+                                <option value="RB Houseblend 30% Robusta 70% Arabica (regular)|180000">RB HB 30R70A Reguler (Rp 180.000)</option>
+                                <option value="RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)|220000">RB HB 35C65B Premium (Rp 220.000)</option>
+                            </optgroup>
+                            <optgroup label="Kemasan">
+                                <option value="Botol 250ml|2000">Botol 250ml (Rp 2.000)</option>
+                                <option value="Flat Bottom Valve 250gr|0">Flat Bottom Valve 250gr</option>
+                                <option value="Flat Bottom Valve 500gr|0">Flat Bottom Valve 500gr</option>
+                                <option value="Flat Bottom Valve 1000gr|0">Flat Bottom Valve 1000gr</option>
+                                <option value="Kemasan Kopi 5kg Besar Hitam Tanpa Valve|0">Kemasan 5kg Hitam</option>
+                                <option value="Kemasan Kopi 7kg Besar Hitam Tanpa Valve|0">Kemasan 7kg Hitam</option>
+                                <option value="Kemasan Sample|0">Kemasan Sample</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jumlah Raw Material (Kg/Pcs)</label>
+                        <input type="number" name="jumlah_raw[]" step="0.01" required onchange="calculateAssembly()">
+                    </div>
+                    <div class="form-group">
+                        <label>Harga Satuan (Rp)</label>
+                        <input type="number" name="harga_raw[]" step="1" readonly class="calculated">
+                    </div>
+                    <div class="form-group">
+                        <label>Total Harga (Rp)</label>
+                        <input type="number" name="total_raw[]" step="1" readonly class="calculated">
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function addRawMaterialRow() {
+            const container = document.getElementById('raw-material-container');
+            const count = container.querySelectorAll('.item-row').length + 1;
+            container.insertAdjacentHTML('beforeend', getRawMaterialTemplate(count));
+        }
+
+        function updateRawMaterialPrice(select) {
+            const row = select.closest('.item-row');
+            const val = select.value;
+            if (!val) return;
+            const parts = val.split('|');
+            const price = parseFloat(parts[1]) || 0;
+            row.querySelector('[name="harga_raw[]"]').value = price;
+            calculateAssembly();
+        }
+
+        function calculateAssembly() {
+            const rows = document.querySelectorAll('#raw-material-container .item-row');
+            let totalQty = 0;
+            let totalHarga = 0;
+
+            rows.forEach(row => {
+                const qty = parseFloat(row.querySelector('[name="jumlah_raw[]"]').value) || 0;
+                const price = parseFloat(row.querySelector('[name="harga_raw[]"]').value) || 0;
+                const total = qty * price;
+                row.querySelector('[name="total_raw[]"]').value = total;
+                totalQty += qty;
+                totalHarga += total;
+            });
+
+            const produksi = parseFloat(document.querySelector('#form-assembly [name="jumlah_produksi"]').value) || 0;
+            const shrinkage = parseFloat(document.querySelector('#form-assembly [name="penyusutan"]').value) || 0;
+            const hpp = produksi > 0 ? totalHarga / produksi : 0;
+
+            document.getElementById('assembly-total-raw').textContent = totalQty.toFixed(2) + ' Kg';
+            document.getElementById('assembly-total-harga').textContent = 'Rp ' + totalHarga.toLocaleString('id-ID');
+            document.getElementById('assembly-hpp').textContent = 'Rp ' + hpp.toLocaleString('id-ID', {maximumFractionDigits: 0});
+            document.getElementById('assembly-shrinkage').textContent = shrinkage + '%';
+        }
+
+        // ========================
+        // PEMBELIAN FUNCTIONS
+        // ========================
+        function calculatePembelian() {
+            const jumlah = parseFloat(document.querySelector('#form-pembelian [name="jumlah"]').value) || 0;
+            const harga = parseFloat(document.querySelector('#form-pembelian [name="harga_satuan"]').value) || 0;
+            document.querySelector('#form-pembelian [name="total"]').value = jumlah * harga;
+        }
+
+        // ========================
+        // PENJUALAN FUNCTIONS
+        // ========================
+        function generateInvoiceNo() {
+            const dateInput = document.querySelector('#form-penjualan [name="tanggal"]');
+            if (!dateInput.value) return;
+
+            const data = JSON.parse(localStorage.getItem(STORAGE_KEYS.penjualan) || '[]');
+            const count = data.length + 1;
+            const d = new Date(dateInput.value);
+            const yy = String(d.getFullYear()).slice(-2);
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            document.querySelector('#form-penjualan [name="no_invoice"]').value = 'INV' + yy + mm + String(count).padStart(3, '0');
+        }
+
+        function getPenjualanItemTemplate(num) {
+            return `<div class="item-row" data-row="${num}">
+                <span class="row-number">Item ${num}</span>
+                <button type="button" class="remove-btn" onclick="removeRow(this)">×</button>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Nama Barang</label>
+                        <select name="nama_barang[]" required onchange="updateHargaJual(this)">
+                            <option value="">Pilih Produk</option>
+                            <optgroup label="Roasted Beans (RB)">
+                                <option value="RB Robusta Temanggung|125000">RB Robusta Temanggung - Rp 125.000</option>
+                                <option value="RB Robusta Jawa Barat|125000">RB Robusta Jawa Barat - Rp 125.000</option>
+                                <option value="RB Arabika Jawa Barat|145000">RB Arabika Jawa Barat - Rp 145.000</option>
+                                <option value="RB Arabika Jawa Barat105|150000">RB Arabika Jawa Barat105 - Rp 150.000</option>
+                                <option value="RB Arabika Brazil Cerrado|190000">RB Arabika Brazil Cerrado - Rp 190.000</option>
+                                <option value="RB Arabica Ciwidey Natural|245000">RB Arabica Ciwidey Natural - Rp 245.000</option>
+                                <option value="RB Arabika Natural Semendo|190000">RB Arabika Natural Semendo - Rp 190.000</option>
+                                <option value="RB Arabika Flores Bajawa|245000">RB Arabika Flores Bajawa - Rp 245.000</option>
+                                <option value="RB Gayo|180000">RB Gayo - Rp 180.000</option>
+                                <option value="RB Arabika Bali Kintamani Natural|198000">RB Arabika Bali Kintamani - Rp 198.000</option>
+                                <option value="RB Arabika Argopuro Natural|220000">RB Arabika Argopuro Natural - Rp 220.000</option>
+                                <option value="RB Arabika Argopuro Wine|300000">RB Arabika Argopuro Wine - Rp 300.000</option>
+                            </optgroup>
+                            <optgroup label="House Blend (HB)">
+                                <option value="RB Houseblend 70% Robusta 30% Arabika Reguler|150000">HB 70R30A Reguler - Rp 150.000</option>
+                                <option value="RB Houseblend 70% Robusta 30% Arabika NEW|150000">HB 70R30A NEW - Rp 150.000</option>
+                                <option value="RB Houseblend 70% Robusta 30% Arabika Classic|160000">HB 70R30A Classic - Rp 160.000</option>
+                                <option value="RB Houseblend 50% Robusta 50% Arabika Reguler|155000">HB 50R50A Reguler - Rp 155.000</option>
+                                <option value="RB Houseblend 50% Robusta 50% Arabika NEW|155000">HB 50R50A NEW - Rp 155.000</option>
+                                <option value="RB Houseblend 50% Robusta 50% Arabika Kembalikealam|160000">HB 50R50A Kembalikealam - Rp 160.000</option>
+                                <option value="RB Houseblend 50% Robusta 50% Arabika KembalikealamNew|160000">HB 50R50A KembalikealamNew - Rp 160.000</option>
+                                <option value="RB Houseblend 40% Robusta 60% Arabika Reguler|165000">HB 40R60A Reguler - Rp 165.000</option>
+                                <option value="RB Houseblend 40% Robusta 60% Arabika NEW|165000">HB 40R60A NEW - Rp 165.000</option>
+                                <option value="RB Houseblend 30% Robusta 70% Arabica (regular)|180000">HB 30R70A Reguler - Rp 180.000</option>
+                                <option value="RB Houseblend 30% Robusta 70% Arabica NEW|180000">HB 30R70A NEW - Rp 180.000</option>
+                                <option value="RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)|220000">HB 35C65B Premium - Rp 220.000</option>
+                                <option value="RB Houseblend Arabika Natural 40% Arabika Gayo 60% EDC|220000">HB 40N60G EDC - Rp 220.000</option>
+                                <option value="RB Houseblend Signature 7030|180000">HB Signature 7030 - Rp 180.000</option>
+                            </optgroup>
+                            <optgroup label="Packaged (250gr)">
+                                <option value="250 gr - RB Arabika Brazil Cerrado|60000">250g RB Brazil Cerrado - Rp 60.000</option>
+                                <option value="250 gr - RB Arabica Ciwidey Natural|75000">250g RB Ciwidey - Rp 75.000</option>
+                                <option value="250 gr - RB Arabika Flores Bajawa|75000">250g RB Flores Bajawa - Rp 75.000</option>
+                                <option value="250 gr - RB Arabika Natural Semendo|60000">250g RB Semendo - Rp 60.000</option>
+                                <option value="250 gr - RB Gayo|65000">250g RB Gayo - Rp 65.000</option>
+                                <option value="250 gr - RB Arabika Bali Kintamani Natural|130565">250g RB Bali Kintamani - Rp 130.565</option>
+                                <option value="250 gr - RB Arabika Argopuro Natural|220000">250g RB Argopuro Natural - Rp 220.000</option>
+                                <option value="250 gr - RB Houseblend 50% Robusta 50% Arabika Reguler|50000">250g HB 50R50A - Rp 50.000</option>
+                            </optgroup>
+                            <optgroup label="Packaged (500gr)">
+                                <option value="500 gr - RB Robusta Temanggung|70000">500g RB Robusta Temanggung - Rp 70.000</option>
+                                <option value="500 gr - RB Gayo|95000">500g RB Gayo - Rp 95.000</option>
+                                <option value="500 gr - RB Arabika Natural Semendo|110000">500g RB Semendo - Rp 110.000</option>
+                                <option value="500 gr - RB Arabika Brazil Cerrado|110000">500g RB Brazil Cerrado - Rp 110.000</option>
+                                <option value="500 gr - RB Houseblend 40% Robusta 60% Arabika Reguler|90000">500g HB 40R60A - Rp 90.000</option>
+                                <option value="500 gr - RB Houseblend 50% Robusta 50% Arabika Reguler|85000">500g HB 50R50A - Rp 85.000</option>
+                            </optgroup>
+                            <optgroup label="Lainnya">
+                                <option value="Gula Aren|55000">Gula Aren - Rp 55.000</option>
+                                <option value="Gula Aren Kata Rasa|55000">Gula Aren Kata Rasa - Rp 55.000</option>
+                                <option value="Sewa Mesin Kopi Faema 2 Grup + Grinder|4300000">Sewa Mesin Faema 2Grup - Rp 4.300.000</option>
+                                <option value="Sewa Mesin Simonelli Oscar 2 + Grinder|2700000">Sewa Mesin Simonelli Oscar - Rp 2.700.000</option>
+                                <option value="Sewa Mesin Pegaso Wega 2 Group + Grinder|3500000">Sewa Mesin Pegaso Wega - Rp 3.500.000</option>
+                                <option value="V60 Natural Ciwidey|25000">V60 Natural Ciwidey - Rp 25.000</option>
+                                <option value="V60 Flores Bajawa|25000">V60 Flores Bajawa - Rp 25.000</option>
+                                <option value="Macha Green Tea|25000">Macha Green Tea - Rp 25.000</option>
+                                <option value="Caramel Latte|25000">Caramel Latte - Rp 25.000</option>
+                                <option value="Syrup Caramel 750ml|100000">Syrup Caramel 750ml - Rp 100.000</option>
+                                <option value="Crimer La Gia|60000">Crimer La Gia - Rp 60.000</option>
+                                <option value="Silicone Holder Mat Tamper|60000">Silicone Holder Mat - Rp 60.000</option>
+                                <option value="Wadah Ampas Kopi Espresso Knock Box|70000">Knock Box - Rp 70.000</option>
+                                <option value="Tamper Kopi Espresso 51mm|70000">Tamper 51mm - Rp 70.000</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jumlah (Kg/Pcs)</label>
+                        <input type="number" name="jumlah[]" step="0.01" required onchange="calculatePenjualan()">
+                    </div>
+                    <div class="form-group">
+                        <label>Harga Satuan (Rp)</label>
+                        <input type="number" name="harga_satuan[]" step="1" required onchange="calculatePenjualan()">
+                    </div>
+                    <div class="form-group">
+                        <label>Total (Rp)</label>
+                        <input type="number" name="total[]" step="1" readonly class="calculated">
+                    </div>
+                    <div class="form-group">
+                        <label>Diskon (Rp)</label>
+                        <input type="number" name="diskon[]" step="1" value="0" onchange="calculatePenjualan()">
+                    </div>
+                    <div class="form-group">
+                        <label>Kemasan</label>
+                        <select name="kemasan[]">
+                            <option value="">-</option>
+                            <option value="Flat Bottom Valve 250gr">Flat Bottom 250gr</option>
+                            <option value="Flat Bottom Valve 500gr">Flat Bottom 500gr</option>
+                            <option value="Flat Bottom Valve 1000gr">Flat Bottom 1kg</option>
+                            <option value="Kemasan Kopi 5kg Besar Hitam Tanpa Valve">Kemasan 5kg Hitam</option>
+                            <option value="Kemasan Kopi 7kg Besar Hitam Tanpa Valve">Kemasan 7kg Hitam</option>
+                            <option value="Kemasan Sample">Kemasan Sample</option>
+                            <option value="Botol 250ml">Botol 250ml</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Jumlah Kemasan</label>
+                        <input type="number" name="jumlah_kemasan[]" step="1">
+                    </div>
+                    <div class="form-group">
+                        <label>Batch No Item</label>
+                        <input type="text" name="batch_no_item[]" placeholder="Contoh: 1201-RB09">
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        function addPenjualanItem() {
+            const container = document.getElementById('penjualan-items-container');
+            const count = container.querySelectorAll('.item-row').length + 1;
+            container.insertAdjacentHTML('beforeend', getPenjualanItemTemplate(count));
+        }
+
+        function updateHargaJual(select) {
+            const row = select.closest('.item-row');
+            const val = select.value;
+            if (!val) return;
+            const parts = val.split('|');
+            const price = parseFloat(parts[1]) || 0;
+            row.querySelector('[name="harga_satuan[]"]').value = price;
+            calculatePenjualan();
+        }
+
+        function calculatePenjualan() {
+            const rows = document.querySelectorAll('#penjualan-items-container .item-row');
+            let subtotal = 0;
+            let totalDiskon = 0;
+
+            rows.forEach(row => {
+                const qty = parseFloat(row.querySelector('[name="jumlah[]"]').value) || 0;
+                const price = parseFloat(row.querySelector('[name="harga_satuan[]"]').value) || 0;
+                const diskon = parseFloat(row.querySelector('[name="diskon[]"]').value) || 0;
+                const total = (qty * price) - diskon;
+                row.querySelector('[name="total[]"]').value = total > 0 ? total : 0;
+                subtotal += (qty * price);
+                totalDiskon += diskon;
+            });
+
+            const ppnPct = parseFloat(document.querySelector('#form-penjualan [name="ppn_pct"]').value) || 0;
+            const pphPct = parseFloat(document.querySelector('#form-penjualan [name="pph_pct"]').value) || 0;
+
+            const ppn = subtotal * (ppnPct / 100);
+            const pph = subtotal * (pphPct / 100);
+            const total = subtotal - totalDiskon + ppn - pph;
+
+            document.querySelector('#form-penjualan [name="ppn"]').value = ppn;
+            document.querySelector('#form-penjualan [name="pph23"]').value = pph;
+
+            document.getElementById('penjualan-subtotal').textContent = 'Rp ' + subtotal.toLocaleString('id-ID');
+            document.getElementById('penjualan-diskon').textContent = 'Rp ' + totalDiskon.toLocaleString('id-ID');
+            document.getElementById('penjualan-ppn').textContent = 'Rp ' + ppn.toLocaleString('id-ID');
+            document.getElementById('penjualan-pph').textContent = 'Rp ' + pph.toLocaleString('id-ID');
+            document.getElementById('penjualan-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
+        }
+
+        // ========================
+        // ROW MANAGEMENT
+        // ========================
+        function removeRow(btn) {
+            const row = btn.closest('.item-row');
+            const container = row.parentElement;
+            if (container.querySelectorAll('.item-row').length <= 1) {
+                showToast('Minimal 1 baris diperlukan', 'warning');
+                return;
+            }
+            row.remove();
+            // Renumber
+            container.querySelectorAll('.item-row').forEach((r, i) => {
+                r.querySelector('.row-number').textContent = (r.closest('#raw-material-container') ? 'Bahan ' : 'Item ') + (i + 1);
+            });
+            calculateAssembly();
+            calculatePenjualan();
+        }
+
+        // ========================
+        // SAVE ENTRY
+        // ========================
+        function saveEntry(type) {
+            const form = document.getElementById('form-' + type);
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                showToast('Mohon lengkapi semua field yang required', 'error');
+                return;
+            }
+
+            showLoading(true);
+
+            setTimeout(() => {
+                let data = {};
+                const formData = new FormData(form);
+
+                // Handle multiple values
+                formData.forEach((value, key) => {
+                    if (key.endsWith('[]')) {
+                        const cleanKey = key.slice(0, -2);
+                        if (!data[cleanKey]) data[cleanKey] = [];
+                        data[cleanKey].push(value);
+                    } else {
+                        data[key] = value;
+                    }
+                });
+
+                // Add metadata
+                data._timestamp = new Date().toISOString();
+                data._id = type + '_' + Date.now();
+
+                // Save to localStorage
+                const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
+                stored.push(data);
+                localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(stored));
+
+                showLoading(false);
+                showToast('Entry ' + type + ' berhasil disimpan!', 'success');
+                resetForm(type);
+                updateBadgeCounts();
+            }, 500);
+        }
+
+        // ========================
+        // PREVIEW DATA
+        // ========================
+        function loadPreviewData() {
+            const types = ['assembly', 'pembelian', 'kasmasuk', 'penjualan'];
+
+            types.forEach(type => {
+                const data = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
+                document.getElementById('count-' + type).textContent = data.length + ' records';
+
+                const container = document.getElementById('preview-' + type);
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>Belum ada data ' + type + '</p></div>';
+                    return;
+                }
+
+                let html = '<table class="data-table"><thead><tr>';
+
+                // Headers based on type
+                if (type === 'assembly') {
+                    html += '<th>Tanggal</th><th>Batch</th><th>SKU</th><th>Produk</th><th>Qty</th><th>HPP</th><th>Material</th>';
+                } else if (type === 'pembelian') {
+                    html += '<th>Tanggal</th><th>Supplier</th><th>Barang</th><th>COA</th><th>Jumlah</th><th>Total</th><th>Status</th>';
+                } else if (type === 'kasmasuk') {
+                    html += '<th>Tanggal</th><th>Customer</th><th>No Invoice</th><th>Kas Masuk</th><th>Account</th>';
+                } else if (type === 'penjualan') {
+                    html += '<th>Tanggal</th><th>Invoice</th><th>Customer</th><th>Status</th><th>Total</th><th>Items</th>';
+                }
+                html += '<th>Aksi</th></tr></thead><tbody>';
+
+                data.forEach((row, idx) => {
+                    html += '<tr>';
+                    if (type === 'assembly') {
+                        html += `<td>${row.date || '-'}</td>`;
+                        html += `<td>${row.batch_no || '-'}</td>`;
+                        html += `<td>${row.sku || '-'}</td>`;
+                        html += `<td>${row.nama_barang || '-'}</td>`;
+                        html += `<td class="number">${row.jumlah_produksi || 0}</td>`;
+                        html += `<td class="number">Rp ${parseFloat(row._totalHarga || 0).toLocaleString('id-ID')}</td>`;
+                        html += `<td>${(row.raw_material || []).length} items</td>`;
+                    } else if (type === 'pembelian') {
+                        html += `<td>${row.tanggal || '-'}</td>`;
+                        html += `<td>${row.nama_supplier || '-'}</td>`;
+                        html += `<td>${row.nama_barang || '-'}</td>`;
+                        html += `<td>${row.coa_expenses || '-'}</td>`;
+                        html += `<td class="number">${row.jumlah || 0}</td>`;
+                        html += `<td class="number">Rp ${parseFloat(row.total || 0).toLocaleString('id-ID')}</td>`;
+                        html += `<td><span class="status-badge ${row.status_bayar === 'Belum Lunas' ? 'status-belum' : 'status-lunas'}">${row.status_bayar || '-'}</span></td>`;
+                    } else if (type === 'kasmasuk') {
+                        html += `<td>${row.tanggal || '-'}</td>`;
+                        html += `<td>${row.lawan_transaksi || '-'}</td>`;
+                        html += `<td>${row.no_dokumen || '-'}</td>`;
+                        html += `<td class="number">Rp ${parseFloat(row.kas_masuk || 0).toLocaleString('id-ID')}</td>`;
+                        html += `<td>${row.cash_account || '-'}</td>`;
+                    } else if (type === 'penjualan') {
+                        html += `<td>${row.tanggal || '-'}</td>`;
+                        html += `<td>${row.no_invoice || '-'}</td>`;
+                        html += `<td>${row.customer || '-'}</td>`;
+                        html += `<td><span class="status-badge ${row.status === 'PIUTANG' ? 'status-piutang' : 'status-lunas'}">${row.status || '-'}</span></td>`;
+                        html += `<td class="number">Rp ${parseFloat(row._totalTagihan || 0).toLocaleString('id-ID')}</td>`;
+                        html += `<td>${(row.nama_barang || []).length} items</td>`;
+                    }
+                    html += `<td><button class="btn btn-danger btn-sm" onclick="deleteEntry('${type}', ${idx})">🗑️</button></td>`;
+                    html += '</tr>';
+                });
+
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            });
+        }
+
+        function deleteEntry(type, idx) {
+            if (!confirm('Yakin hapus entry ini?')) return;
+            const data = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
+            data.splice(idx, 1);
+            localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(data));
+            loadPreviewData();
+            updateBadgeCounts();
+            showToast('Entry dihapus', 'info');
+        }
+
+        function clearAllData() {
+            if (!confirm('Yakin hapus SEMUA data? Ini tidak bisa dibatalkan!')) return;
+            Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
+            loadPreviewData();
+            updateBadgeCounts();
+            showToast('Semua data dihapus', 'info');
+        }
+
+        function updateBadgeCounts() {
+            Object.keys(STORAGE_KEYS).forEach(type => {
+                const data = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
+                const badge = document.getElementById('badge-' + type);
+                if (badge) {
+                    badge.textContent = data.length;
+                    badge.style.display = data.length > 0 ? 'block' : 'none';
+                }
+            });
+        }
+
+        // ========================
+        // GAS SYNC
+        // ========================
+        async function syncToGAS() {
+            const gasUrl = document.getElementById('gasUrl').value;
+            if (!gasUrl || gasUrl.includes('YOUR_SCRIPT_ID')) {
+                showToast('Mohon isi GAS Web App URL terlebih dahulu', 'error');
+                return;
+            }
+
+            showLoading(true);
+
+            const payload = {
+                sheetId: document.getElementById('sheetId').value,
+                assembly: JSON.parse(localStorage.getItem(STORAGE_KEYS.assembly) || '[]'),
+                pembelian: JSON.parse(localStorage.getItem(STORAGE_KEYS.pembelian) || '[]'),
+                kasmasuk: JSON.parse(localStorage.getItem(STORAGE_KEYS.kasmasuk) || '[]'),
+                penjualan: JSON.parse(localStorage.getItem(STORAGE_KEYS.penjualan) || '[]')
+            };
+
+            try {
+                const response = await fetch(gasUrl, {
+                    method: 'POST',
+                    body: JSON.stringify(payload),
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                const result = await response.json();
+                showLoading(false);
+
+                if (result.success) {
+                    showToast('Sync ke Google Sheets berhasil! ' + result.message, 'success');
+                } else {
+                    showToast('Sync gagal: ' + result.message, 'error');
+                }
+            } catch (e) {
+                showLoading(false);
+                showToast('Error sync: ' + e.message, 'error');
+                console.error(e);
+            }
+        }
+
+        // ========================
+        // INIT
+        // ========================
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set default dates
+            const today = new Date().toISOString().split('T')[0];
+            document.querySelectorAll('input[type="date"]').forEach(input => {
+                if (!input.value) input.value = today;
+            });
+
+            updateBadgeCounts();
+
+            // Load saved GAS config
+            const savedUrl = localStorage.getItem('gas_url');
+            const savedSheetId = localStorage.getItem('gas_sheet_id');
+            if (savedUrl) document.getElementById('gasUrl').value = savedUrl;
+            if (savedSheetId) document.getElementById('sheetId').value = savedSheetId;
+
+            // Save config on change
+            document.getElementById('gasUrl').addEventListener('change', e => localStorage.setItem('gas_url', e.target.value));
+            document.getElementById('sheetId').addEventListener('change', e => localStorage.setItem('gas_sheet_id', e.target.value));
         });
-        document.getElementById('formFields').innerHTML = html;
-      }).getFieldsForTab(tabName);
-    }
+    // ============================================
+// SEARCHABLE DROPDOWN SYSTEM
+// ============================================
+
+const GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+
+// --- Searchable Dropdown untuk Produk ---
+function initSearchableProduk(inputId, dropdownId, hiddenInputId) {
+  const input = document.getElementById(inputId);
+  const dropdown = document.getElementById(dropdownId);
+  const hidden = document.getElementById(hiddenInputId);
+  
+  let debounceTimer;
+  
+  input.addEventListener('input', function() {
+    const query = this.value.trim();
+    hidden.value = ''; // Reset hidden value
     
-    function submitData() {
-      const form = document.getElementById('entryForm');
-      google.script.run.withSuccessHandler(msg => alert(msg)).submitData(form);
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      if (query.length >= 2) {
+        searchMasterData('produk', query, dropdown, input, hidden);
+      } else {
+        dropdown.innerHTML = '';
+        dropdown.style.display = 'none';
+      }
+    }, 300);
+  });
+  
+  // Hide dropdown on click outside
+  document.addEventListener('click', function(e) {
+    if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.style.display = 'none';
     }
+  });
+}
+
+// --- Searchable Dropdown untuk Customer ---
+function initSearchableCustomer(inputId, dropdownId, hiddenInputId) {
+  const input = document.getElementById(inputId);
+  const dropdown = document.getElementById(dropdownId);
+  const hidden = document.getElementById(hiddenInputId);
+  
+  let debounceTimer;
+  
+  input.addEventListener('input', function() {
+    const query = this.value.trim();
+    hidden.value = '';
     
-    window.onload = () => renderTab('Pembelian');
-  </script>
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+      if (query.length >= 2) {
+        searchMasterData('customer', query, dropdown, input, hidden);
+      } else {
+        dropdown.innerHTML = '';
+        dropdown.style.display = 'none';
+      }
+    }, 300);
+  });
+  
+  document.addEventListener('click', function(e) {
+    if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.style.display = 'none';
+    }
+  });
+}
+
+// --- Search Master Data via GAS ---
+async function searchMasterData(type, query, dropdown, input, hidden) {
+  try {
+    const response = await fetch(`${GAS_URL}?action=getMasterData&type=${type}&search=${encodeURIComponent(query)}`);
+    const result = await response.json();
+    
+    if (result.success && result.data.length > 0) {
+      dropdown.innerHTML = '';
+      dropdown.style.display = 'block';
+      
+      result.data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'dropdown-item';
+        div.textContent = item.nama;
+        div.style.cssText = 'padding:8px 12px;cursor:pointer;border-bottom:1px solid #eee;';
+        div.style.color = '#333';
+        
+        div.addEventListener('mouseenter', function() {
+          this.style.backgroundColor = '#f5f5f5';
+        });
+        div.addEventListener('mouseleave', function() {
+          this.style.backgroundColor = 'transparent';
+        });
+        
+        div.addEventListener('click', function() {
+          input.value = item.nama;
+          hidden.value = item.nama;
+          dropdown.style.display = 'none';
+          
+          // Auto-fill related fields
+          if (type === 'produk') {
+            fillProdukDetail(item);
+          } else if (type === 'customer') {
+            fillCustomerDetail(item);
+          }
+        });
+        
+        dropdown.appendChild(div);
+      });
+    } else {
+      // Tidak ditemukan - tampilkan opsi tambah baru
+      dropdown.innerHTML = `
+        <div style="padding:8px 12px;color:#999;">
+          "${query}" tidak ditemukan. Tekan Enter untuk tambah baru.
+        </div>
+      `;
+      dropdown.style.display = 'block';
+    }
+  } catch (err) {
+    console.error('Error:', err);
+  }
+}
+
+// --- Auto-fill Produk Detail ---
+function fillProdukDetail(item) {
+  const kategoriInput = document.getElementById('kategori');
+  const hargaInput = document.getElementById('hargaSatuan');
+  
+  if (kategoriInput) kategoriInput.value = item.kategori || '';
+  if (hargaInput) hargaInput.value = item.hargaDefault || '';
+  
+  // Hitung total otomatis
+  calculateTotal();
+}
+
+// --- Auto-fill Customer Detail ---
+function fillCustomerDetail(item) {
+  const tipeInput = document.getElementById('tipeCustomer');
+  const salesmanInput = document.getElementById('salesman');
+  
+  if (tipeInput) tipeInput.value = item.tipe || 'B2C';
+  if (salesmanInput) salesmanInput.value = item.salesman || '';
+}
+
+// --- Submit Form ke GAS ---
+async function submitForm(formData) {
+  try {
+    const response = await fetch(GAS_URL, {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'submit',
+        ...formData
+      })
+    });
+    
+    const result = await response.json();
+    
+    if (result.success) {
+      alert('✅ ' + result.message);
+      // Reset form atau redirect
+    } else {
+      alert('❌ Error: ' + result.error);
+    }
+  } catch (err) {
+    alert('❌ Network Error: ' + err);
+  }
+}
+
+// --- Calculate Total ---
+function calculateTotal() {
+  const qty = parseFloat(document.getElementById('qty')?.value) || 0;
+  const harga = parseFloat(document.getElementById('hargaSatuan')?.value) || 0;
+  const total = document.getElementById('totalHarga');
+  
+  if (total) total.value = qty * harga;
+}
+<!-- Searchable Produk -->
+<div class="form-group">
+  <label>Nama Produk</label>
+  <input type="text" id="namaProdukInput" placeholder="Ketik nama produk..." autocomplete="off">
+  <input type="hidden" id="namaProduk" name="namaProduk">
+  <div id="produkDropdown" class="dropdown-list" style="display:none;position:absolute;z-index:1000;background:white;border:1px solid #ddd;max-height:200px;overflow-y:auto;width:100%;"></div>
+</div>
+
+<!-- Searchable Customer -->
+<div class="form-group">
+  <label>Nama Customer</label>
+  <input type="text" id="namaCustomerInput" placeholder="Ketik nama customer..." autocomplete="off">
+  <input type="hidden" id="namaCustomer" name="namaCustomer">
+  <div id="customerDropdown" class="dropdown-list" style="display:none;position:absolute;z-index:1000;background:white;border:1px solid #ddd;max-height:200px;overflow-y:auto;width:100%;"></div>
+</div>
+
+<!-- Auto-fill fields -->
+<div class="form-group">
+  <label>Kategori</label>
+  <input type="text" id="kategori" name="kategori" readonly>
+</div>
+
+<div class="form-group">
+  <label>Tipe Customer</label>
+  <input type="text" id="tipeCustomer" name="tipeCustomer" readonly>
+</div>
+
+<div class="form-group">
+  <label>Salesman</label>
+  <input type="text" id="salesman" name="salesman" readonly>
+</div>
+
+<script>
+  // Init searchable dropdowns
+  document.addEventListener('DOMContentLoaded', function() {
+    initSearchableProduk('namaProdukInput', 'produkDropdown', 'namaProduk');
+    initSearchableCustomer('namaCustomerInput', 'customerDropdown', 'namaCustomer');
+  });
+
+    </script>
+    
 </body>
 </html>
