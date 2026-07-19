@@ -131,6 +131,7 @@
         .form-group {
             display: flex;
             flex-direction: column;
+            position: relative;
         }
         .form-group.full-width {
             grid-column: 1 / -1;
@@ -352,12 +353,62 @@
         .gas-config input {
             background: white;
         }
+        /* Dropdown searchable */
+        .dropdown-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-top: 4px;
+        }
+        .dropdown-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        .dropdown-item:hover {
+            background: #f5f5f5;
+        }
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+        .resep-item {
+            display: flex;
+            gap: 10px;
+            margin: 8px 0;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .resep-item > div {
+            flex: 1;
+        }
+        .resep-item label {
+            font-size: 11px;
+            margin-bottom: 4px;
+            display: block;
+        }
+        .resep-item input {
+            padding: 8px 10px;
+            font-size: 13px;
+        }
         @media (max-width: 768px) {
             .container { padding: 10px; }
             .form-card { padding: 20px; }
             .form-grid { grid-template-columns: 1fr; }
             .tab-btn { padding: 10px 15px; font-size: 12px; }
             .form-header { flex-direction: column; align-items: flex-start; }
+            .resep-item { flex-direction: column; }
         }
     </style>
 <base target="_blank">
@@ -383,7 +434,7 @@
                 <div class="form-group">
                     <label>GAS Web App URL</label>
                     <input type="url" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec" 
-       value="https://script.google.com/macros/s/AKfycbwk4O0ioUg5Vi1SMqkawGOlCgrvQh4Fi3Ke267jobna5leCGqKehzDGe5TTdhX8IQ/exec">
+                           value="https://script.google.com/macros/s/AKfycbwk4O0ioUg5Vi1SMqkawGOlCgrvQh4Fi3Ke267jobna5leCGqKehzDGe5TTdhX8IQ/exec">
                 </div>
                 <div class="form-group">
                     <label>Sheet ID</label>
@@ -417,7 +468,7 @@
                     </div>
                     <div class="form-actions">
                         <button class="btn btn-secondary" onclick="resetForm('assembly')">🔄 Reset</button>
-                        <button class="btn btn-primary" onclick="saveEntry('assembly')">💾 Simpan Entry</button>
+                        <button class="btn btn-primary" onclick="saveAssemblyEntry()">💾 Simpan ke GAS</button>
                     </div>
                 </div>
 
@@ -431,43 +482,20 @@
                             <label>Batch No (Auto)</label>
                             <input type="text" name="batch_no" readonly placeholder="DDMM-RBXX">
                         </div>
-                        <div class="form-group">
+                        <div class="form-group" style="position:relative;">
                             <label>SKU Produk</label>
-                            <select name="sku" required onchange="updateAssemblyProduct()">
-                                <option value="">Pilih SKU</option>
-                                <option value="RB01">RB01 - RB Robusta Temanggung</option>
-                                <option value="RB02">RB02 - RB Robusta Jawa Barat</option>
-                                <option value="RB05">RB05 - RB Gayo</option>
-                                <option value="RB06">RB06 - RB Arabika Natural Semendo</option>
-                                <option value="RB07">RB07 - RB Arabika Jawa Barat</option>
-                                <option value="RB08">RB08 - RB Arabika Flores Bajawa</option>
-                                <option value="RB09">RB09 - RB Arabika Brazil Cerrado</option>
-                                <option value="RB10">RB10 - RB Arabika Angling Natural</option>
-                                <option value="RB12">RB12 - RB Arabika Angling Full Wash</option>
-                                <option value="RB14">RB14 - RB Arabica Ciwidey Natural</option>
-                                <option value="RB15">RB15 - RB Arabika Bali Kintamani Natural</option>
-                                <option value="RB20">RB20 - RB Arabika Jawa Barat105</option>
-                                <option value="RB21">RB21 - RB Arabika Argopuro Natural</option>
-                                <option value="RB24">RB24 - RB Arabika Argopuro Wine</option>
-                                <option value="RB25">RB25 - RB Arabika Bali Kintamani Natural</option>
-                                <option value="HB02073070R">HB02073070R - HB 30R70A Classic</option>
-                                <option value="HB02074060R">HB02074060R - HB 40R60A Reguler</option>
-                                <option value="HB02075050R">HB02075050R - HB 50R50A Reguler</option>
-                                <option value="HB02077030R">HB02077030R - HB 70R30A Reguler</option>
-                                <option value="HB07015050KA">HB07015050KA - HB 50R50A Kembalikealam</option>
-                                <option value="HB14093565P">HB14093565P - HB 35C65B Premium</option>
-                                <option value="HB05084060">HB05084060 - HB 40G60B EDC</option>
-                                <option value="HB14054060">HB14054060 - HB 40C60G EDC</option>
-                                <option value="SIGNHB020709">SIGNHB020709 - HB Signature 7030</option>
-                            </select>
+                            <input type="text" id="skuInput" name="sku" placeholder="Ketik SKU atau nama produk..." autocomplete="off" required>
+                            <div id="skuDropdown" class="dropdown-list" style="display:none;"></div>
+                            <input type="hidden" id="kodeProdukHidden" name="kodeProduk">
                         </div>
                         <div class="form-group">
                             <label>Nama Produk</label>
-                            <input type="text" name="nama_barang" readonly placeholder="Auto-fill dari SKU">
+                            <input type="text" id="namaBarangInput" name="nama_barang" readonly placeholder="Auto-fill dari SKU">
+                            <input type="hidden" id="namaProdukHidden" name="namaProduk">
                         </div>
                         <div class="form-group">
                             <label>Jumlah Produksi (Kg)</label>
-                            <input type="number" name="jumlah_produksi" step="0.01" required onchange="calculateAssembly()">
+                            <input type="number" id="jumlahProduksi" name="jumlah_produksi" step="0.01" required oninput="calculateResep()">
                         </div>
                         <div class="form-group">
                             <label>Penyusutan (%)</label>
@@ -479,9 +507,18 @@
                         </div>
                     </div>
 
+                    <!-- Resep Container -->
+                    <div id="resepContainer" style="display:none; margin-top:25px; padding-top:25px; border-top:2px dashed var(--border);">
+                        <div class="section-header">
+                            <div class="section-title">🌱 Resep Bahan Baku (Auto dari Master)</div>
+                        </div>
+                        <div id="resepList"></div>
+                    </div>
+
+                    <!-- Manual Raw Material (fallback) -->
                     <div class="dynamic-section">
                         <div class="section-header">
-                            <div class="section-title">🌱 Raw Material / Bahan Baku</div>
+                            <div class="section-title">🌱 Raw Material Manual (Opsional)</div>
                             <button type="button" class="btn btn-secondary btn-sm" onclick="addRawMaterialRow()">➕ Tambah Bahan</button>
                         </div>
                         <div id="raw-material-container">
@@ -491,7 +528,7 @@
                                 <div class="form-grid">
                                     <div class="form-group">
                                         <label>Nama Raw Material</label>
-                                        <select name="raw_material[]" required onchange="updateRawMaterialPrice(this)">
+                                        <select name="raw_material[]" onchange="updateRawMaterialPrice(this)">
                                             <option value="">Pilih Bahan</option>
                                             <optgroup label="Green Beans (GB)">
                                                 <option value="GB Arabika Jawa Barat Asalan|90000">GB Arabika Jawa Barat Asalan (Rp 90.000)</option>
@@ -538,7 +575,7 @@
                                     </div>
                                     <div class="form-group">
                                         <label>Jumlah Raw Material (Kg/Pcs)</label>
-                                        <input type="number" name="jumlah_raw[]" step="0.01" required onchange="calculateAssembly()">
+                                        <input type="number" name="jumlah_raw[]" step="0.01" onchange="calculateAssembly()">
                                     </div>
                                     <div class="form-group">
                                         <label>Harga Satuan (Rp)</label>
@@ -1152,853 +1189,931 @@
     </div>
 
     <script>
-        // ========================
-        // GLOBAL STATE & CONFIG
-        // ========================
-        const STORAGE_KEYS = {
-            assembly: 'q_entry_assembly',
-            pembelian: 'q_entry_pembelian',
-            kasmasuk: 'q_entry_kasmasuk',
-            penjualan: 'q_entry_penjualan'
-        };
 
-        // Data master untuk dropdown
-        const SKU_MAP = {
-            'RB01': 'RB Robusta Temanggung',
-            'RB02': 'RB Robusta Jawa Barat',
-            'RB05': 'RB Gayo',
-            'RB06': 'RB Arabika Natural Semendo',
-            'RB07': 'RB Arabika Jawa Barat',
-            'RB08': 'RB Arabika Flores Bajawa',
-            'RB09': 'RB Arabika Brazil Cerrado',
-            'RB10': 'RB Arabika Angling Natural',
-            'RB12': 'RB Arabika Angling Full Wash',
-            'RB14': 'RB Arabica Ciwidey Natural',
-            'RB15': 'RB Arabika Bali Kintamani Natural',
-            'RB20': 'RB Arabika Jawa Barat105',
-            'RB21': 'RB Arabika Argopuro Natural',
-            'RB24': 'RB Arabika Argopuro Wine',
-            'RB25': 'RB Arabika Bali Kintamani Natural',
-            'HB02073070R': 'HB 30R70A Classic',
-            'HB02074060R': 'HB 40R60A Reguler',
-            'HB02075050R': 'HB 50R50A Reguler',
-            'HB02077030R': 'HB 70R30A Reguler',
-            'HB07015050KA': 'HB 50R50A Kembalikealam',
-            'HB14093565P': 'HB 35C65B Premium',
-            'HB05084060': 'HB 40G60B EDC',
-            'HB14054060': 'HB 40C60G EDC',
-            'SIGNHB020709': 'HB Signature 7030'
-        };
+// ========================
+// GLOBAL STATE & CONFIG
+// ========================
+const STORAGE_KEYS = {
+    assembly: 'q_entry_assembly',
+    pembelian: 'q_entry_pembelian',
+    kasmasuk: 'q_entry_kasmasuk',
+    penjualan: 'q_entry_penjualan'
+};
 
-        // ========================
-        // TAB NAVIGATION
-        // ========================
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab-' + tabName).style.display = 'block';
-            event.target.classList.add('active');
+// SKU to Nama Barang mapping (dari Master Produk)
+const SKU_MAP = {
+    'RB01': 'RB Robusta Temanggung',
+    'RB01-250': '250 gr - RB Robusta Temanggung',
+    'RB01-500': '500 gr - RB Robusta Temanggung',
+    'RB02': 'RB Robusta Jawa Barat',
+    'RB02-250': '250 gr - RB Robusta Jawa Barat',
+    'RB02-500': '500 gr - RB Robusta Jawa Barat',
+    'RB03': 'RB Ijen Wine',
+    'RB04': 'RB Gayo Wine',
+    'RB04-250': '250 gr - RB Gayo Wine',
+    'RB04-500': '500 gr - RB Gayo Wine',
+    'RB05': 'RB Gayo',
+    'RB05-250': '250 gr - RB Gayo',
+    'RB05-500': '500 gr - RB Gayo',
+    'RB06': 'RB Arabika Natural Semendo',
+    'RB06-250': '250 gr - RB Arabika Natural Semendo',
+    'RB06-500': '500 gr - RB Arabika Natural Semendo',
+    'RB07': 'RB Arabika Jawa Barat',
+    'RB07-250': '250 gr - RB Arabika Jawa Barat',
+    'RB07-500': '500 gr - RB Arabika Jawa Barat',
+    'RB08': 'RB Arabika Flores Bajawa',
+    'RB08-250': '250 gr - RB Arabika Flores Bajawa',
+    'RB08-500': '500 gr - RB Arabika Flores Bajawa',
+    'RB09': 'RB Arabika Brazil Cerrado',
+    'RB09-250': '250 gr - RB Arabika Brazil Cerrado',
+    'RB09-500': '500 gr - RB Arabika Brazil Cerrado',
+    'RB10': 'RB Arabika Angling Natural',
+    'RB10-250': '250 gr - RB Arabika Angling Natural',
+    'RB10-500': '500 gr - RB Arabika Angling Natural',
+    'RB11': 'RB Arabika Angling Honey',
+    'RB11-250': '250 gr - RB Arabika Angling Honey',
+    'RB11-500': '500 gr - RB Arabika Angling Honey',
+    'RB12': 'RB Arabika Angling Full Wash',
+    'RB12-250': '250 gr - RB Arabika Angling Full Wash',
+    'RB12-500': '500 gr - RB Arabika Angling Full Wash',
+    'RB13': 'RB Arabica Garut FW',
+    'RB13-250': '250 gr - RB Arabica Garut FW',
+    'RB13-500': '500 gr - RB Arabica Garut FW',
+    'RB14': 'RB Arabica Ciwidey Natural',
+    'RB14-250': '250 gr - RB Arabica Ciwidey Natural',
+    'RB14-500': '500 gr - RB Arabica Ciwidey Natural',
+    'RB15': 'RB Arabika Bali Kintamani Natural',
+    'RB15-250': '250 gr - RB Arabika Bali Kintamani Natural',
+    'RB15-500': '500 gr - RB Arabika Bali Kintamani Natural',
+    'RB20': 'RB Arabika Jawa Barat105',
+    'RB21': 'RB Arabika Argopuro Natural',
+    'RB21-250': '250 gr - RB Arabika Argopuro Natural',
+    'RB21-500': '500 gr - RB Arabika Argopuro Natural',
+    'RB24': 'RB Arabika Argopuro Wine',
+    'RB25': 'RB Arabika Bali Kintamani Natural',
+    'HB02073070R': 'RB Houseblend 30% Robusta, 70% Arabica (regular)',
+    'HB02073070R-250': '250 gr - RB Houseblend 30% Robusta, 70% Arabica (regular)',
+    'HB02073070R-500': '500 gr - RB Houseblend 30% Robusta, 70% Arabica (regular)',
+    'HB02073070RNEW': 'RB Houseblend 30% Robusta 70% Arabica NEW',
+    'HB02074060R': 'RB Houseblend 40% Robusta 60% Arabika Reguler',
+    'HB02074060R-250': '250 gr - RB Houseblend 40% Robusta 60% Arabika Reguler',
+    'HB02074060R-500': '500 gr - RB Houseblend 40% Robusta 60% Arabika Reguler',
+    'HB02074060RNEW': 'RB Houseblend 40% Robusta 60% Arabika NEW',
+    'HB02075050R': 'RB Houseblend 50% Robusta 50% Arabika Reguler',
+    'HB02075050R-250': '250 gr - RB Houseblend 50% Robusta 50% Arabika Reguler',
+    'HB02075050R-500': '500 gr - RB Houseblend 50% Robusta 50% Arabika Reguler',
+    'HB02075050RNEW': 'RB Houseblend 50% Robusta 50% Arabika NEW',
+    'HB02077030R': 'RB Houseblend 70% Robusta 30% Arabika Reguler',
+    'HB02077030R-250': '250 gr - RB Houseblend 70% Robusta 30% Arabika Reguler',
+    'HB02077030R-500': '500 gr - RB Houseblend 70% Robusta 30% Arabika Reguler',
+    'HB02077030RNEW': 'RB Houseblend 70% Robusta 30% Arabika NEW',
+    'HB0514060P': 'RB Houseblend 40% Robusta 60% Arabika Premium',
+    'HB0514060P-250': '250 gr - RB Houseblend 40% Robusta 60% Arabika Premium',
+    'HB0514060P-500': '500 gr - RB Houseblend 40% Robusta 60% Arabika Premium',
+    'HB0515050P': 'RB Houseblend 50% Robusta 50% Arabika Premium',
+    'HB0515050P-250': '250 gr - RB Houseblend 50% Robusta 50% Arabika Premium',
+    'HB0515050P-500': '500 gr - RB Houseblend 50% Robusta 50% Arabika Premium',
+    'HB05017030P': 'RB Houseblend 70% Arabika 30% Robusta Premium',
+    'HB05017030P-250': '250 gr - RB Houseblend 70% Arabika 30% Robusta Premium',
+    'HB05017030P-500': '500 gr - RB Houseblend 70% Arabika 30% Robusta Premium',
+    'HB07015050KA': 'RB Houseblend 50% Robusta 50% Arabika Kembalikealam',
+    'HB07015050KANew': 'RB Houseblend 50% Robusta 50% Arabika KembalikealamNew',
+    'HB14093565P': 'RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)',
+    'HB14093565P-250': '250 gr - RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)',
+    'HB14093565P-500': '500 gr - RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)',
+    'HB14098020': 'RB Houseblend 80% Arabika Brazil 20% Arabika Ciwidey Natural',
+    'HB14098020-250': '250 gr - RB Houseblend 80% Arabika Brazil 20% Arabika Ciwidey Natural',
+    'HB14098020-500': '500 gr - RB Houseblend 80% Arabika Brazil 20% Arabika Ciwidey Natural',
+    'SIGNHB020709': 'RB Houseblend Signature 7030',
+    'HB01207030C': 'RB Houseblend 70% Robusta 30% Arabika Classic',
+    'HB02205050R': 'RB Houseblend 50% Robusta 50% Arabika Classic',
+    'HB02205050R-250': '250 gr - RB Houseblend 50% Robusta 50% Arabika Classic',
+    'HB02205050R-500': '500 gr - RB Houseblend 50% Robusta 50% Arabika Classic',
+    'HB05084060': 'RB Arabika Gayo 40% Arabika Bajawa 60% EDC',
+    'HB14054060': 'RB Houseblend Arabika Natural 40% Arabika Gayo 60% EDC',
+    'RB07145050': 'RB Houseblend 50% Arabika Jawa Barat 50% Natural Ciwidey'
+};
 
-            if (tabName === 'preview') {
-                loadPreviewData();
-            }
-        }
+// GAS URL
+function getGASUrl() {
+    return document.getElementById('gasUrl').value;
+}
 
-        // ========================
-        // TOAST NOTIFICATIONS
-        // ========================
-        function showToast(message, type = 'info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = 'toast ' + type;
-            toast.innerHTML = type === 'success' ? '✅ ' : type === 'error' ? '❌ ' : 'ℹ️ ';
-            toast.innerHTML += message;
-            container.appendChild(toast);
-            setTimeout(() => {
-                toast.style.animation = 'fadeOut 0.3s ease';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
+// ========================
+// TAB NAVIGATION
+// ========================
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + tabName).style.display = 'block';
+    event.target.classList.add('active');
 
-        // ========================
-        // LOADING OVERLAY
-        // ========================
-        function showLoading(show) {
-            document.getElementById('loadingOverlay').classList.toggle('active', show);
-        }
-
-        // ========================
-        // FORM RESET
-        // ========================
-        function resetForm(type) {
-            document.getElementById('form-' + type).reset();
-            if (type === 'assembly') {
-                document.getElementById('raw-material-container').innerHTML = getRawMaterialTemplate(1);
-                calculateAssembly();
-            }
-            if (type === 'penjualan') {
-                document.getElementById('penjualan-items-container').innerHTML = getPenjualanItemTemplate(1);
-                calculatePenjualan();
-            }
-            showToast('Form ' + type + ' direset', 'info');
-        }
-
-        // ========================
-        // ASSEMBLY FUNCTIONS
-        // ========================
-        function generateBatchNo() {
-            const dateInput = document.querySelector('#form-assembly [name="date"]');
-            const skuInput = document.querySelector('#form-assembly [name="sku"]');
-            if (!dateInput.value || !skuInput.value) return;
-
-            const d = new Date(dateInput.value);
-            const dd = String(d.getDate()).padStart(2, '0');
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const sku = skuInput.value;
-            document.querySelector('#form-assembly [name="batch_no"]').value = dd + mm + '-' + sku;
-        }
-
-        function updateAssemblyProduct() {
-            const sku = document.querySelector('#form-assembly [name="sku"]').value;
-            document.querySelector('#form-assembly [name="nama_barang"]').value = SKU_MAP[sku] || '';
-            generateBatchNo();
-        }
-
-        function getRawMaterialTemplate(num) {
-            return `<div class="item-row" data-row="${num}">
-                <span class="row-number">Bahan ${num}</span>
-                <button type="button" class="remove-btn" onclick="removeRow(this)">×</button>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Nama Raw Material</label>
-                        <select name="raw_material[]" required onchange="updateRawMaterialPrice(this)">
-                            <option value="">Pilih Bahan</option>
-                            <optgroup label="Green Beans (GB)">
-                                <option value="GB Arabika Jawa Barat Asalan|90000">GB Arabika Jawa Barat Asalan (Rp 90.000)</option>
-                                <option value="GB Arabika Jawa Barat105|105000">GB Arabika Jawa Barat105 (Rp 105.000)</option>
-                                <option value="GB Robusta Jawa Barat Asalan|68000">GB Robusta Jawa Barat Asalan (Rp 68.000)</option>
-                                <option value="GB Robusta Temanggung|71300">GB Robusta Temanggung (Rp 71.300)</option>
-                                <option value="GB Arabika Brazil Cerrado|110000">GB Arabika Brazil Cerrado (Rp 110.000)</option>
-                                <option value="GB Arabika Ciwidey Natural|170240">GB Arabika Ciwidey Natural (Rp 170.240)</option>
-                                <option value="GB Arabika Semendo Natural|110720">GB Arabika Semendo Natural (Rp 110.720)</option>
-                                <option value="GB Flores Bajawa|160000">GB Flores Bajawa (Rp 160.000)</option>
-                                <option value="GB Gayo|105000">GB Gayo (Rp 105.000)</option>
-                                <option value="GB Arabika Argopuro Natural|130000">GB Arabika Argopuro Natural (Rp 130.000)</option>
-                                <option value="GB Arabika Argopuro Wine|300000">GB Arabika Argopuro Wine (Rp 300.000)</option>
-                                <option value="GB Arabika Bali Kintamani Natural|115000">GB Arabika Bali Kintamani (Rp 115.000)</option>
-                                <option value="GB Arabika Pasir Angling Natural|166000">GB Arabika Pasir Angling Natural (Rp 166.000)</option>
-                                <option value="GB Arabika Pasir Angling FW|122300">GB Arabika Pasir Angling FW (Rp 122.300)</option>
-                            </optgroup>
-                            <optgroup label="Roasted Beans (RB)">
-                                <option value="RB Robusta Jawa Barat|125000">RB Robusta Jawa Barat (Rp 125.000)</option>
-                                <option value="RB Robusta Temanggung|125000">RB Robusta Temanggung (Rp 125.000)</option>
-                                <option value="RB Arabika Jawa Barat|145000">RB Arabika Jawa Barat (Rp 145.000)</option>
-                                <option value="RB Arabika Jawa Barat105|150000">RB Arabika Jawa Barat105 (Rp 150.000)</option>
-                                <option value="RB Arabika Brazil Cerrado|190000">RB Arabika Brazil Cerrado (Rp 190.000)</option>
-                                <option value="RB Arabica Ciwidey Natural|245000">RB Arabica Ciwidey Natural (Rp 245.000)</option>
-                                <option value="RB Arabika Natural Semendo|190000">RB Arabika Natural Semendo (Rp 190.000)</option>
-                                <option value="RB Arabika Flores Bajawa|245000">RB Arabika Flores Bajawa (Rp 245.000)</option>
-                                <option value="RB Gayo|180000">RB Gayo (Rp 180.000)</option>
-                                <option value="RB Houseblend 70% Robusta 30% Arabika Reguler|150000">RB HB 70R30A Reguler (Rp 150.000)</option>
-                                <option value="RB Houseblend 50% Robusta 50% Arabika Reguler|155000">RB HB 50R50A Reguler (Rp 155.000)</option>
-                                <option value="RB Houseblend 40% Robusta 60% Arabika Reguler|165000">RB HB 40R60A Reguler (Rp 165.000)</option>
-                                <option value="RB Houseblend 30% Robusta 70% Arabica (regular)|180000">RB HB 30R70A Reguler (Rp 180.000)</option>
-                                <option value="RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)|220000">RB HB 35C65B Premium (Rp 220.000)</option>
-                            </optgroup>
-                            <optgroup label="Kemasan">
-                                <option value="Botol 250ml|2000">Botol 250ml (Rp 2.000)</option>
-                                <option value="Flat Bottom Valve 250gr|0">Flat Bottom Valve 250gr</option>
-                                <option value="Flat Bottom Valve 500gr|0">Flat Bottom Valve 500gr</option>
-                                <option value="Flat Bottom Valve 1000gr|0">Flat Bottom Valve 1000gr</option>
-                                <option value="Kemasan Kopi 5kg Besar Hitam Tanpa Valve|0">Kemasan 5kg Hitam</option>
-                                <option value="Kemasan Kopi 7kg Besar Hitam Tanpa Valve|0">Kemasan 7kg Hitam</option>
-                                <option value="Kemasan Sample|0">Kemasan Sample</option>
-                            </optgroup>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Jumlah Raw Material (Kg/Pcs)</label>
-                        <input type="number" name="jumlah_raw[]" step="0.01" required onchange="calculateAssembly()">
-                    </div>
-                    <div class="form-group">
-                        <label>Harga Satuan (Rp)</label>
-                        <input type="number" name="harga_raw[]" step="1" readonly class="calculated">
-                    </div>
-                    <div class="form-group">
-                        <label>Total Harga (Rp)</label>
-                        <input type="number" name="total_raw[]" step="1" readonly class="calculated">
-                    </div>
-                </div>
-            </div>`;
-        }
-
-        function addRawMaterialRow() {
-            const container = document.getElementById('raw-material-container');
-            const count = container.querySelectorAll('.item-row').length + 1;
-            container.insertAdjacentHTML('beforeend', getRawMaterialTemplate(count));
-        }
-
-        function updateRawMaterialPrice(select) {
-            const row = select.closest('.item-row');
-            const val = select.value;
-            if (!val) return;
-            const parts = val.split('|');
-            const price = parseFloat(parts[1]) || 0;
-            row.querySelector('[name="harga_raw[]"]').value = price;
-            calculateAssembly();
-        }
-
-        function calculateAssembly() {
-            const rows = document.querySelectorAll('#raw-material-container .item-row');
-            let totalQty = 0;
-            let totalHarga = 0;
-
-            rows.forEach(row => {
-                const qty = parseFloat(row.querySelector('[name="jumlah_raw[]"]').value) || 0;
-                const price = parseFloat(row.querySelector('[name="harga_raw[]"]').value) || 0;
-                const total = qty * price;
-                row.querySelector('[name="total_raw[]"]').value = total;
-                totalQty += qty;
-                totalHarga += total;
-            });
-
-            const produksi = parseFloat(document.querySelector('#form-assembly [name="jumlah_produksi"]').value) || 0;
-            const shrinkage = parseFloat(document.querySelector('#form-assembly [name="penyusutan"]').value) || 0;
-            const hpp = produksi > 0 ? totalHarga / produksi : 0;
-
-            document.getElementById('assembly-total-raw').textContent = totalQty.toFixed(2) + ' Kg';
-            document.getElementById('assembly-total-harga').textContent = 'Rp ' + totalHarga.toLocaleString('id-ID');
-            document.getElementById('assembly-hpp').textContent = 'Rp ' + hpp.toLocaleString('id-ID', {maximumFractionDigits: 0});
-            document.getElementById('assembly-shrinkage').textContent = shrinkage + '%';
-        }
-
-        // ========================
-        // PEMBELIAN FUNCTIONS
-        // ========================
-        function calculatePembelian() {
-            const jumlah = parseFloat(document.querySelector('#form-pembelian [name="jumlah"]').value) || 0;
-            const harga = parseFloat(document.querySelector('#form-pembelian [name="harga_satuan"]').value) || 0;
-            document.querySelector('#form-pembelian [name="total"]').value = jumlah * harga;
-        }
-
-        // ========================
-        // PENJUALAN FUNCTIONS
-        // ========================
-        function generateInvoiceNo() {
-            const dateInput = document.querySelector('#form-penjualan [name="tanggal"]');
-            if (!dateInput.value) return;
-
-            const data = JSON.parse(localStorage.getItem(STORAGE_KEYS.penjualan) || '[]');
-            const count = data.length + 1;
-            const d = new Date(dateInput.value);
-            const yy = String(d.getFullYear()).slice(-2);
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            document.querySelector('#form-penjualan [name="no_invoice"]').value = 'INV' + yy + mm + String(count).padStart(3, '0');
-        }
-
-        function getPenjualanItemTemplate(num) {
-            return `<div class="item-row" data-row="${num}">
-                <span class="row-number">Item ${num}</span>
-                <button type="button" class="remove-btn" onclick="removeRow(this)">×</button>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Nama Barang</label>
-                        <select name="nama_barang[]" required onchange="updateHargaJual(this)">
-                            <option value="">Pilih Produk</option>
-                            <optgroup label="Roasted Beans (RB)">
-                                <option value="RB Robusta Temanggung|125000">RB Robusta Temanggung - Rp 125.000</option>
-                                <option value="RB Robusta Jawa Barat|125000">RB Robusta Jawa Barat - Rp 125.000</option>
-                                <option value="RB Arabika Jawa Barat|145000">RB Arabika Jawa Barat - Rp 145.000</option>
-                                <option value="RB Arabika Jawa Barat105|150000">RB Arabika Jawa Barat105 - Rp 150.000</option>
-                                <option value="RB Arabika Brazil Cerrado|190000">RB Arabika Brazil Cerrado - Rp 190.000</option>
-                                <option value="RB Arabica Ciwidey Natural|245000">RB Arabica Ciwidey Natural - Rp 245.000</option>
-                                <option value="RB Arabika Natural Semendo|190000">RB Arabika Natural Semendo - Rp 190.000</option>
-                                <option value="RB Arabika Flores Bajawa|245000">RB Arabika Flores Bajawa - Rp 245.000</option>
-                                <option value="RB Gayo|180000">RB Gayo - Rp 180.000</option>
-                                <option value="RB Arabika Bali Kintamani Natural|198000">RB Arabika Bali Kintamani - Rp 198.000</option>
-                                <option value="RB Arabika Argopuro Natural|220000">RB Arabika Argopuro Natural - Rp 220.000</option>
-                                <option value="RB Arabika Argopuro Wine|300000">RB Arabika Argopuro Wine - Rp 300.000</option>
-                            </optgroup>
-                            <optgroup label="House Blend (HB)">
-                                <option value="RB Houseblend 70% Robusta 30% Arabika Reguler|150000">HB 70R30A Reguler - Rp 150.000</option>
-                                <option value="RB Houseblend 70% Robusta 30% Arabika NEW|150000">HB 70R30A NEW - Rp 150.000</option>
-                                <option value="RB Houseblend 70% Robusta 30% Arabika Classic|160000">HB 70R30A Classic - Rp 160.000</option>
-                                <option value="RB Houseblend 50% Robusta 50% Arabika Reguler|155000">HB 50R50A Reguler - Rp 155.000</option>
-                                <option value="RB Houseblend 50% Robusta 50% Arabika NEW|155000">HB 50R50A NEW - Rp 155.000</option>
-                                <option value="RB Houseblend 50% Robusta 50% Arabika Kembalikealam|160000">HB 50R50A Kembalikealam - Rp 160.000</option>
-                                <option value="RB Houseblend 50% Robusta 50% Arabika KembalikealamNew|160000">HB 50R50A KembalikealamNew - Rp 160.000</option>
-                                <option value="RB Houseblend 40% Robusta 60% Arabika Reguler|165000">HB 40R60A Reguler - Rp 165.000</option>
-                                <option value="RB Houseblend 40% Robusta 60% Arabika NEW|165000">HB 40R60A NEW - Rp 165.000</option>
-                                <option value="RB Houseblend 30% Robusta 70% Arabica (regular)|180000">HB 30R70A Reguler - Rp 180.000</option>
-                                <option value="RB Houseblend 30% Robusta 70% Arabica NEW|180000">HB 30R70A NEW - Rp 180.000</option>
-                                <option value="RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)|220000">HB 35C65B Premium - Rp 220.000</option>
-                                <option value="RB Houseblend Arabika Natural 40% Arabika Gayo 60% EDC|220000">HB 40N60G EDC - Rp 220.000</option>
-                                <option value="RB Houseblend Signature 7030|180000">HB Signature 7030 - Rp 180.000</option>
-                            </optgroup>
-                            <optgroup label="Packaged (250gr)">
-                                <option value="250 gr - RB Arabika Brazil Cerrado|60000">250g RB Brazil Cerrado - Rp 60.000</option>
-                                <option value="250 gr - RB Arabica Ciwidey Natural|75000">250g RB Ciwidey - Rp 75.000</option>
-                                <option value="250 gr - RB Arabika Flores Bajawa|75000">250g RB Flores Bajawa - Rp 75.000</option>
-                                <option value="250 gr - RB Arabika Natural Semendo|60000">250g RB Semendo - Rp 60.000</option>
-                                <option value="250 gr - RB Gayo|65000">250g RB Gayo - Rp 65.000</option>
-                                <option value="250 gr - RB Arabika Bali Kintamani Natural|130565">250g RB Bali Kintamani - Rp 130.565</option>
-                                <option value="250 gr - RB Arabika Argopuro Natural|220000">250g RB Argopuro Natural - Rp 220.000</option>
-                                <option value="250 gr - RB Houseblend 50% Robusta 50% Arabika Reguler|50000">250g HB 50R50A - Rp 50.000</option>
-                            </optgroup>
-                            <optgroup label="Packaged (500gr)">
-                                <option value="500 gr - RB Robusta Temanggung|70000">500g RB Robusta Temanggung - Rp 70.000</option>
-                                <option value="500 gr - RB Gayo|95000">500g RB Gayo - Rp 95.000</option>
-                                <option value="500 gr - RB Arabika Natural Semendo|110000">500g RB Semendo - Rp 110.000</option>
-                                <option value="500 gr - RB Arabika Brazil Cerrado|110000">500g RB Brazil Cerrado - Rp 110.000</option>
-                                <option value="500 gr - RB Houseblend 40% Robusta 60% Arabika Reguler|90000">500g HB 40R60A - Rp 90.000</option>
-                                <option value="500 gr - RB Houseblend 50% Robusta 50% Arabika Reguler|85000">500g HB 50R50A - Rp 85.000</option>
-                            </optgroup>
-                            <optgroup label="Lainnya">
-                                <option value="Gula Aren|55000">Gula Aren - Rp 55.000</option>
-                                <option value="Gula Aren Kata Rasa|55000">Gula Aren Kata Rasa - Rp 55.000</option>
-                                <option value="Sewa Mesin Kopi Faema 2 Grup + Grinder|4300000">Sewa Mesin Faema 2Grup - Rp 4.300.000</option>
-                                <option value="Sewa Mesin Simonelli Oscar 2 + Grinder|2700000">Sewa Mesin Simonelli Oscar - Rp 2.700.000</option>
-                                <option value="Sewa Mesin Pegaso Wega 2 Group + Grinder|3500000">Sewa Mesin Pegaso Wega - Rp 3.500.000</option>
-                                <option value="V60 Natural Ciwidey|25000">V60 Natural Ciwidey - Rp 25.000</option>
-                                <option value="V60 Flores Bajawa|25000">V60 Flores Bajawa - Rp 25.000</option>
-                                <option value="Macha Green Tea|25000">Macha Green Tea - Rp 25.000</option>
-                                <option value="Caramel Latte|25000">Caramel Latte - Rp 25.000</option>
-                                <option value="Syrup Caramel 750ml|100000">Syrup Caramel 750ml - Rp 100.000</option>
-                                <option value="Crimer La Gia|60000">Crimer La Gia - Rp 60.000</option>
-                                <option value="Silicone Holder Mat Tamper|60000">Silicone Holder Mat - Rp 60.000</option>
-                                <option value="Wadah Ampas Kopi Espresso Knock Box|70000">Knock Box - Rp 70.000</option>
-                                <option value="Tamper Kopi Espresso 51mm|70000">Tamper 51mm - Rp 70.000</option>
-                            </optgroup>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Jumlah (Kg/Pcs)</label>
-                        <input type="number" name="jumlah[]" step="0.01" required onchange="calculatePenjualan()">
-                    </div>
-                    <div class="form-group">
-                        <label>Harga Satuan (Rp)</label>
-                        <input type="number" name="harga_satuan[]" step="1" required onchange="calculatePenjualan()">
-                    </div>
-                    <div class="form-group">
-                        <label>Total (Rp)</label>
-                        <input type="number" name="total[]" step="1" readonly class="calculated">
-                    </div>
-                    <div class="form-group">
-                        <label>Diskon (Rp)</label>
-                        <input type="number" name="diskon[]" step="1" value="0" onchange="calculatePenjualan()">
-                    </div>
-                    <div class="form-group">
-                        <label>Kemasan</label>
-                        <select name="kemasan[]">
-                            <option value="">-</option>
-                            <option value="Flat Bottom Valve 250gr">Flat Bottom 250gr</option>
-                            <option value="Flat Bottom Valve 500gr">Flat Bottom 500gr</option>
-                            <option value="Flat Bottom Valve 1000gr">Flat Bottom 1kg</option>
-                            <option value="Kemasan Kopi 5kg Besar Hitam Tanpa Valve">Kemasan 5kg Hitam</option>
-                            <option value="Kemasan Kopi 7kg Besar Hitam Tanpa Valve">Kemasan 7kg Hitam</option>
-                            <option value="Kemasan Sample">Kemasan Sample</option>
-                            <option value="Botol 250ml">Botol 250ml</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Jumlah Kemasan</label>
-                        <input type="number" name="jumlah_kemasan[]" step="1">
-                    </div>
-                    <div class="form-group">
-                        <label>Batch No Item</label>
-                        <input type="text" name="batch_no_item[]" placeholder="Contoh: 1201-RB09">
-                    </div>
-                </div>
-            </div>`;
-        }
-
-        function addPenjualanItem() {
-            const container = document.getElementById('penjualan-items-container');
-            const count = container.querySelectorAll('.item-row').length + 1;
-            container.insertAdjacentHTML('beforeend', getPenjualanItemTemplate(count));
-        }
-
-        function updateHargaJual(select) {
-            const row = select.closest('.item-row');
-            const val = select.value;
-            if (!val) return;
-            const parts = val.split('|');
-            const price = parseFloat(parts[1]) || 0;
-            row.querySelector('[name="harga_satuan[]"]').value = price;
-            calculatePenjualan();
-        }
-
-        function calculatePenjualan() {
-            const rows = document.querySelectorAll('#penjualan-items-container .item-row');
-            let subtotal = 0;
-            let totalDiskon = 0;
-
-            rows.forEach(row => {
-                const qty = parseFloat(row.querySelector('[name="jumlah[]"]').value) || 0;
-                const price = parseFloat(row.querySelector('[name="harga_satuan[]"]').value) || 0;
-                const diskon = parseFloat(row.querySelector('[name="diskon[]"]').value) || 0;
-                const total = (qty * price) - diskon;
-                row.querySelector('[name="total[]"]').value = total > 0 ? total : 0;
-                subtotal += (qty * price);
-                totalDiskon += diskon;
-            });
-
-            const ppnPct = parseFloat(document.querySelector('#form-penjualan [name="ppn_pct"]').value) || 0;
-            const pphPct = parseFloat(document.querySelector('#form-penjualan [name="pph_pct"]').value) || 0;
-
-            const ppn = subtotal * (ppnPct / 100);
-            const pph = subtotal * (pphPct / 100);
-            const total = subtotal - totalDiskon + ppn - pph;
-
-            document.querySelector('#form-penjualan [name="ppn"]').value = ppn;
-            document.querySelector('#form-penjualan [name="pph23"]').value = pph;
-
-            document.getElementById('penjualan-subtotal').textContent = 'Rp ' + subtotal.toLocaleString('id-ID');
-            document.getElementById('penjualan-diskon').textContent = 'Rp ' + totalDiskon.toLocaleString('id-ID');
-            document.getElementById('penjualan-ppn').textContent = 'Rp ' + ppn.toLocaleString('id-ID');
-            document.getElementById('penjualan-pph').textContent = 'Rp ' + pph.toLocaleString('id-ID');
-            document.getElementById('penjualan-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
-        }
-
-        // ========================
-        // ROW MANAGEMENT
-        // ========================
-        function removeRow(btn) {
-            const row = btn.closest('.item-row');
-            const container = row.parentElement;
-            if (container.querySelectorAll('.item-row').length <= 1) {
-                showToast('Minimal 1 baris diperlukan', 'warning');
-                return;
-            }
-            row.remove();
-            // Renumber
-            container.querySelectorAll('.item-row').forEach((r, i) => {
-                r.querySelector('.row-number').textContent = (r.closest('#raw-material-container') ? 'Bahan ' : 'Item ') + (i + 1);
-            });
-            calculateAssembly();
-            calculatePenjualan();
-        }
-
-        // ========================
-        // SAVE ENTRY
-        // ========================
-        function saveEntry(type) {
-            const form = document.getElementById('form-' + type);
-            if (!form.checkValidity()) {
-                form.reportValidity();
-                showToast('Mohon lengkapi semua field yang required', 'error');
-                return;
-            }
-
-            showLoading(true);
-
-            setTimeout(() => {
-                let data = {};
-                const formData = new FormData(form);
-
-                // Handle multiple values
-                formData.forEach((value, key) => {
-                    if (key.endsWith('[]')) {
-                        const cleanKey = key.slice(0, -2);
-                        if (!data[cleanKey]) data[cleanKey] = [];
-                        data[cleanKey].push(value);
-                    } else {
-                        data[key] = value;
-                    }
-                });
-
-                // Add metadata
-                data._timestamp = new Date().toISOString();
-                data._id = type + '_' + Date.now();
-
-                // Save to localStorage
-                const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
-                stored.push(data);
-                localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(stored));
-
-                showLoading(false);
-                showToast('Entry ' + type + ' berhasil disimpan!', 'success');
-                resetForm(type);
-                updateBadgeCounts();
-            }, 500);
-        }
-
-        // ========================
-        // PREVIEW DATA
-        // ========================
-        function loadPreviewData() {
-            const types = ['assembly', 'pembelian', 'kasmasuk', 'penjualan'];
-
-            types.forEach(type => {
-                const data = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
-                document.getElementById('count-' + type).textContent = data.length + ' records';
-
-                const container = document.getElementById('preview-' + type);
-                if (data.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><p>Belum ada data ' + type + '</p></div>';
-                    return;
-                }
-
-                let html = '<table class="data-table"><thead><tr>';
-
-                // Headers based on type
-                if (type === 'assembly') {
-                    html += '<th>Tanggal</th><th>Batch</th><th>SKU</th><th>Produk</th><th>Qty</th><th>HPP</th><th>Material</th>';
-                } else if (type === 'pembelian') {
-                    html += '<th>Tanggal</th><th>Supplier</th><th>Barang</th><th>COA</th><th>Jumlah</th><th>Total</th><th>Status</th>';
-                } else if (type === 'kasmasuk') {
-                    html += '<th>Tanggal</th><th>Customer</th><th>No Invoice</th><th>Kas Masuk</th><th>Account</th>';
-                } else if (type === 'penjualan') {
-                    html += '<th>Tanggal</th><th>Invoice</th><th>Customer</th><th>Status</th><th>Total</th><th>Items</th>';
-                }
-                html += '<th>Aksi</th></tr></thead><tbody>';
-
-                data.forEach((row, idx) => {
-                    html += '<tr>';
-                    if (type === 'assembly') {
-                        html += `<td>${row.date || '-'}</td>`;
-                        html += `<td>${row.batch_no || '-'}</td>`;
-                        html += `<td>${row.sku || '-'}</td>`;
-                        html += `<td>${row.nama_barang || '-'}</td>`;
-                        html += `<td class="number">${row.jumlah_produksi || 0}</td>`;
-                        html += `<td class="number">Rp ${parseFloat(row._totalHarga || 0).toLocaleString('id-ID')}</td>`;
-                        html += `<td>${(row.raw_material || []).length} items</td>`;
-                    } else if (type === 'pembelian') {
-                        html += `<td>${row.tanggal || '-'}</td>`;
-                        html += `<td>${row.nama_supplier || '-'}</td>`;
-                        html += `<td>${row.nama_barang || '-'}</td>`;
-                        html += `<td>${row.coa_expenses || '-'}</td>`;
-                        html += `<td class="number">${row.jumlah || 0}</td>`;
-                        html += `<td class="number">Rp ${parseFloat(row.total || 0).toLocaleString('id-ID')}</td>`;
-                        html += `<td><span class="status-badge ${row.status_bayar === 'Belum Lunas' ? 'status-belum' : 'status-lunas'}">${row.status_bayar || '-'}</span></td>`;
-                    } else if (type === 'kasmasuk') {
-                        html += `<td>${row.tanggal || '-'}</td>`;
-                        html += `<td>${row.lawan_transaksi || '-'}</td>`;
-                        html += `<td>${row.no_dokumen || '-'}</td>`;
-                        html += `<td class="number">Rp ${parseFloat(row.kas_masuk || 0).toLocaleString('id-ID')}</td>`;
-                        html += `<td>${row.cash_account || '-'}</td>`;
-                    } else if (type === 'penjualan') {
-                        html += `<td>${row.tanggal || '-'}</td>`;
-                        html += `<td>${row.no_invoice || '-'}</td>`;
-                        html += `<td>${row.customer || '-'}</td>`;
-                        html += `<td><span class="status-badge ${row.status === 'PIUTANG' ? 'status-piutang' : 'status-lunas'}">${row.status || '-'}</span></td>`;
-                        html += `<td class="number">Rp ${parseFloat(row._totalTagihan || 0).toLocaleString('id-ID')}</td>`;
-                        html += `<td>${(row.nama_barang || []).length} items</td>`;
-                    }
-                    html += `<td><button class="btn btn-danger btn-sm" onclick="deleteEntry('${type}', ${idx})">🗑️</button></td>`;
-                    html += '</tr>';
-                });
-
-                html += '</tbody></table>';
-                container.innerHTML = html;
-            });
-        }
-
-        function deleteEntry(type, idx) {
-            if (!confirm('Yakin hapus entry ini?')) return;
-            const data = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
-            data.splice(idx, 1);
-            localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(data));
-            loadPreviewData();
-            updateBadgeCounts();
-            showToast('Entry dihapus', 'info');
-        }
-
-        function clearAllData() {
-            if (!confirm('Yakin hapus SEMUA data? Ini tidak bisa dibatalkan!')) return;
-            Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
-            loadPreviewData();
-            updateBadgeCounts();
-            showToast('Semua data dihapus', 'info');
-        }
-
-        function updateBadgeCounts() {
-            Object.keys(STORAGE_KEYS).forEach(type => {
-                const data = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
-                const badge = document.getElementById('badge-' + type);
-                if (badge) {
-                    badge.textContent = data.length;
-                    badge.style.display = data.length > 0 ? 'block' : 'none';
-                }
-            });
-        }
-
-        // ========================
-        // GAS SYNC
-        // ========================
-        async function syncToGAS() {
-            const gasUrl = document.getElementById('gasUrl').value;
-            if (!gasUrl || gasUrl.includes('YOUR_SCRIPT_ID')) {
-                showToast('Mohon isi GAS Web App URL terlebih dahulu', 'error');
-                return;
-            }
-
-            showLoading(true);
-
-            const payload = {
-                sheetId: document.getElementById('sheetId').value,
-                assembly: JSON.parse(localStorage.getItem(STORAGE_KEYS.assembly) || '[]'),
-                pembelian: JSON.parse(localStorage.getItem(STORAGE_KEYS.pembelian) || '[]'),
-                kasmasuk: JSON.parse(localStorage.getItem(STORAGE_KEYS.kasmasuk) || '[]'),
-                penjualan: JSON.parse(localStorage.getItem(STORAGE_KEYS.penjualan) || '[]')
-            };
-
-            try {
-                const response = await fetch(gasUrl, {
-                    method: 'POST',
-                    body: JSON.stringify(payload),
-                    headers: { 'Content-Type': 'application/json' }
-                });
-                const result = await response.json();
-                showLoading(false);
-
-                if (result.success) {
-                    showToast('Sync ke Google Sheets berhasil! ' + result.message, 'success');
-                } else {
-                    showToast('Sync gagal: ' + result.message, 'error');
-                }
-            } catch (e) {
-                showLoading(false);
-                showToast('Error sync: ' + e.message, 'error');
-                console.error(e);
-            }
-        }
-
-        // ========================
-        // INIT
-        // ========================
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set default dates
-            const today = new Date().toISOString().split('T')[0];
-            document.querySelectorAll('input[type="date"]').forEach(input => {
-                if (!input.value) input.value = today;
-            });
-
-            updateBadgeCounts();
-
-            // Load saved GAS config
-            const savedUrl = localStorage.getItem('gas_url');
-            const savedSheetId = localStorage.getItem('gas_sheet_id');
-            if (savedUrl) document.getElementById('gasUrl').value = savedUrl;
-            if (savedSheetId) document.getElementById('sheetId').value = savedSheetId;
-
-            // Save config on change
-            document.getElementById('gasUrl').addEventListener('change', e => localStorage.setItem('gas_url', e.target.value));
-            document.getElementById('sheetId').addEventListener('change', e => localStorage.setItem('gas_sheet_id', e.target.value));
-        });
-    // ============================================
-// SEARCHABLE DROPDOWN SYSTEM
-// ============================================
-
-const GAS_URL = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
-
-// --- Searchable Dropdown untuk Produk ---
-function initSearchableProduk(inputId, dropdownId, hiddenInputId) {
-  const input = document.getElementById(inputId);
-  const dropdown = document.getElementById(dropdownId);
-  const hidden = document.getElementById(hiddenInputId);
-  
-  let debounceTimer;
-  
-  input.addEventListener('input', function() {
-    const query = this.value.trim();
-    hidden.value = ''; // Reset hidden value
-    
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      if (query.length >= 2) {
-        searchMasterData('produk', query, dropdown, input, hidden);
-      } else {
-        dropdown.innerHTML = '';
-        dropdown.style.display = 'none';
-      }
-    }, 300);
-  });
-  
-  // Hide dropdown on click outside
-  document.addEventListener('click', function(e) {
-    if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-      dropdown.style.display = 'none';
+    if (tabName === 'preview') {
+        loadPreviewData();
     }
-  });
 }
 
-// --- Searchable Dropdown untuk Customer ---
-function initSearchableCustomer(inputId, dropdownId, hiddenInputId) {
-  const input = document.getElementById(inputId);
-  const dropdown = document.getElementById(dropdownId);
-  const hidden = document.getElementById(hiddenInputId);
-  
-  let debounceTimer;
-  
-  input.addEventListener('input', function() {
-    const query = this.value.trim();
-    hidden.value = '';
-    
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-      if (query.length >= 2) {
-        searchMasterData('customer', query, dropdown, input, hidden);
-      } else {
-        dropdown.innerHTML = '';
-        dropdown.style.display = 'none';
-      }
-    }, 300);
-  });
-  
-  document.addEventListener('click', function(e) {
-    if (!input.contains(e.target) && !dropdown.contains(e.target)) {
-      dropdown.style.display = 'none';
+// ========================
+// TOAST NOTIFICATIONS
+// ========================
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + type;
+    toast.innerHTML = type === 'success' ? '✅ ' : type === 'error' ? '❌ ' : 'ℹ️ ';
+    toast.innerHTML += message;
+    container.appendChild(toast);
+    setTimeout(() => {
+        toast.style.animation = 'fadeOut 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
+}
+
+// ========================
+// LOADING OVERLAY
+// ========================
+function showLoading(show) {
+    document.getElementById('loadingOverlay').classList.toggle('active', show);
+}
+
+// ========================
+// FORM RESET
+// ========================
+function resetForm(type) {
+    document.getElementById('form-' + type).reset();
+    if (type === 'assembly') {
+        document.getElementById('raw-material-container').innerHTML = getRawMaterialTemplate(1);
+        document.getElementById('resepContainer').style.display = 'none';
+        document.getElementById('resepList').innerHTML = '';
+        window.currentResep = null;
+        calculateAssembly();
     }
-  });
-}
-
-// --- Search Master Data via GAS ---
-async function searchMasterData(type, query, dropdown, input, hidden) {
-  try {
-    const response = await fetch(`${GAS_URL}?action=getMasterData&type=${type}&search=${encodeURIComponent(query)}`);
-    const result = await response.json();
-    
-    if (result.success && result.data.length > 0) {
-      dropdown.innerHTML = '';
-      dropdown.style.display = 'block';
-      
-      result.data.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'dropdown-item';
-        div.textContent = item.nama;
-        div.style.cssText = 'padding:8px 12px;cursor:pointer;border-bottom:1px solid #eee;';
-        div.style.color = '#333';
-        
-        div.addEventListener('mouseenter', function() {
-          this.style.backgroundColor = '#f5f5f5';
-        });
-        div.addEventListener('mouseleave', function() {
-          this.style.backgroundColor = 'transparent';
-        });
-        
-        div.addEventListener('click', function() {
-          input.value = item.nama;
-          hidden.value = item.nama;
-          dropdown.style.display = 'none';
-          
-          // Auto-fill related fields
-          if (type === 'produk') {
-            fillProdukDetail(item);
-          } else if (type === 'customer') {
-            fillCustomerDetail(item);
-          }
-        });
-        
-        dropdown.appendChild(div);
-      });
-    } else {
-      // Tidak ditemukan - tampilkan opsi tambah baru
-      dropdown.innerHTML = `
-        <div style="padding:8px 12px;color:#999;">
-          "${query}" tidak ditemukan. Tekan Enter untuk tambah baru.
-        </div>
-      `;
-      dropdown.style.display = 'block';
+    if (type === 'penjualan') {
+        document.getElementById('penjualan-items-container').innerHTML = getPenjualanItemTemplate(1);
+        calculatePenjualan();
     }
-  } catch (err) {
-    console.error('Error:', err);
-  }
+    showToast('Form ' + type + ' direset', 'info');
 }
 
-// --- Auto-fill Produk Detail ---
-function fillProdukDetail(item) {
-  const kategoriInput = document.getElementById('kategori');
-  const hargaInput = document.getElementById('hargaSatuan');
-  
-  if (kategoriInput) kategoriInput.value = item.kategori || '';
-  if (hargaInput) hargaInput.value = item.hargaDefault || '';
-  
-  // Hitung total otomatis
-  calculateTotal();
+// ========================
+// ASSEMBLY ENTRY - GAS INTEGRATED
+// ========================
+function generateBatchNo() {
+    const dateInput = document.querySelector('#form-assembly [name="date"]');
+    const skuInput = document.getElementById('skuInput');
+    if (!dateInput.value || !skuInput.value) return;
+
+    const d = new Date(dateInput.value);
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const sku = skuInput.value;
+    document.querySelector('#form-assembly [name="batch_no"]').value = dd + mm + '-' + sku;
 }
 
-// --- Auto-fill Customer Detail ---
-function fillCustomerDetail(item) {
-  const tipeInput = document.getElementById('tipeCustomer');
-  const salesmanInput = document.getElementById('salesman');
-  
-  if (tipeInput) tipeInput.value = item.tipe || 'B2C';
-  if (salesmanInput) salesmanInput.value = item.salesman || '';
-}
+// --- Searchable SKU Dropdown ---
+const skuInput = document.getElementById('skuInput');
+const skuDropdown = document.getElementById('skuDropdown');
+let skuDebounceTimer;
 
-// --- Submit Form ke GAS ---
-async function submitForm(formData) {
-  try {
-    const response = await fetch(GAS_URL, {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'submit',
-        ...formData
-      })
+if (skuInput) {
+    skuInput.addEventListener('input', function() {
+        const query = this.value.trim();
+        clearTimeout(skuDebounceTimer);
+
+        if (query.length >= 1) {
+            skuDebounceTimer = setTimeout(() => {
+                searchSKU(query);
+            }, 200);
+        } else {
+            skuDropdown.style.display = 'none';
+        }
     });
-    
-    const result = await response.json();
-    
-    if (result.success) {
-      alert('✅ ' + result.message);
-      // Reset form atau redirect
+
+    skuInput.addEventListener('focus', function() {
+        if (this.value.trim().length >= 1) {
+            searchSKU(this.value.trim());
+        }
+    });
+}
+
+function searchSKU(query) {
+    const results = [];
+    const queryLower = query.toLowerCase();
+
+    // Search dari SKU_MAP
+    Object.entries(SKU_MAP).forEach(([kode, nama]) => {
+        if (kode.toLowerCase().includes(queryLower) || nama.toLowerCase().includes(queryLower)) {
+            results.push({ kode, nama });
+        }
+    });
+
+    if (results.length > 0) {
+        skuDropdown.innerHTML = '';
+        skuDropdown.style.display = 'block';
+
+        results.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'dropdown-item';
+            div.innerHTML = `<strong>${item.kode}</strong> - ${item.nama}`;
+            div.addEventListener('click', function() {
+                selectSKU(item.kode, item.nama);
+            });
+            skuDropdown.appendChild(div);
+        });
     } else {
-      alert('❌ Error: ' + result.error);
+        skuDropdown.innerHTML = '<div class="dropdown-item" style="color:#999;">Tidak ditemukan</div>';
+        skuDropdown.style.display = 'block';
     }
-  } catch (err) {
-    alert('❌ Network Error: ' + err);
-  }
 }
 
-// --- Calculate Total ---
-function calculateTotal() {
-  const qty = parseFloat(document.getElementById('qty')?.value) || 0;
-  const harga = parseFloat(document.getElementById('hargaSatuan')?.value) || 0;
-  const total = document.getElementById('totalHarga');
-  
-  if (total) total.value = qty * harga;
+function selectSKU(kode, nama) {
+    skuInput.value = kode;
+    document.getElementById('kodeProdukHidden').value = kode;
+    document.getElementById('namaBarangInput').value = nama;
+    document.getElementById('namaProdukHidden').value = nama;
+    skuDropdown.style.display = 'none';
+    generateBatchNo();
+
+    // Fetch resep dari GAS
+    loadResepFromGAS(nama);
 }
-<!-- Searchable Produk -->
-<div class="form-group">
-  <label>Nama Produk</label>
-  <input type="text" id="namaProdukInput" placeholder="Ketik nama produk..." autocomplete="off">
-  <input type="hidden" id="namaProduk" name="namaProduk">
-  <div id="produkDropdown" class="dropdown-list" style="display:none;position:absolute;z-index:1000;background:white;border:1px solid #ddd;max-height:200px;overflow-y:auto;width:100%;"></div>
-</div>
 
-<!-- Searchable Customer -->
-<div class="form-group">
-  <label>Nama Customer</label>
-  <input type="text" id="namaCustomerInput" placeholder="Ketik nama customer..." autocomplete="off">
-  <input type="hidden" id="namaCustomer" name="namaCustomer">
-  <div id="customerDropdown" class="dropdown-list" style="display:none;position:absolute;z-index:1000;background:white;border:1px solid #ddd;max-height:200px;overflow-y:auto;width:100%;"></div>
-</div>
+// Hide dropdown on click outside
+document.addEventListener('click', function(e) {
+    if (skuDropdown && !skuInput.contains(e.target) && !skuDropdown.contains(e.target)) {
+        skuDropdown.style.display = 'none';
+    }
+});
 
-<!-- Auto-fill fields -->
-<div class="form-group">
-  <label>Kategori</label>
-  <input type="text" id="kategori" name="kategori" readonly>
-</div>
+// --- Load Resep dari GAS ---
+async function loadResepFromGAS(namaProduk) {
+    const gasUrl = getGASUrl();
+    if (!gasUrl || gasUrl.includes('YOUR_SCRIPT_ID')) {
+        showToast('GAS URL belum diisi', 'error');
+        return;
+    }
 
-<div class="form-group">
-  <label>Tipe Customer</label>
-  <input type="text" id="tipeCustomer" name="tipeCustomer" readonly>
-</div>
+    showLoading(true);
+    try {
+        const response = await fetch(`${gasUrl}?action=getResep&nama=${encodeURIComponent(namaProduk)}`);
+        const result = await response.json();
+        showLoading(false);
 
-<div class="form-group">
-  <label>Salesman</label>
-  <input type="text" id="salesman" name="salesman" readonly>
-</div>
+        const container = document.getElementById('resepContainer');
+        const list = document.getElementById('resepList');
 
-<script>
-  // Init searchable dropdowns
-  document.addEventListener('DOMContentLoaded', function() {
-    initSearchableProduk('namaProdukInput', 'produkDropdown', 'namaProduk');
-    initSearchableCustomer('namaCustomerInput', 'customerDropdown', 'namaCustomer');
-  });
+        if (result.success && result.data.length > 0) {
+            window.currentResep = result.data;
 
+            list.innerHTML = '';
+            result.data.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'resep-item';
+                div.innerHTML = `
+                    <div>
+                        <label>Raw Material ${index + 1}</label>
+                        <input type="text" class="rm-nama-${index}" value="${item.rawMaterial}" readonly>
+                    </div>
+                    <div>
+                        <label>Komposisi</label>
+                        <input type="text" class="rm-komposisi-${index}" value="${(item.komposisi * 100).toFixed(0)}%" readonly>
+                    </div>
+                    <div>
+                        <label>Jumlah RM</label>
+                        <input type="number" class="rm-jumlah-${index}" value="0" readonly step="0.01">
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+
+            container.style.display = 'block';
+
+            // Recalculate kalau jumlah produksi sudah ada
+            const qty = parseFloat(document.getElementById('jumlahProduksi').value) || 0;
+            if (qty > 0) calculateResep();
+
+            showToast(`Resep ditemukan: ${result.data.length} bahan baku`, 'success');
+        } else {
+            window.currentResep = null;
+            container.style.display = 'none';
+            list.innerHTML = '';
+            showToast('Resep tidak ditemukan di Master_Resep', 'warning');
+        }
+    } catch (err) {
+        showLoading(false);
+        console.error('Error load resep:', err);
+        showToast('Error load resep: ' + err.message, 'error');
+    }
+}
+
+// --- Calculate Resep ---
+function calculateResep() {
+    if (!window.currentResep) return;
+
+    const qty = parseFloat(document.getElementById('jumlahProduksi').value) || 0;
+
+    window.currentResep.forEach((item, index) => {
+        const jumlahInput = document.querySelector(`.rm-jumlah-${index}`);
+        if (jumlahInput) {
+            jumlahInput.value = (qty * item.komposisi).toFixed(2);
+        }
+    });
+}
+
+// Listen jumlah produksi changes
+document.getElementById('jumlahProduksi').addEventListener('input', calculateResep);
+
+// --- Save Assembly Entry ke GAS ---
+async function saveAssemblyEntry() {
+    const form = document.getElementById('form-assembly');
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        showToast('Mohon lengkapi semua field yang required', 'error');
+        return;
+    }
+
+    const gasUrl = getGASUrl();
+    if (!gasUrl || gasUrl.includes('YOUR_SCRIPT_ID')) {
+        showToast('Mohon isi GAS Web App URL terlebih dahulu', 'error');
+        return;
+    }
+
+    const kodeProduk = document.getElementById('kodeProdukHidden').value;
+    const namaProduk = document.getElementById('namaProdukHidden').value;
+    const jumlahProduksi = parseFloat(document.getElementById('jumlahProduksi').value) || 0;
+    const tanggal = document.querySelector('#form-assembly [name="date"]').value;
+    const catatan = document.querySelector('#form-assembly [name="no_log"]').value;
+
+    if (!kodeProduk || !namaProduk || !jumlahProduksi) {
+        showToast('Kode Produk, Nama Produk, dan Jumlah Produksi wajib diisi', 'error');
+        return;
+    }
+
+    showLoading(true);
+
+    try {
+        const response = await fetch(gasUrl, {
+            method: 'POST',
+            body: JSON.stringify({
+                action: 'submitAssembly',
+                kodeProduk: kodeProduk,
+                namaProduk: namaProduk,
+                jumlahProduksi: jumlahProduksi,
+                tanggal: tanggal,
+                catatan: catatan
+            })
+        });
+
+        const result = await response.json();
+        showLoading(false);
+
+        if (result.success) {
+            showToast('✅ ' + result.message, 'success');
+
+            // Simpan juga ke localStorage sebagai backup
+            const data = {
+                _timestamp: new Date().toISOString(),
+                _id: 'assembly_' + Date.now(),
+                date: tanggal,
+                batch_no: result.batchNo,
+                sku: kodeProduk,
+                nama_barang: namaProduk,
+                jumlah_produksi: jumlahProduksi,
+                resep: window.currentResep || []
+            };
+            const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.assembly) || '[]');
+            stored.push(data);
+            localStorage.setItem(STORAGE_KEYS.assembly, JSON.stringify(stored));
+
+            resetForm('assembly');
+            updateBadgeCounts();
+        } else {
+            showToast('❌ Error: ' + result.error, 'error');
+        }
+    } catch (err) {
+        showLoading(false);
+        showToast('❌ Network Error: ' + err.message, 'error');
+        console.error(err);
+    }
+}
+
+// ========================
+// RAW MATERIAL FUNCTIONS (Manual fallback)
+// ========================
+function getRawMaterialTemplate(num) {
+    return `<div class="item-row" data-row="${num}">
+        <span class="row-number">Bahan ${num}</span>
+        <button type="button" class="remove-btn" onclick="removeRow(this)">×</button>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Nama Raw Material</label>
+                <select name="raw_material[]" onchange="updateRawMaterialPrice(this)">
+                    <option value="">Pilih Bahan</option>
+                    <optgroup label="Green Beans (GB)">
+                        <option value="GB Arabika Jawa Barat Asalan|90000">GB Arabika Jawa Barat Asalan (Rp 90.000)</option>
+                        <option value="GB Arabika Jawa Barat105|105000">GB Arabika Jawa Barat105 (Rp 105.000)</option>
+                        <option value="GB Robusta Jawa Barat Asalan|68000">GB Robusta Jawa Barat Asalan (Rp 68.000)</option>
+                        <option value="GB Robusta Temanggung|71300">GB Robusta Temanggung (Rp 71.300)</option>
+                        <option value="GB Arabika Brazil Cerrado|110000">GB Arabika Brazil Cerrado (Rp 110.000)</option>
+                        <option value="GB Arabika Ciwidey Natural|170240">GB Arabika Ciwidey Natural (Rp 170.240)</option>
+                        <option value="GB Arabika Semendo Natural|110720">GB Arabika Semendo Natural (Rp 110.720)</option>
+                        <option value="GB Flores Bajawa|160000">GB Flores Bajawa (Rp 160.000)</option>
+                        <option value="GB Gayo|105000">GB Gayo (Rp 105.000)</option>
+                        <option value="GB Arabika Argopuro Natural|130000">GB Arabika Argopuro Natural (Rp 130.000)</option>
+                        <option value="GB Arabika Argopuro Wine|300000">GB Arabika Argopuro Wine (Rp 300.000)</option>
+                        <option value="GB Arabika Bali Kintamani Natural|115000">GB Arabika Bali Kintamani (Rp 115.000)</option>
+                        <option value="GB Arabika Pasir Angling Natural|166000">GB Arabika Pasir Angling Natural (Rp 166.000)</option>
+                        <option value="GB Arabika Pasir Angling FW|122300">GB Arabika Pasir Angling FW (Rp 122.300)</option>
+                    </optgroup>
+                    <optgroup label="Roasted Beans (RB)">
+                        <option value="RB Robusta Jawa Barat|125000">RB Robusta Jawa Barat (Rp 125.000)</option>
+                        <option value="RB Robusta Temanggung|125000">RB Robusta Temanggung (Rp 125.000)</option>
+                        <option value="RB Arabika Jawa Barat|145000">RB Arabika Jawa Barat (Rp 145.000)</option>
+                        <option value="RB Arabika Jawa Barat105|150000">RB Arabika Jawa Barat105 (Rp 150.000)</option>
+                        <option value="RB Arabika Brazil Cerrado|190000">RB Arabika Brazil Cerrado (Rp 190.000)</option>
+                        <option value="RB Arabica Ciwidey Natural|245000">RB Arabica Ciwidey Natural (Rp 245.000)</option>
+                        <option value="RB Arabika Natural Semendo|190000">RB Arabika Natural Semendo (Rp 190.000)</option>
+                        <option value="RB Arabika Flores Bajawa|245000">RB Arabika Flores Bajawa (Rp 245.000)</option>
+                        <option value="RB Gayo|180000">RB Gayo (Rp 180.000)</option>
+                        <option value="RB Houseblend 70% Robusta 30% Arabika Reguler|150000">RB HB 70R30A Reguler (Rp 150.000)</option>
+                        <option value="RB Houseblend 50% Robusta 50% Arabika Reguler|155000">RB HB 50R50A Reguler (Rp 155.000)</option>
+                        <option value="RB Houseblend 40% Robusta 60% Arabika Reguler|165000">RB HB 40R60A Reguler (Rp 165.000)</option>
+                        <option value="RB Houseblend 30% Robusta 70% Arabica (regular)|180000">RB HB 30R70A Reguler (Rp 180.000)</option>
+                        <option value="RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)|220000">RB HB 35C65B Premium (Rp 220.000)</option>
+                    </optgroup>
+                    <optgroup label="Kemasan">
+                        <option value="Botol 250ml|2000">Botol 250ml (Rp 2.000)</option>
+                        <option value="Flat Bottom Valve 250gr|0">Flat Bottom Valve 250gr</option>
+                        <option value="Flat Bottom Valve 500gr|0">Flat Bottom Valve 500gr</option>
+                        <option value="Flat Bottom Valve 1000gr|0">Flat Bottom Valve 1000gr</option>
+                        <option value="Kemasan Kopi 5kg Besar Hitam Tanpa Valve|0">Kemasan 5kg Hitam</option>
+                        <option value="Kemasan Kopi 7kg Besar Hitam Tanpa Valve|0">Kemasan 7kg Hitam</option>
+                        <option value="Kemasan Sample|0">Kemasan Sample</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Jumlah Raw Material (Kg/Pcs)</label>
+                <input type="number" name="jumlah_raw[]" step="0.01" onchange="calculateAssembly()">
+            </div>
+            <div class="form-group">
+                <label>Harga Satuan (Rp)</label>
+                <input type="number" name="harga_raw[]" step="1" readonly class="calculated">
+            </div>
+            <div class="form-group">
+                <label>Total Harga (Rp)</label>
+                <input type="number" name="total_raw[]" step="1" readonly class="calculated">
+            </div>
+        </div>
+    </div>`;
+}
+
+function addRawMaterialRow() {
+    const container = document.getElementById('raw-material-container');
+    const count = container.querySelectorAll('.item-row').length + 1;
+    container.insertAdjacentHTML('beforeend', getRawMaterialTemplate(count));
+}
+
+function updateRawMaterialPrice(select) {
+    const row = select.closest('.item-row');
+    const val = select.value;
+    if (!val) return;
+    const parts = val.split('|');
+    const price = parseFloat(parts[1]) || 0;
+    row.querySelector('[name="harga_raw[]"]').value = price;
+    calculateAssembly();
+}
+
+function calculateAssembly() {
+    const rows = document.querySelectorAll('#raw-material-container .item-row');
+    let totalQty = 0;
+    let totalHarga = 0;
+
+    rows.forEach(row => {
+        const qty = parseFloat(row.querySelector('[name="jumlah_raw[]"]').value) || 0;
+        const price = parseFloat(row.querySelector('[name="harga_raw[]"]').value) || 0;
+        const total = qty * price;
+        row.querySelector('[name="total_raw[]"]').value = total;
+        totalQty += qty;
+        totalHarga += total;
+    });
+
+    const produksi = parseFloat(document.querySelector('#form-assembly [name="jumlah_produksi"]').value) || 0;
+    const shrinkage = parseFloat(document.querySelector('#form-assembly [name="penyusutan"]').value) || 0;
+    const hpp = produksi > 0 ? totalHarga / produksi : 0;
+
+    document.getElementById('assembly-total-raw').textContent = totalQty.toFixed(2) + ' Kg';
+    document.getElementById('assembly-total-harga').textContent = 'Rp ' + totalHarga.toLocaleString('id-ID');
+    document.getElementById('assembly-hpp').textContent = 'Rp ' + hpp.toLocaleString('id-ID', {maximumFractionDigits: 0});
+    document.getElementById('assembly-shrinkage').textContent = shrinkage + '%';
+}
+
+// ========================
+// PEMBELIAN FUNCTIONS
+// ========================
+function calculatePembelian() {
+    const jumlah = parseFloat(document.querySelector('#form-pembelian [name="jumlah"]').value) || 0;
+    const harga = parseFloat(document.querySelector('#form-pembelian [name="harga_satuan"]').value) || 0;
+    document.querySelector('#form-pembelian [name="total"]').value = jumlah * harga;
+}
+
+// ========================
+// PENJUALAN FUNCTIONS
+// ========================
+function generateInvoiceNo() {
+    const dateInput = document.querySelector('#form-penjualan [name="tanggal"]');
+    if (!dateInput.value) return;
+
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEYS.penjualan) || '[]');
+    const count = data.length + 1;
+    const d = new Date(dateInput.value);
+    const yy = String(d.getFullYear()).slice(-2);
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    document.querySelector('#form-penjualan [name="no_invoice"]').value = 'INV' + yy + mm + String(count).padStart(3, '0');
+}
+
+function getPenjualanItemTemplate(num) {
+    return `<div class="item-row" data-row="${num}">
+        <span class="row-number">Item ${num}</span>
+        <button type="button" class="remove-btn" onclick="removeRow(this)">×</button>
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Nama Barang</label>
+                <select name="nama_barang[]" required onchange="updateHargaJual(this)">
+                    <option value="">Pilih Produk</option>
+                    <optgroup label="Roasted Beans (RB)">
+                        <option value="RB Robusta Temanggung|125000">RB Robusta Temanggung - Rp 125.000</option>
+                        <option value="RB Robusta Jawa Barat|125000">RB Robusta Jawa Barat - Rp 125.000</option>
+                        <option value="RB Arabika Jawa Barat|145000">RB Arabika Jawa Barat - Rp 145.000</option>
+                        <option value="RB Arabika Jawa Barat105|150000">RB Arabika Jawa Barat105 - Rp 150.000</option>
+                        <option value="RB Arabika Brazil Cerrado|190000">RB Arabika Brazil Cerrado - Rp 190.000</option>
+                        <option value="RB Arabica Ciwidey Natural|245000">RB Arabica Ciwidey Natural - Rp 245.000</option>
+                        <option value="RB Arabika Natural Semendo|190000">RB Arabika Natural Semendo - Rp 190.000</option>
+                        <option value="RB Arabika Flores Bajawa|245000">RB Arabika Flores Bajawa - Rp 245.000</option>
+                        <option value="RB Gayo|180000">RB Gayo - Rp 180.000</option>
+                        <option value="RB Arabika Bali Kintamani Natural|198000">RB Arabika Bali Kintamani - Rp 198.000</option>
+                        <option value="RB Arabika Argopuro Natural|220000">RB Arabika Argopuro Natural - Rp 220.000</option>
+                        <option value="RB Arabika Argopuro Wine|300000">RB Arabika Argopuro Wine - Rp 300.000</option>
+                    </optgroup>
+                    <optgroup label="House Blend (HB)">
+                        <option value="RB Houseblend 70% Robusta 30% Arabika Reguler|150000">HB 70R30A Reguler - Rp 150.000</option>
+                        <option value="RB Houseblend 70% Robusta 30% Arabika NEW|150000">HB 70R30A NEW - Rp 150.000</option>
+                        <option value="RB Houseblend 70% Robusta 30% Arabika Classic|160000">HB 70R30A Classic - Rp 160.000</option>
+                        <option value="RB Houseblend 50% Robusta 50% Arabika Reguler|155000">HB 50R50A Reguler - Rp 155.000</option>
+                        <option value="RB Houseblend 50% Robusta 50% Arabika NEW|155000">HB 50R50A NEW - Rp 155.000</option>
+                        <option value="RB Houseblend 50% Robusta 50% Arabika Kembalikealam|160000">HB 50R50A Kembalikealam - Rp 160.000</option>
+                        <option value="RB Houseblend 50% Robusta 50% Arabika KembalikealamNew|160000">HB 50R50A KembalikealamNew - Rp 160.000</option>
+                        <option value="RB Houseblend 40% Robusta 60% Arabika Reguler|165000">HB 40R60A Reguler - Rp 165.000</option>
+                        <option value="RB Houseblend 40% Robusta 60% Arabika NEW|165000">HB 40R60A NEW - Rp 165.000</option>
+                        <option value="RB Houseblend 30% Robusta 70% Arabica (regular)|180000">HB 30R70A Reguler - Rp 180.000</option>
+                        <option value="RB Houseblend 30% Robusta 70% Arabica NEW|180000">HB 30R70A NEW - Rp 180.000</option>
+                        <option value="RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)|220000">HB 35C65B Premium - Rp 220.000</option>
+                        <option value="RB Houseblend Arabika Natural 40% Arabika Gayo 60% EDC|220000">HB 40N60G EDC - Rp 220.000</option>
+                        <option value="RB Houseblend Signature 7030|180000">HB Signature 7030 - Rp 180.000</option>
+                    </optgroup>
+                    <optgroup label="Packaged (250gr)">
+                        <option value="250 gr - RB Arabika Brazil Cerrado|60000">250g RB Brazil Cerrado - Rp 60.000</option>
+                        <option value="250 gr - RB Arabica Ciwidey Natural|75000">250g RB Ciwidey - Rp 75.000</option>
+                        <option value="250 gr - RB Arabika Flores Bajawa|75000">250g RB Flores Bajawa - Rp 75.000</option>
+                        <option value="250 gr - RB Arabika Natural Semendo|60000">250g RB Semendo - Rp 60.000</option>
+                        <option value="250 gr - RB Gayo|65000">250g RB Gayo - Rp 65.000</option>
+                        <option value="250 gr - RB Arabika Bali Kintamani Natural|130565">250g RB Bali Kintamani - Rp 130.565</option>
+                        <option value="250 gr - RB Arabika Argopuro Natural|220000">250g RB Argopuro Natural - Rp 220.000</option>
+                        <option value="250 gr - RB Houseblend 50% Robusta 50% Arabika Reguler|50000">250g HB 50R50A - Rp 50.000</option>
+                    </optgroup>
+                    <optgroup label="Packaged (500gr)">
+                        <option value="500 gr - RB Robusta Temanggung|70000">500g RB Robusta Temanggung - Rp 70.000</option>
+                        <option value="500 gr - RB Gayo|95000">500g RB Gayo - Rp 95.000</option>
+                        <option value="500 gr - RB Arabika Natural Semendo|110000">500g RB Semendo - Rp 110.000</option>
+                        <option value="500 gr - RB Arabika Brazil Cerrado|110000">500g RB Brazil Cerrado - Rp 110.000</option>
+                        <option value="500 gr - RB Houseblend 40% Robusta 60% Arabika Reguler|90000">500g HB 40R60A - Rp 90.000</option>
+                        <option value="500 gr - RB Houseblend 50% Robusta 50% Arabika Reguler|85000">500g HB 50R50A - Rp 85.000</option>
+                    </optgroup>
+                    <optgroup label="Lainnya">
+                        <option value="Gula Aren|55000">Gula Aren - Rp 55.000</option>
+                        <option value="Gula Aren Kata Rasa|55000">Gula Aren Kata Rasa - Rp 55.000</option>
+                        <option value="Sewa Mesin Kopi Faema 2 Grup + Grinder|4300000">Sewa Mesin Faema 2Grup - Rp 4.300.000</option>
+                        <option value="Sewa Mesin Simonelli Oscar 2 + Grinder|2700000">Sewa Mesin Simonelli Oscar - Rp 2.700.000</option>
+                        <option value="Sewa Mesin Pegaso Wega 2 Group + Grinder|3500000">Sewa Mesin Pegaso Wega - Rp 3.500.000</option>
+                        <option value="V60 Natural Ciwidey|25000">V60 Natural Ciwidey - Rp 25.000</option>
+                        <option value="V60 Flores Bajawa|25000">V60 Flores Bajawa - Rp 25.000</option>
+                        <option value="Macha Green Tea|25000">Macha Green Tea - Rp 25.000</option>
+                        <option value="Caramel Latte|25000">Caramel Latte - Rp 25.000</option>
+                        <option value="Syrup Caramel 750ml|100000">Syrup Caramel 750ml - Rp 100.000</option>
+                        <option value="Crimer La Gia|60000">Crimer La Gia - Rp 60.000</option>
+                        <option value="Silicone Holder Mat Tamper|60000">Silicone Holder Mat - Rp 60.000</option>
+                        <option value="Wadah Ampas Kopi Espresso Knock Box|70000">Knock Box - Rp 70.000</option>
+                        <option value="Tamper Kopi Espresso 51mm|70000">Tamper 51mm - Rp 70.000</option>
+                    </optgroup>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Jumlah (Kg/Pcs)</label>
+                <input type="number" name="jumlah[]" step="0.01" required onchange="calculatePenjualan()">
+            </div>
+            <div class="form-group">
+                <label>Harga Satuan (Rp)</label>
+                <input type="number" name="harga_satuan[]" step="1" required onchange="calculatePenjualan()">
+            </div>
+            <div class="form-group">
+                <label>Total (Rp)</label>
+                <input type="number" name="total[]" step="1" readonly class="calculated">
+            </div>
+            <div class="form-group">
+                <label>Diskon (Rp)</label>
+                <input type="number" name="diskon[]" step="1" value="0" onchange="calculatePenjualan()">
+            </div>
+            <div class="form-group">
+                <label>Kemasan</label>
+                <select name="kemasan[]">
+                    <option value="">-</option>
+                    <option value="Flat Bottom Valve 250gr">Flat Bottom 250gr</option>
+                    <option value="Flat Bottom Valve 500gr">Flat Bottom 500gr</option>
+                    <option value="Flat Bottom Valve 1000gr">Flat Bottom 1kg</option>
+                    <option value="Kemasan Kopi 5kg Besar Hitam Tanpa Valve">Kemasan 5kg Hitam</option>
+                    <option value="Kemasan Kopi 7kg Besar Hitam Tanpa Valve">Kemasan 7kg Hitam</option>
+                    <option value="Kemasan Sample">Kemasan Sample</option>
+                    <option value="Botol 250ml">Botol 250ml</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Jumlah Kemasan</label>
+                <input type="number" name="jumlah_kemasan[]" step="1">
+            </div>
+            <div class="form-group">
+                <label>Batch No Item</label>
+                <input type="text" name="batch_no_item[]" placeholder="Contoh: 1201-RB09">
+            </div>
+        </div>
+    </div>`;
+}
+
+function addPenjualanItem() {
+    const container = document.getElementById('penjualan-items-container');
+    const count = container.querySelectorAll('.item-row').length + 1;
+    container.insertAdjacentHTML('beforeend', getPenjualanItemTemplate(count));
+}
+
+function updateHargaJual(select) {
+    const row = select.closest('.item-row');
+    const val = select.value;
+    if (!val) return;
+    const parts = val.split('|');
+    const price = parseFloat(parts[1]) || 0;
+    row.querySelector('[name="harga_satuan[]"]').value = price;
+    calculatePenjualan();
+}
+
+function calculatePenjualan() {
+    const rows = document.querySelectorAll('#penjualan-items-container .item-row');
+    let subtotal = 0;
+    let totalDiskon = 0;
+
+    rows.forEach(row => {
+        const qty = parseFloat(row.querySelector('[name="jumlah[]"]').value) || 0;
+        const price = parseFloat(row.querySelector('[name="harga_satuan[]"]').value) || 0;
+        const diskon = parseFloat(row.querySelector('[name="diskon[]"]').value) || 0;
+        const total = (qty * price) - diskon;
+        row.querySelector('[name="total[]"]').value = total > 0 ? total : 0;
+        subtotal += (qty * price);
+        totalDiskon += diskon;
+    });
+
+    const ppnPct = parseFloat(document.querySelector('#form-penjualan [name="ppn_pct"]').value) || 0;
+    const pphPct = parseFloat(document.querySelector('#form-penjualan [name="pph_pct"]').value) || 0;
+
+    const ppn = subtotal * (ppnPct / 100);
+    const pph = subtotal * (pphPct / 100);
+    const total = subtotal - totalDiskon + ppn - pph;
+
+    document.querySelector('#form-penjualan [name="ppn"]').value = ppn;
+    document.querySelector('#form-penjualan [name="pph23"]').value = pph;
+
+    document.getElementById('penjualan-subtotal').textContent = 'Rp ' + subtotal.toLocaleString('id-ID');
+    document.getElementById('penjualan-diskon').textContent = 'Rp ' + totalDiskon.toLocaleString('id-ID');
+    document.getElementById('penjualan-ppn').textContent = 'Rp ' + ppn.toLocaleString('id-ID');
+    document.getElementById('penjualan-pph').textContent = 'Rp ' + pph.toLocaleString('id-ID');
+    document.getElementById('penjualan-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
+}
+
+// ========================
+// ROW MANAGEMENT
+// ========================
+function removeRow(btn) {
+    const row = btn.closest('.item-row');
+    const container = row.parentElement;
+    if (container.querySelectorAll('.item-row').length <= 1) {
+        showToast('Minimal 1 baris diperlukan', 'warning');
+        return;
+    }
+    row.remove();
+    container.querySelectorAll('.item-row').forEach((r, i) => {
+        r.querySelector('.row-number').textContent = (r.closest('#raw-material-container') ? 'Bahan ' : 'Item ') + (i + 1);
+    });
+    calculateAssembly();
+    calculatePenjualan();
+}
+
+// ========================
+// SAVE ENTRY (LocalStorage - untuk non-Assembly)
+// ========================
+function saveEntry(type) {
+    const form = document.getElementById('form-' + type);
+    if (!form.checkValidity()) {
+        form.reportValidity();
+        showToast('Mohon lengkapi semua field yang required', 'error');
+        return;
+    }
+
+    showLoading(true);
+
+    setTimeout(() => {
+        let data = {};
+        const formData = new FormData(form);
+
+        formData.forEach((value, key) => {
+            if (key.endsWith('[]')) {
+                const cleanKey = key.slice(0, -2);
+                if (!data[cleanKey]) data[cleanKey] = [];
+                data[cleanKey].push(value);
+            } else {
+                data[key] = value;
+            }
+        });
+
+        data._timestamp = new Date().toISOString();
+        data._id = type + '_' + Date.now();
+
+        const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
+        stored.push(data);
+        localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(stored));
+
+        showLoading(false);
+        showToast('Entry ' + type + ' berhasil disimpan!', 'success');
+        resetForm(type);
+        updateBadgeCounts();
+    }, 500);
+}
+
+// ========================
+// PREVIEW DATA
+// ========================
+function loadPreviewData() {
+    const types = ['assembly', 'pembelian', 'kasmasuk', 'penjualan'];
+
+    types.forEach(type => {
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
+        document.getElementById('count-' + type).textContent = data.length + ' records';
+
+        const container = document.getElementById('preview-' + type);
+        if (data.length === 0) {
+            container.innerHTML = '<div class="empty-state"><p>Belum ada data ' + type + '</p></div>';
+            return;
+        }
+
+        let html = '<table class="data-table"><thead><tr>';
+
+        if (type === 'assembly') {
+            html += '<th>Tanggal</th><th>Batch</th><th>SKU</th><th>Produk</th><th>Qty</th><th>HPP</th><th>Material</th>';
+        } else if (type === 'pembelian') {
+            html += '<th>Tanggal</th><th>Supplier</th><th>Barang</th><th>COA</th><th>Jumlah</th><th>Total</th><th>Status</th>';
+        } else if (type === 'kasmasuk') {
+            html += '<th>Tanggal</th><th>Customer</th><th>No Invoice</th><th>Kas Masuk</th><th>Account</th>';
+        } else if (type === 'penjualan') {
+            html += '<th>Tanggal</th><th>Invoice</th><th>Customer</th><th>Status</th><th>Total</th><th>Items</th>';
+        }
+        html += '<th>Aksi</th></tr></thead><tbody>';
+
+        data.forEach((row, idx) => {
+            html += '<tr>';
+            if (type === 'assembly') {
+                html += `<td>${row.date || '-'}</td>`;
+                html += `<td>${row.batch_no || '-'}</td>`;
+                html += `<td>${row.sku || '-'}</td>`;
+                html += `<td>${row.nama_barang || '-'}</td>`;
+                html += `<td class="number">${row.jumlah_produksi || 0}</td>`;
+                html += `<td class="number">Rp ${parseFloat(row._totalHarga || 0).toLocaleString('id-ID')}</td>`;
+                html += `<td>${(row.raw_material || []).length} items</td>`;
+            } else if (type === 'pembelian') {
+                html += `<td>${row.tanggal || '-'}</td>`;
+                html += `<td>${row.nama_supplier || '-'}</td>`;
+                html += `<td>${row.nama_barang || '-'}</td>`;
+                html += `<td>${row.coa_expenses || '-'}</td>`;
+                html += `<td class="number">${row.jumlah || 0}</td>`;
+                html += `<td class="number">Rp ${parseFloat(row.total || 0).toLocaleString('id-ID')}</td>`;
+                html += `<td><span class="status-badge ${row.status_bayar === 'Belum Lunas' ? 'status-belum' : 'status-lunas'}">${row.status_bayar || '-'}</span></td>`;
+            } else if (type === 'kasmasuk') {
+                html += `<td>${row.tanggal || '-'}</td>`;
+                html += `<td>${row.lawan_transaksi || '-'}</td>`;
+                html += `<td>${row.no_dokumen || '-'}</td>`;
+                html += `<td class="number">Rp ${parseFloat(row.kas_masuk || 0).toLocaleString('id-ID')}</td>`;
+                html += `<td>${row.cash_account || '-'}</td>`;
+            } else if (type === 'penjualan') {
+                html += `<td>${row.tanggal || '-'}</td>`;
+                html += `<td>${row.no_invoice || '-'}</td>`;
+                html += `<td>${row.customer || '-'}</td>`;
+                html += `<td><span class="status-badge ${row.status === 'PIUTANG' ? 'status-piutang' : 'status-lunas'}">${row.status || '-'}</span></td>`;
+                html += `<td class="number">Rp ${parseFloat(row._totalTagihan || 0).toLocaleString('id-ID')}</td>`;
+                html += `<td>${(row.nama_barang || []).length} items</td>`;
+            }
+            html += `<td><button class="btn btn-danger btn-sm" onclick="deleteEntry('${type}', ${idx})">🗑️</button></td>`;
+            html += '</tr>';
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    });
+}
+
+function deleteEntry(type, idx) {
+    if (!confirm('Yakin hapus entry ini?')) return;
+    const data = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
+    data.splice(idx, 1);
+    localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(data));
+    loadPreviewData();
+    updateBadgeCounts();
+    showToast('Entry dihapus', 'info');
+}
+
+function clearAllData() {
+    if (!confirm('Yakin hapus SEMUA data? Ini tidak bisa dibatalkan!')) return;
+    Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
+    loadPreviewData();
+    updateBadgeCounts();
+    showToast('Semua data dihapus', 'info');
+}
+
+function updateBadgeCounts() {
+    Object.keys(STORAGE_KEYS).forEach(type => {
+        const data = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
+        const badge = document.getElementById('badge-' + type);
+        if (badge) {
+            badge.textContent = data.length;
+            badge.style.display = data.length > 0 ? 'block' : 'none';
+        }
+    });
+}
+
+// ========================
+// GAS SYNC
+// ========================
+async function syncToGAS() {
+    const gasUrl = getGASUrl();
+    if (!gasUrl || gasUrl.includes('YOUR_SCRIPT_ID')) {
+        showToast('Mohon isi GAS Web App URL terlebih dahulu', 'error');
+        return;
+    }
+
+    showLoading(true);
+
+    const payload = {
+        sheetId: document.getElementById('sheetId').value,
+        assembly: JSON.parse(localStorage.getItem(STORAGE_KEYS.assembly) || '[]'),
+        pembelian: JSON.parse(localStorage.getItem(STORAGE_KEYS.pembelian) || '[]'),
+        kasmasuk: JSON.parse(localStorage.getItem(STORAGE_KEYS.kasmasuk) || '[]'),
+        penjualan: JSON.parse(localStorage.getItem(STORAGE_KEYS.penjualan) || '[]')
+    };
+
+    try {
+        const response = await fetch(gasUrl, {
+            method: 'POST',
+            body: JSON.stringify(payload),
+            headers: { 'Content-Type': 'application/json' }
+        });
+        const result = await response.json();
+        showLoading(false);
+
+        if (result.success) {
+            showToast('Sync ke Google Sheets berhasil! ' + result.message, 'success');
+        } else {
+            showToast('Sync gagal: ' + result.message, 'error');
+        }
+    } catch (e) {
+        showLoading(false);
+        showToast('Error sync: ' + e.message, 'error');
+        console.error(e);
+    }
+}
+
+// ========================
+// INIT
+// ========================
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('input[type="date"]').forEach(input => {
+        if (!input.value) input.value = today;
+    });
+
+    updateBadgeCounts();
+
+    const savedUrl = localStorage.getItem('gas_url');
+    const savedSheetId = localStorage.getItem('gas_sheet_id');
+    if (savedUrl) document.getElementById('gasUrl').value = savedUrl;
+    if (savedSheetId) document.getElementById('sheetId').value = savedSheetId;
+
+    document.getElementById('gasUrl').addEventListener('change', e => localStorage.setItem('gas_url', e.target.value));
+    document.getElementById('sheetId').addEventListener('change', e => localStorage.setItem('gas_sheet_id', e.target.value));
+});
     </script>
-    
 </body>
 </html>
