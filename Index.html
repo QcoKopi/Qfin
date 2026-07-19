@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+<div class="max-w-6xl mx-auto">
+<h1 class="text-2xl font-bold mb-6">Q.co Control Center</h1>
+<!-- Tabs -->
+<div class="flex space-x-4 mb-6">
+<button onclick="showSection('entry')" class="bg-blue-600
+text-white px-4 py-2 rounded">Entry Transaksi</button>
+<button onclick="showSection('db')" class="bg-gray-600
+text-white px-4 py-2 rounded">Kelola Database</button>
+</div>
+<!-- Entry Section -->
+<div id="entry">
+<form id="transForm" class="bg-white p-6 rounded shadow">
+<select id="type" name="type" class="w-full border p-2
+
+mb-4">
+
+<option value="Pembelian">Pembelian</option>
+<option value="Penjualan">Penjualan</option>
+</select>
+<input type="text" name="nama" placeholder="Nama
+Barang/Pelanggan" class="w-full border p-2 mb-4">
+<button type="button" onclick="submitEntry()"
+class="bg-green-600 text-white px-4 py-2">Save</button>
+</form>
+</div>
+</div>
+<script>
+function submitEntry() {
+var data = {
+type: document.getElementById('type').value,
+nama: document.querySelector('input[name="nama"]').value
+};
+google.script.run.withSuccessHandler(() =>
+alert('Sukses!')).processTransaction(data);
+}
+</script>
+</body>
+</html>
