@@ -1170,10 +1170,10 @@
     // PREVIEW & SYNC
     // ============================================================
     async function updatePreviewStats() {
-        const result = await callGAS('getBulk', { tables: ['Penjualan', 'Pembelian', 'Kas_Masuk', 'Kas_Keluar'] }, 90000);
+        const result = await callGAS('getBulk', { tables: ['Penjualan_App', 'Pembelian_App', 'Kas_Masuk', 'Kas_Keluar'] }, 90000);
         const bulk = (result.success && result.data) ? result.data : {};
-        const penjualan = bulk['Penjualan'] || { success: false };
-        const pembelian = bulk['Pembelian'] || { success: false };
+        const penjualan = bulk['Penjualan_App'] || { success: false };
+        const pembelian = bulk['Pembelian_App'] || { success: false };
         const kasMasuk = bulk['Kas_Masuk'] || { success: false };
         const kasKeluar = bulk['Kas_Keluar'] || { success: false };
 
@@ -1193,8 +1193,8 @@
             { name: 'Master_COA', label: 'Master COA' },
             { name: 'Master_CashAccount', label: 'Master Cash Account' },
             { name: 'Assembly_Entry', label: 'Assembly Entry' },
-            { name: 'Pembelian', label: 'Pembelian' },
-            { name: 'Penjualan', label: 'Penjualan' },
+            { name: 'Pembelian_App', label: 'Pembelian' },
+            { name: 'Penjualan_App', label: 'Penjualan' },
             { name: 'Kas_Masuk', label: 'Kas Masuk' },
             { name: 'Kas_Keluar', label: 'Kas Keluar' }
         ];
