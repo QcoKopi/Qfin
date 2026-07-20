@@ -196,6 +196,7 @@
                 <input type="url" class="gas-url-input" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbzykNrUHcDjtk2ktmdARMpmhmRUWXJ2zwFP3Cm-PEcHeNNwmABuSAXhT0n-9jAmyc8/exec">
                 <button class="btn btn-primary" onclick="saveGasUrl()"><span>Save URL</span></button>
                 <button class="btn btn-success" onclick="syncAll()"><span>Sync All</span></button>
+                <button class="btn btn-success" onclick="syncHargaBeli()"><span>Sync Harga Beli</span></button>
                 <button class="btn btn-secondary" onclick="loadAllData()"><span>Refresh</span></button>
                 <button class="btn btn-danger" onclick="clearCacheAndReload()"><span>Clear Cache</span></button>
             </div>
@@ -203,6 +204,7 @@
         <div class="nav-tabs">
             <button class="nav-tab active" onclick="switchTab('assembly', this)">Assembly</button>
             <button class="nav-tab" onclick="switchTab('pembelian', this)">Pembelian</button>
+            <button class="nav-tab" onclick="switchTab('resep-mapping', this)">Resep Mapping</button>
             <button class="nav-tab" onclick="switchTab('penjualan', this)">Penjualan</button>
             <button class="nav-tab" onclick="switchTab('kas-masuk', this)">Kas Masuk</button>
             <button class="nav-tab" onclick="switchTab('kas-keluar', this)">Kas Keluar</button>
@@ -233,7 +235,7 @@
                         </div>
                         <div class="form-group"><label>Nama Barang</label><input type="text" id="asmNamaBarang" readonly placeholder="Auto-fill dari SKU"></div>
                         <div class="form-group"><label>Jumlah Produksi</label><input type="number" id="asmQty" step="0.01" placeholder="0.00" onchange="onAssemblyQtyChange()"></div>
-                        <div class="form-group"><label>Penyusutan (%)</label><input type="number" id="asmWaste" step="0.01" placeholder="0.00" value="0" onchange="calculateAssemblyHPP()"></div>
+                        <div class="form-group"><label>Penyusutan (%) — Otomatis</label><input type="number" id="asmWaste" step="0.01" placeholder="0.00" value="0" readonly style="background:#f4f4f4;"></div>
                     </div>
                     <div class="hpp-display" id="assemblyHPP" style="display:none;">
                         <div class="hpp-label">HPP per Unit</div>
@@ -298,6 +300,27 @@
                         <button class="btn btn-primary btn-sm" onclick="addPembelianDetail()">+ Tambah Barang</button>
                     </div>
                     <div id="pembelianDetails"></div>
+                </div>
+            </div>
+
+            <!-- RESEP MAPPING TAB -->
+            <div class="tab-content" id="tab-resep-mapping">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Resep Mapping</div>
+                        <button class="btn btn-secondary btn-sm" onclick="loadResepMapping()">Refresh</button>
+                    </div>
+                    <div class="alert alert-info" id="resepMappingAlert" style="display:none;"></div>
+                    <p style="font-size:13px;color:var(--gray);margin-bottom:15px;">
+                        Daftar semua resep di Master_Resep dan produk yang terkait. Sistem tidak lagi menebak-nebak pasangan resep↔produk (rawan salah) —
+                        pilih produk yang benar di sini sekali, lalu klik Simpan. Perubahan langsung tersimpan ke Master_Resep dan berlaku permanen untuk semua baris bahan pada resep tersebut.
+                    </p>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table">
+                            <thead><tr><th>Nama Resep</th><th>Bahan</th><th>Status</th><th>Pilih Produk yang Benar</th><th></th></tr></thead>
+                            <tbody id="resepMappingBody"><tr><td colspan="5" style="text-align:center;color:var(--gray);padding:20px;">Klik Refresh untuk memuat data</td></tr></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -566,6 +589,11 @@
     // quantity (kg) can be recalculated automatically whenever Jumlah Produksi
     // changes. Rows added manually via "+ Tambah Bahan" are not in this map.
     let assemblyRecipeMap = {};
+    // detailIds of raw material rows flagged is_gb by the backend (raw
+    // material's own SKU starts with "GB" / Green Bean). Their quantity is
+    // entered manually (not auto from komposisi) and their total feeds the
+    // automatic Penyusutan (%) calculation.
+    let gbDetailIds = [];
 
     function getGasUrl() {
         return localStorage.getItem('qfin_gas_url') || document.getElementById('gasUrl').value || '';
@@ -745,6 +773,7 @@
         // (5 extra sequential round trips) even though this tab isn't shown
         // by default. Now they only load when the user actually opens it.
         if (tabName === 'preview') updatePreviewStats();
+        if (tabName === 'resep-mapping') loadResepMapping();
     }
     function setDefaultDates() {
         const today = new Date().toISOString().split('T')[0];
@@ -763,16 +792,26 @@
     // ============================================================
     // ASSEMBLY
     // ============================================================
-    function addAssemblyDetail(fromRecipe = false) {
+    function addAssemblyDetail(mode = 'manual') {
+        // mode: 'manual' (added via + Tambah Bahan, fully free), 'auto'
+        // (from Master_Resep, qty locked to komposisi x Jumlah Produksi), or
+        // 'gb' (from Master_Resep but a GB/Green Bean material - qty must be
+        // entered manually per batch since roasting weight loss varies).
         const id = assemblyDetails.length;
         const div = document.createElement('div'); div.className = 'detail-row'; div.id = `asm-detail-${id}`;
-        const tag = fromRecipe ? ' <span style="font-weight:400;color:var(--gray);font-size:11px;">(otomatis dari Master_Resep)</span>' : '';
-        const qtyReadonly = fromRecipe ? 'readonly style="background:#f4f4f4;"' : '';
+        let tag = '';
+        let qtyReadonly = '';
+        if (mode === 'auto') {
+            tag = ' <span style="font-weight:400;color:var(--gray);font-size:11px;">(otomatis dari Master_Resep)</span>';
+            qtyReadonly = 'readonly style="background:#f4f4f4;"';
+        } else if (mode === 'gb') {
+            tag = ' <span style="font-weight:400;color:var(--accent);font-size:11px;">(Green Bean — isi jumlah aktual)</span>';
+        }
         div.innerHTML = `
             <div class="detail-row-header"><span><strong>Bahan #${id + 1}</strong>${tag}</span><button class="btn-remove" onclick="removeAssemblyDetail(${id})">Hapus</button></div>
             <div class="form-grid">
                 <div class="form-group"><label>Raw Material</label><div class="searchable-dropdown"><input type="text" id="asm-raw-${id}" placeholder="Cari raw material..." oninput="searchDropdown('asm-raw-${id}', 'products')" onfocus="showDropdown('asm-raw-${id}')"><div class="dropdown-list" id="asm-raw-${id}-list"></div></div></div>
-                <div class="form-group"><label>Jumlah (kg)</label><input type="number" id="asm-raw-qty-${id}" step="0.01" placeholder="0.00" onchange="calculateAssemblyHPP()" ${qtyReadonly}></div>
+                <div class="form-group"><label>Jumlah (kg)</label><input type="number" id="asm-raw-qty-${id}" step="0.01" placeholder="0.00" onchange="onAssemblyDetailQtyChange()" ${qtyReadonly}></div>
                 <div class="form-group"><label>Harga per kg</label><input type="number" id="asm-raw-price-${id}" step="1000" placeholder="0" onchange="calculateAssemblyHPP()"></div>
             </div>`;
         document.getElementById('assemblyDetails').appendChild(div);
@@ -783,30 +822,37 @@
         const el = document.getElementById(`asm-detail-${id}`); if (el) el.remove();
         assemblyDetails = assemblyDetails.filter(i => i !== id);
         delete assemblyRecipeMap[id];
+        gbDetailIds = gbDetailIds.filter(i => i !== id);
         calculateAssemblyHPP();
+        calculatePenyusutan();
     }
     async function loadRecipeForProduct(sku) {
         const result = await callGAS('getResep', { id_produk: sku });
-        document.getElementById('assemblyDetails').innerHTML = ''; assemblyDetails = []; assemblyRecipeMap = {};
+        document.getElementById('assemblyDetails').innerHTML = ''; assemblyDetails = []; assemblyRecipeMap = {}; gbDetailIds = [];
         if (result.success && result.data && result.data.length > 0) {
+            let gbCount = 0;
             result.data.forEach((r) => {
-                const id = addAssemblyDetail(true);
+                const isGB = !!r.is_gb;
+                const id = addAssemblyDetail(isGB ? 'gb' : 'auto');
                 const rawInput = document.getElementById(`asm-raw-${id}`);
                 if (rawInput) { rawInput.value = r.bahan; rawInput.dataset.value = r.bahan_id || r.bahan; }
                 const priceInput = document.getElementById(`asm-raw-price-${id}`);
                 if (priceInput && r.harga_bahan) { priceInput.value = r.harga_bahan; }
-                assemblyRecipeMap[id] = parseFloat(r.komposisi) || 0;
+                if (isGB) { gbDetailIds.push(id); gbCount++; }
+                else { assemblyRecipeMap[id] = parseFloat(r.komposisi) || 0; }
             });
             applyRecipeQuantities();
-            showAlert('info', `${result.data.length} bahan baku dimuat otomatis dari Master_Resep. Qty akan menyesuaikan Jumlah Produksi.`, 'assemblyAlert');
+            const gbNote = gbCount > 0 ? ` ${gbCount} di antaranya Green Bean — isi jumlah aktual secara manual.` : '';
+            showAlert('info', `${result.data.length} bahan baku dimuat dari Master_Resep.${gbNote}`, 'assemblyAlert');
         } else {
-            showAlert('warning', 'Tidak ada resep di Master_Resep untuk produk ini. Tambahkan bahan secara manual dengan "+ Tambah Bahan".', 'assemblyAlert');
+            showAlert('warning', 'Tidak ada resep di Master_Resep untuk produk ini (atau belum dipetakan - cek tab "Resep Mapping"). Tambahkan bahan secara manual dengan "+ Tambah Bahan".', 'assemblyAlert');
         }
         calculateAssemblyHPP();
+        calculatePenyusutan();
     }
-    // Recomputes qty (kg) for every recipe-driven row (komposisi x Jumlah
-    // Produksi) without re-fetching from the backend. Rows added manually
-    // via "+ Tambah Bahan" are untouched since they're not in assemblyRecipeMap.
+    // Recomputes qty (kg) for every recipe-driven, non-GB row (komposisi x
+    // Jumlah Produksi) without re-fetching from the backend. GB rows and
+    // manually-added rows are untouched since they're not in assemblyRecipeMap.
     function applyRecipeQuantities() {
         const qtyProduksi = parseFloat(document.getElementById('asmQty').value) || 0;
         Object.keys(assemblyRecipeMap).forEach(id => {
@@ -818,6 +864,31 @@
     function onAssemblyQtyChange() {
         applyRecipeQuantities();
         calculateAssemblyHPP();
+        calculatePenyusutan();
+    }
+    function onAssemblyDetailQtyChange() {
+        calculateAssemblyHPP();
+        calculatePenyusutan();
+    }
+    // Penyusutan (%) = shrinkage from raw material to finished goods. Coffee
+    // green beans lose weight during roasting, so this is based on total GB
+    // quantity entered vs Jumlah Produksi (finished output). If there are no
+    // GB rows (non-coffee assembly), falls back to total of ALL raw
+    // materials vs Jumlah Produksi so the field still means something.
+    function calculatePenyusutan() {
+        const jumlahProduksi = parseFloat(document.getElementById('asmQty').value) || 0;
+        let basisQty = gbDetailIds.reduce((sum, id) => sum + (parseFloat(document.getElementById(`asm-raw-qty-${id}`)?.value) || 0), 0);
+        if (basisQty <= 0) {
+            basisQty = assemblyDetails.reduce((sum, id) => sum + (parseFloat(document.getElementById(`asm-raw-qty-${id}`)?.value) || 0), 0);
+        }
+        const wasteInput = document.getElementById('asmWaste');
+        if (!wasteInput) return;
+        if (basisQty > 0 && jumlahProduksi > 0) {
+            const penyusutan = ((basisQty - jumlahProduksi) / basisQty) * 100;
+            wasteInput.value = penyusutan.toFixed(2);
+        } else {
+            wasteInput.value = '0';
+        }
     }
     function calculateAssemblyHPP() {
         let totalMaterial = 0;
@@ -856,7 +927,7 @@
         document.getElementById('asmBatch').value = ''; document.getElementById('asmSku').value = '';
         document.getElementById('asmSku').dataset.value = ''; document.getElementById('asmNamaBarang').value = '';
         document.getElementById('asmQty').value = ''; document.getElementById('asmWaste').value = '0';
-        document.getElementById('assemblyDetails').innerHTML = ''; assemblyDetails = []; assemblyRecipeMap = {};
+        document.getElementById('assemblyDetails').innerHTML = ''; assemblyDetails = []; assemblyRecipeMap = {}; gbDetailIds = [];
         document.getElementById('assemblyHPP').style.display = 'none';
     }
 
@@ -903,6 +974,95 @@
         document.getElementById('pemNoDokumen').value = ''; document.getElementById('pemSupplier').value = '';
         document.getElementById('pemCOA').value = ''; document.getElementById('pembelianDetails').innerHTML = '';
         pembelianDetails = [];
+    }
+
+    // ============================================================
+    // RESEP MAPPING
+    // ============================================================
+    let resepMappingData = [];
+
+    function escapeHtml(str) {
+        if (str === undefined || str === null) return '';
+        return str.toString()
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    async function loadResepMapping() {
+        const tbody = document.getElementById('resepMappingBody');
+        if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:20px;">Memuat...</td></tr>';
+        const result = await callGAS('listResepMapping', {});
+        if (!result.success) { showAlert('danger', 'Gagal memuat: ' + result.message, 'resepMappingAlert'); return; }
+        resepMappingData = result.data || [];
+        renderResepMapping();
+    }
+
+    function renderResepMapping() {
+        const tbody = document.getElementById('resepMappingBody');
+        if (!tbody) return;
+        if (resepMappingData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray);padding:20px;">Belum ada data di Master_Resep</td></tr>';
+            return;
+        }
+        // Show problem rows first (belum dipetakan / kode salah), OK rows last.
+        const order = { 'BELUM_DIPETAKAN': 0, 'KODE_TIDAK_DITEMUKAN': 1, 'OK': 2 };
+        const sorted = resepMappingData.map((r, idx) => ({ r, idx })).sort((a, b) => (order[a.r.status] ?? 9) - (order[b.r.status] ?? 9));
+
+        tbody.innerHTML = sorted.map(({ r, idx }) => {
+            const statusBadge = r.status === 'OK'
+                ? `<span style="color:var(--success);font-weight:600;">✓ ${escapeHtml(r.nama_produk_jadi)}</span>`
+                : r.status === 'KODE_TIDAK_DITEMUKAN'
+                    ? `<span style="color:var(--danger);font-weight:600;">Kode "${escapeHtml(r.id_produk_jadi)}" tidak ditemukan di Master_Produk</span>`
+                    : `<span style="color:#b7791f;font-weight:600;">Belum dipetakan</span>`;
+            return `
+            <tr>
+                <td><strong>${escapeHtml(r.nama_resep)}</strong></td>
+                <td style="font-size:12px;color:var(--secondary);">${r.bahan_list.map(escapeHtml).join(', ')}</td>
+                <td>${statusBadge}</td>
+                <td>
+                    <div class="searchable-dropdown" style="min-width:220px;">
+                        <input type="text" id="resepmap-produk-${idx}" placeholder="Pilih produk yang benar..." oninput="searchDropdown('resepmap-produk-${idx}', 'products')" onfocus="showDropdown('resepmap-produk-${idx}')">
+                        <div class="dropdown-list" id="resepmap-produk-${idx}-list"></div>
+                    </div>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-success" onclick="saveResepMapping(${idx})">Simpan</button>
+                    <button class="btn btn-sm btn-secondary" onclick="createProdukFromResep(${idx})" title="Pakai ini kalau produknya memang belum ada di Master_Produk (bukan salah nama)">+ Produk Baru</button>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    async function saveResepMapping(idx) {
+        const row = resepMappingData[idx];
+        const input = document.getElementById(`resepmap-produk-${idx}`);
+        const idProduk = input?.dataset.value;
+        if (!idProduk) { showAlert('warning', 'Pilih produk dulu dari dropdown sebelum menyimpan', 'resepMappingAlert'); return; }
+        const result = await callGAS('setResepMapping', { nama_resep: row.nama_resep, id_produk_jadi: idProduk });
+        if (result.success) {
+            showAlert('success', `"${row.nama_resep}" berhasil dikaitkan (${result.count} baris bahan diperbarui).`, 'resepMappingAlert');
+            loadResepMapping();
+        } else {
+            showAlert('danger', 'Gagal: ' + result.message, 'resepMappingAlert');
+        }
+    }
+
+    async function createProdukFromResep(idx) {
+        const row = resepMappingData[idx];
+        const ok = confirm(`Buat produk baru bernama persis "${row.nama_resep}" di Master_Produk, lalu kaitkan resep ini ke produk tersebut?`);
+        if (!ok) return;
+        const result = await callGAS('createProdukFromResep', { nama_resep: row.nama_resep });
+        if (result.success) {
+            showAlert('success', result.message, 'resepMappingAlert');
+            localStorage.removeItem(CACHE_KEY + 'Master_Produk');
+            await loadMasterData();
+            loadResepMapping();
+        } else {
+            showAlert('danger', 'Gagal: ' + result.message, 'resepMappingAlert');
+        }
     }
 
     // ============================================================
@@ -1167,6 +1327,20 @@
             const result = await callGAS('syncAll', { records: backup });
             if (result.success) { localStorage.removeItem('qfin_backup'); showAlert('success', 'Sync completed: ' + result.count + ' records'); }
         } else { showAlert('info', 'No local data to sync'); }
+    }
+
+    async function syncHargaBeli() {
+        const result = await callGAS('syncHargaBeli', {});
+        if (result.success) {
+            showAlert('success', result.message, 'assemblyAlert');
+            // Master_Produk was just changed on the server - drop the local
+            // cache so the next load picks up the freshly averaged prices
+            // instead of the stale cached ones.
+            localStorage.removeItem(CACHE_KEY + 'Master_Produk');
+            await loadMasterData();
+        } else {
+            showAlert('danger', 'Gagal sync harga beli: ' + result.message, 'assemblyAlert');
+        }
     }
 
     // Backup function - called before every submit
