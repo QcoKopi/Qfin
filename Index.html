@@ -208,8 +208,6 @@
             <button class="nav-tab" onclick="switchTab('resep-mapping', this)">Resep Mapping</button>
             <button class="nav-tab" onclick="switchTab('penjualan', this)">Penjualan</button>
             <button class="nav-tab" onclick="switchTab('kas-masuk', this)">Kas Masuk</button>
-            <button class="nav-tab" onclick="switchTab('kas-keluar', this)">Kas Keluar</button>
-            <button class="nav-tab" onclick="switchTab('biaya', this)">Biaya Ops</button>
             <button class="nav-tab" onclick="switchTab('opname', this)">Stock Opname</button>
             <button class="nav-tab" onclick="switchTab('movement', this)">Stock Movement</button>
             <button class="nav-tab" onclick="switchTab('preview', this)">Preview</button>
@@ -420,84 +418,6 @@
                         </div>
                         <div class="form-group"><label>Kas Masuk (Rp)</label><input type="number" id="kmJumlah" step="1000" placeholder="0"></div>
                         <div class="form-group"><label>Keterangan</label><input type="text" id="kmKeterangan" placeholder="Keterangan"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- KAS KELUAR TAB -->
-            <div class="tab-content" id="tab-kas-keluar">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Kas Keluar</div>
-                        <button class="btn btn-success btn-sm" onclick="submitKasKeluar()">Submit Kas Keluar</button>
-                    </div>
-                    <div class="alert alert-info" id="kasKeluarAlert" style="display:none;"></div>
-                    <div class="form-grid">
-                        <div class="form-group"><label>Tanggal</label><input type="date" id="kkDate"></div>
-                        <div class="form-group"><label>No Dokumen</label><input type="text" id="kkNoDokumen" placeholder="KK-XXXX"></div>
-                        <div class="form-group">
-                            <label>Sales</label>
-                            <div class="searchable-dropdown">
-                                <input type="text" id="kkSales" placeholder="Cari salesman..." oninput="searchDropdown('kkSales', 'salesmen')" onfocus="showDropdown('kkSales')">
-                                <div class="dropdown-list" id="kkSales-list"></div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Cash Account</label>
-                            <div class="searchable-dropdown">
-                                <input type="text" id="kkCash" placeholder="Cari cash account..." oninput="searchDropdown('kkCash', 'cash')" onfocus="showDropdown('kkCash')">
-                                <div class="dropdown-list" id="kkCash-list"></div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Kode Transaksi</label>
-                            <select id="kkKodeTransaksi">
-                                <option value="Pembayaran Hutang">Pembayaran Hutang</option>
-                                <option value="Biaya Operasional">Biaya Operasional</option>
-                                <option value="Pengeluaran Lain">Pengeluaran Lain</option>
-                            </select>
-                        </div>
-                        <div class="form-group"><label>Lawan Transaksi</label><input type="text" id="kkLawan" placeholder="Nama penerima"></div>
-                        <div class="form-group"><label>Kas Keluar (Rp)</label><input type="number" id="kkJumlah" step="1000" placeholder="0"></div>
-                        <div class="form-group"><label>Keterangan</label><input type="text" id="kkKeterangan" placeholder="Keterangan"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- BIAYA OPS TAB -->
-            <div class="tab-content" id="tab-biaya">
-                <div class="card">
-                    <div class="card-header">
-                        <div class="card-title">Biaya Operasional</div>
-                        <button class="btn btn-success btn-sm" onclick="submitBiaya()">Submit Biaya</button>
-                    </div>
-                    <div class="alert alert-info" id="biayaAlert" style="display:none;"></div>
-                    <div class="form-grid">
-                        <div class="form-group"><label>Tanggal</label><input type="date" id="biaDate"></div>
-                        <div class="form-group"><label>No Dokumen</label><input type="text" id="biaNoDokumen" placeholder="BY-XXXX"></div>
-                        <div class="form-group"><label>Cost Center</label><input type="text" id="biaCostCenter" value="Q.Co"></div>
-                        <div class="form-group">
-                            <label>COA</label>
-                            <div class="searchable-dropdown">
-                                <input type="text" id="biaCOA" placeholder="Cari COA..." oninput="searchDropdown('biaCOA', 'coa')" onfocus="showDropdown('biaCOA')">
-                                <div class="dropdown-list" id="biaCOA-list"></div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Supplier</label>
-                            <div class="searchable-dropdown">
-                                <input type="text" id="biaSupplier" placeholder="Cari supplier..." oninput="searchDropdown('biaSupplier', 'suppliers')" onfocus="showDropdown('biaSupplier')">
-                                <div class="dropdown-list" id="biaSupplier-list"></div>
-                            </div>
-                        </div>
-                        <div class="form-group"><label>Nama Barang/Biaya</label><input type="text" id="biaNamaBarang" placeholder="Nama barang atau biaya"></div>
-                        <div class="form-group"><label>Jumlah</label><input type="number" id="biaQty" step="1" value="1"></div>
-                        <div class="form-group"><label>Harga Satuan</label><input type="number" id="biaHarga" step="1000" placeholder="0" onchange="calculateBiayaTotal()"></div>
-                        <div class="form-group"><label>Total</label><input type="number" id="biaTotal" readonly placeholder="0"></div>
-                        <div class="form-group">
-                            <label>Status Bayar</label>
-                            <select id="biaStatus"><option value="Lunas">Lunas</option><option value="Hutang">Hutang</option></select>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -1191,51 +1111,6 @@
     }
 
     // ============================================================
-    // KAS KELUAR
-    // ============================================================
-    async function submitKasKeluar() {
-        const data = {
-            tanggal: document.getElementById('kkDate').value, sales: document.getElementById('kkSales').value,
-            no_dokumen: document.getElementById('kkNoDokumen').value, cash_account: document.getElementById('kkCash').value,
-            kode_transaksi: document.getElementById('kkKodeTransaksi').value, lawan_transaksi: document.getElementById('kkLawan').value,
-            kas_keluar: parseFloat(document.getElementById('kkJumlah').value) || 0, keterangan: document.getElementById('kkKeterangan').value
-        };
-        const result = await callGAS('submitKasKeluar', data);
-        if (result.success) { showAlert('success', 'Kas Keluar berhasil! ID: ' + result.id_kas, 'kasKeluarAlert'); clearKasKeluarForm(); }
-        else showAlert('danger', 'Gagal: ' + result.message, 'kasKeluarAlert');
-    }
-    function clearKasKeluarForm() {
-        document.getElementById('kkNoDokumen').value = ''; document.getElementById('kkJumlah').value = '';
-        document.getElementById('kkLawan').value = ''; document.getElementById('kkKeterangan').value = '';
-    }
-
-    // ============================================================
-    // BIAYA
-    // ============================================================
-    function calculateBiayaTotal() {
-        const qty = parseFloat(document.getElementById('biaQty').value) || 1;
-        const harga = parseFloat(document.getElementById('biaHarga').value) || 0;
-        document.getElementById('biaTotal').value = qty * harga;
-    }
-    async function submitBiaya() {
-        const qty = parseFloat(document.getElementById('biaQty').value) || 1;
-        const harga = parseFloat(document.getElementById('biaHarga').value) || 0;
-        const data = {
-            tanggal: document.getElementById('biaDate').value, cost_center: document.getElementById('biaCostCenter').value,
-            no_dokumen: document.getElementById('biaNoDokumen').value, coa: document.getElementById('biaCOA').value,
-            nama_supplier: document.getElementById('biaSupplier').value, nama_barang: document.getElementById('biaNamaBarang').value,
-            jumlah: qty, harga_satuan: harga, total: qty * harga, status_bayar: document.getElementById('biaStatus').value
-        };
-        const result = await callGAS('submitBiaya', data);
-        if (result.success) { showAlert('success', 'Biaya berhasil! ID: ' + result.id_biaya, 'biayaAlert'); clearBiayaForm(); }
-        else showAlert('danger', 'Gagal: ' + result.message, 'biayaAlert');
-    }
-    function clearBiayaForm() {
-        document.getElementById('biaNoDokumen').value = ''; document.getElementById('biaNamaBarang').value = '';
-        document.getElementById('biaHarga').value = ''; document.getElementById('biaTotal').value = '';
-    }
-
-    // ============================================================
     // STOCK OPNAME
     // ============================================================
     async function fetchStockQty() {
@@ -1368,7 +1243,7 @@
     }
 
     async function importPembelianHistoris() {
-        const ok = confirm('Ini akan memindahkan seluruh baris histori dari sheet "Pembelian" (sumber asli) ke Pembelian/Pembelian_Detail milik app. Bisa makan waktu 1-2 menit untuk data yang besar, dan aman dijalankan berkali-kali (baris yang sudah pernah masuk otomatis dilewati). Lanjutkan?');
+        const ok = confirm('Ini akan memindahkan seluruh baris histori dari sheet "Pembelian" (sumber asli) ke sheet Pembelian milik app. Bisa makan waktu 1-2 menit untuk data yang besar, dan aman dijalankan berkali-kali (baris yang sudah pernah masuk otomatis dilewati). Lanjutkan?');
         if (!ok) return;
         showAlert('info', 'Sedang mengimpor, mohon tunggu...', 'assemblyAlert');
         const result = await callGAS('importPembelianHistoris', {}, 300000);
