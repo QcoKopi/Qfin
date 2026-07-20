@@ -7,7 +7,7 @@
     <style>
         :root {
             --primary: #2c3e50; --secondary: #34495e; --accent: #e67e22;
-            --success: #27ae60; --danger: #e74c3c; --warniang: #f39c12;
+            --success: #27ae60; --danger: #e74c3c; --warning: #f39c12;
             --info: #3498db; --light: #ecf0f1; --dark: #1a252f;
             --gray: #95a5a6; --white: #ffffff;
             --shadow: 0 2px 10px rgba(0,0,0,0.1); --radius: 8px;
@@ -571,21 +571,63 @@
         if (url) { localStorage.setItem('qfin_gas_url', url); showAlert('success', 'GAS URL saved'); }
     }
 
-    async function callGAS(action, data = {}) {
-        const url = getGasUrl();
-        if (!url) { showAlert('danger', 'GAS URL not configured'); return { success: false }; }
-        showLoading(true);
-        try {
-            const response = await fetch(url, {
-                method: 'POST',
-                body: JSON.stringify({ action, ...data })
+    // QFin talks to a Google Apps Script Web App. GAS /exec URLs always
+    // respond with a 302 redirect, and browsers drop the request body when
+    // a POST is redirected (it silently becomes a bodyless GET). A plain
+    // fetch(..., {method:'POST'}) therefore arrives at the backend with no
+    // "action" parameter and fails. The backend already supports JSONP
+    // (see jsonResponse()'s "callback" handling) so we call it that way:
+    // a <script> tag GET request, which is immune to both the redirect
+    // problem and CORS entirely.
+    let __qfinJsonpSeq = 0;
+    function callGAS(action, data = {}) {
+        return new Promise((resolve) => {
+            const url = getGasUrl();
+            if (!url) { showAlert('danger', 'GAS URL not configured'); resolve({ success: false }); return; }
+
+            showLoading(true);
+            const callbackName = '__qfin_cb_' + (Date.now()) + '_' + (__qfinJsonpSeq++);
+
+            const qs = new URLSearchParams();
+            qs.set('action', action);
+            qs.set('callback', callbackName);
+            Object.keys(data).forEach(key => {
+                const val = data[key];
+                if (val === undefined || val === null) return;
+                qs.set(key, (typeof val === 'object') ? JSON.stringify(val) : String(val));
             });
-            const result = await response.json();
-            showLoading(false); return result;
-        } catch (error) {
-            showLoading(false); showAlert('danger', 'Error: ' + error.message);
-            return { success: false, message: error.message };
-        }
+
+            const script = document.createElement('script');
+            let settled = false;
+
+            const cleanup = () => {
+                delete window[callbackName];
+                if (script.parentNode) script.parentNode.removeChild(script);
+                clearTimeout(timeoutId);
+            };
+            const finish = (result) => {
+                if (settled) return;
+                settled = true;
+                cleanup();
+                showLoading(false);
+                resolve(result);
+            };
+
+            const timeoutId = setTimeout(() => {
+                showAlert('danger', 'Request timeout - cek GAS URL / deployment access');
+                finish({ success: false, message: 'Request timeout' });
+            }, 30000);
+
+            window[callbackName] = function(result) { finish(result); };
+
+            script.onerror = function() {
+                showAlert('danger', 'Gagal terhubung ke GAS. Cek GAS URL & deployment (Anyone can access).');
+                finish({ success: false, message: 'Network error calling GAS' });
+            };
+
+            script.src = url + (url.includes('?') ? '&' : '?') + qs.toString();
+            document.body.appendChild(script);
+        });
     }
 
     function getCache(key) {
@@ -660,6 +702,11 @@
         document.getElementById(inputId + '-list').classList.remove('show');
         if (inputId === 'asmSku') { document.getElementById('asmNamaBarang').value = label.split(' (')[0]; loadRecipeForProduct(value); }
         if (inputId === 'opProduk') fetchStockQty();
+        // pen-barang-{id} has onchange="calculatePenjualanHPP(id)" in its HTML,
+        // but setting .value here programmatically never fires that native
+        // change event, so HPP (Auto) was silently staying at 0. Trigger it here.
+        const penBarangMatch = inputId.match(/^pen-barang-(\d+)$/);
+        if (penBarangMatch) calculatePenjualanHPP(parseInt(penBarangMatch[1], 10));
     }
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.searchable-dropdown')) document.querySelectorAll('.dropdown-list').forEach(l => l.classList.remove('show'));
