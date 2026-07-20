@@ -648,14 +648,30 @@
     }
 
     async function loadMasterData() {
-        const tables = ['Master_Produk', 'Master_Resep', 'Master_Customer', 'Master_Supplier', 'Master_Salesman', 'Master_COA', 'Master_CashAccount'];
-        for (const table of tables) {
+        // Master_Resep is intentionally excluded here: nothing in the
+        // frontend reads masterData.resep directly (recipes are fetched
+        // on-demand via the getResep action when a SKU is picked in
+        // Assembly), so fetching it eagerly on every load was pure waste.
+        const tables = ['Master_Produk', 'Master_Customer', 'Master_Supplier', 'Master_Salesman', 'Master_COA', 'Master_CashAccount'];
+        const missing = [];
+        tables.forEach(table => {
             const cached = getCache(table);
-            if (cached) { updateMasterData(table, cached); continue; }
-            const result = await callGAS('getAll', { table });
-            if (result.success && result.data) { setCache(table, result.data); updateMasterData(table, result.data); }
+            if (cached) updateMasterData(table, cached); else missing.push(table);
+        });
+        if (missing.length === 0) return;
+
+        // One bulk round trip for everything not already cached, instead of
+        // one JSONP request per table (was the main cause of slow refreshes).
+        const result = await callGAS('getBulk', { tables: missing });
+        if (result.success && result.data) {
+            missing.forEach(table => {
+                const tableResult = result.data[table];
+                if (tableResult && tableResult.success) {
+                    setCache(table, tableResult.data);
+                    updateMasterData(table, tableResult.data);
+                }
+            });
         }
-        updatePreviewStats();
     }
 
     function updateMasterData(table, data) {
@@ -725,6 +741,10 @@
         document.getElementById('tab-' + tabName).classList.add('active');
         if (btn) btn.classList.add('active');
         setDefaultDates();
+        // Preview stats used to be fetched on every single page load/refresh
+        // (5 extra sequential round trips) even though this tab isn't shown
+        // by default. Now they only load when the user actually opens it.
+        if (tabName === 'preview') updatePreviewStats();
     }
     function setDefaultDates() {
         const today = new Date().toISOString().split('T')[0];
@@ -1091,13 +1111,14 @@
     // PREVIEW & SYNC
     // ============================================================
     async function updatePreviewStats() {
-        const produk = await callGAS('getAll', { table: 'Master_Produk' });
-        const penjualan = await callGAS('getAll', { table: 'Penjualan' });
-        const pembelian = await callGAS('getAll', { table: 'Pembelian' });
-        const kasMasuk = await callGAS('getAll', { table: 'Kas_Masuk' });
-        const kasKeluar = await callGAS('getAll', { table: 'Kas_Keluar' });
+        const result = await callGAS('getBulk', { tables: ['Penjualan', 'Pembelian', 'Kas_Masuk', 'Kas_Keluar'] });
+        const bulk = (result.success && result.data) ? result.data : {};
+        const penjualan = bulk['Penjualan'] || { success: false };
+        const pembelian = bulk['Pembelian'] || { success: false };
+        const kasMasuk = bulk['Kas_Masuk'] || { success: false };
+        const kasKeluar = bulk['Kas_Keluar'] || { success: false };
 
-        document.getElementById('statTotalProduk').textContent = (produk.success ? produk.data.length : 0);
+        document.getElementById('statTotalProduk').textContent = masterData.products.length || 0;
         document.getElementById('statTotalPenjualan').textContent = 'Rp ' + formatNumber((penjualan.success ? penjualan.data.reduce((s, r) => s + (parseFloat(r.total_tagihan) || 0), 0) : 0).toFixed(0));
         document.getElementById('statTotalPembelian').textContent = 'Rp ' + formatNumber((pembelian.success ? pembelian.data.reduce((s, r) => s + (parseFloat(r.total) || 0), 0) : 0).toFixed(0));
         document.getElementById('statKasMasuk').textContent = 'Rp ' + formatNumber((kasMasuk.success ? kasMasuk.data.reduce((s, r) => s + (parseFloat(r.kas_masuk) || 0), 0) : 0).toFixed(0));
