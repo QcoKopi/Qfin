@@ -803,19 +803,24 @@
         calculateAssemblyHPP();
         calculatePenyusutan();
     }
-    // Penyusutan (%) = shrinkage from raw material to finished goods. Coffee
-    // green beans lose weight during roasting, so this is based on total GB
-    // quantity entered vs Jumlah Produksi (finished output). If there are no
-    // GB rows (non-coffee assembly), falls back to total of ALL raw
-    // materials vs Jumlah Produksi so the field still means something.
+    // Penyusutan (%) = shrinkage from raw material to finished goods. This
+    // ONLY makes physical sense for actual roasting (GB -> RB): green beans
+    // lose weight from moisture loss, and both sides of the comparison are
+    // in kg. Houseblends (RB+RB -> RB) don't lose weight - it's just
+    // recombination. Packaging (RB in kg -> a count of 250g/500g bags)
+    // isn't even the same UNIT on both sides (kg vs. "how many bags"), so
+    // comparing them as if they were a weight-loss ratio produced nonsense
+    // numbers (e.g. -300%). Only compute this when there's at least one GB
+    // row; otherwise there's no shrinkage to report.
     function calculatePenyusutan() {
-        const jumlahProduksi = parseFloat(document.getElementById('asmQty').value) || 0;
-        let basisQty = gbDetailIds.reduce((sum, id) => sum + (parseFloat(document.getElementById(`asm-raw-qty-${id}`)?.value) || 0), 0);
-        if (basisQty <= 0) {
-            basisQty = assemblyDetails.reduce((sum, id) => sum + (parseFloat(document.getElementById(`asm-raw-qty-${id}`)?.value) || 0), 0);
-        }
         const wasteInput = document.getElementById('asmWaste');
         if (!wasteInput) return;
+        if (gbDetailIds.length === 0) {
+            wasteInput.value = '0';
+            return;
+        }
+        const jumlahProduksi = parseFloat(document.getElementById('asmQty').value) || 0;
+        const basisQty = gbDetailIds.reduce((sum, id) => sum + (parseFloat(document.getElementById(`asm-raw-qty-${id}`)?.value) || 0), 0);
         if (basisQty > 0 && jumlahProduksi > 0) {
             const penyusutan = ((basisQty - jumlahProduksi) / basisQty) * 100;
             wasteInput.value = penyusutan.toFixed(2);
