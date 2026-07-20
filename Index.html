@@ -577,7 +577,7 @@
         showLoading(true);
         try {
             const response = await fetch(url, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                method: 'POST',
                 body: JSON.stringify({ action, ...data })
             });
             const result = await response.json();
@@ -640,7 +640,7 @@
         list.innerHTML = filtered.map(item => {
             const value = item.id_produk || item.id_customer || item.id_supplier || item.id_salesman || item.id_coa || item.id_cash || item.id_resep || item.id;
             const label = item.nama_produk || item.nama_customer || item.nama_supplier || item.nama_salesman || item.nama_coa || item.nama_cash || item.nama_resep || item.nama;
-            return `<div class="dropdown-item" onclick="selectDropdown('${inputId}', '${value}', '${label.replace(/'/g, "\'")}')">${label} (${value})</div>`;
+            return `<div class="dropdown-item" onclick="selectDropdown('${inputId}', '${value}', '${label.replace(/'/g, "\\'")}')">${label} (${value})</div>`;
         }).join('');
         list.classList.add('show');
     }
