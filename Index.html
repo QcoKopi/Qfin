@@ -617,7 +617,7 @@
     // a <script> tag GET request, which is immune to both the redirect
     // problem and CORS entirely.
     let __qfinJsonpSeq = 0;
-    function callGAS(action, data = {}, timeoutMs = 30000) {
+    function callGAS(action, data = {}, timeoutMs = 60000) {
         return new Promise((resolve) => {
             const url = getGasUrl();
             if (!url) { showAlert('danger', 'GAS URL not configured'); resolve({ success: false }); return; }
@@ -637,8 +637,16 @@
             const script = document.createElement('script');
             let settled = false;
 
+            // On timeout we give up WAITING, but the GAS execution keeps
+            // running server-side and the browser may still finish loading
+            // the script afterward. If we deleted window[callbackName]
+            // here, that late arrival would throw "ReferenceError: ... is
+            // not defined" in the console (and its data would be lost even
+            // though the backend succeeded). Leaving a harmless no-op in
+            // its place instead avoids the crash; only removing the <script>
+            // tag itself and the timer.
             const cleanup = () => {
-                delete window[callbackName];
+                window[callbackName] = function() {};
                 if (script.parentNode) script.parentNode.removeChild(script);
                 clearTimeout(timeoutId);
             };
@@ -651,7 +659,7 @@
             };
 
             const timeoutId = setTimeout(() => {
-                showAlert('danger', 'Request timeout - cek GAS URL / deployment access');
+                showAlert('danger', 'Request timeout - cek GAS URL / deployment access, atau coba lagi (server mungkin masih lambat).');
                 finish({ success: false, message: 'Request timeout' });
             }, timeoutMs);
 
@@ -695,7 +703,7 @@
 
         // One bulk round trip for everything not already cached, instead of
         // one JSONP request per table (was the main cause of slow refreshes).
-        const result = await callGAS('getBulk', { tables: missing });
+        const result = await callGAS('getBulk', { tables: missing }, 90000);
         if (result.success && result.data) {
             missing.forEach(table => {
                 const tableResult = result.data[table];
@@ -1287,7 +1295,7 @@
     // PREVIEW & SYNC
     // ============================================================
     async function updatePreviewStats() {
-        const result = await callGAS('getBulk', { tables: ['Penjualan', 'Pembelian', 'Kas_Masuk', 'Kas_Keluar'] });
+        const result = await callGAS('getBulk', { tables: ['Penjualan', 'Pembelian', 'Kas_Masuk', 'Kas_Keluar'] }, 90000);
         const bulk = (result.success && result.data) ? result.data : {};
         const penjualan = bulk['Penjualan'] || { success: false };
         const pembelian = bulk['Pembelian'] || { success: false };
