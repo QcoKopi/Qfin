@@ -193,10 +193,11 @@
         <div class="header">
             <div><h1>QFin</h1><div class="subtitle">Financial Management System</div></div>
             <div class="header-actions">
-                <input type="url" class="gas-url-input" id="gasUrl" placeholder="https://script.google.com/macros/s/AKfycbzQ4-ywpRvPzKcv7R-Fwo7gycSHnB7qWsfOLq_bKkQPLRxEF2ZjKS7dpNBxlxbs1dA/exec">
+                <input type="url" class="gas-url-input" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec" value="https://script.google.com/macros/s/AKfycbzQ4-ywpRvPzKcv7R-Fwo7gycSHnB7qWsfOLq_bKkQPLRxEF2ZjKS7dpNBxlxbs1dA/exec">
                 <button class="btn btn-primary" onclick="saveGasUrl()"><span>Save URL</span></button>
                 <button class="btn btn-success" onclick="syncAll()"><span>Sync All</span></button>
                 <button class="btn btn-secondary" onclick="loadAllData()"><span>Refresh</span></button>
+                <button class="btn btn-danger" onclick="clearCacheAndReload()"><span>Clear Cache</span></button>
             </div>
         </div>
         <div class="nav-tabs">
@@ -1092,6 +1093,13 @@
         // Load master data
         loadMasterData();
     });
+    function clearCacheAndReload() {
+        localStorage.removeItem('qfin_gas_url');
+        const cacheKeys = Object.keys(localStorage).filter(k => k.startsWith('qfin_cache_'));
+        cacheKeys.forEach(k => localStorage.removeItem(k));
+        showAlert('success', 'Cache cleared. Reloading...', 'assemblyAlert');
+        setTimeout(() => location.reload(), 1000);
+    }
     </script>
 </body>
 </html>
