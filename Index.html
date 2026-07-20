@@ -3,1185 +3,546 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Q Entry System - QBridge</title>
+    <title>QFin - Financial Management System</title>
     <style>
         :root {
-            --primary: #5D4037;
-            --primary-light: #8D6E63;
-            --accent: #A1887F;
-            --bg: #FAFAFA;
-            --card: #FFFFFF;
-            --text: #3E2723;
-            --text-light: #6D4C41;
-            --border: #D7CCC8;
-            --success: #4CAF50;
-            --warning: #FF9800;
-            --danger: #F44336;
-            --info: #2196F3;
+            --primary: #2c3e50; --secondary: #34495e; --accent: #e67e22;
+            --success: #27ae60; --danger: #e74c3c; --warning: #f39c12;
+            --info: #3498db; --light: #ecf0f1; --dark: #1a252f;
+            --gray: #95a5a6; --white: #ffffff;
+            --shadow: 0 2px 10px rgba(0,0,0,0.1); --radius: 8px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            line-height: 1.6;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh; color: var(--primary);
         }
+        .app-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
         .header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: var(--primary); color: var(--white); padding: 20px 30px;
+            border-radius: var(--radius); margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: var(--shadow);
         }
-        .header h1 { font-size: 24px; font-weight: 300; letter-spacing: 2px; }
-        .header p { opacity: 0.9; font-size: 13px; margin-top: 5px; }
-        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
-        .tab-nav {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 25px;
-            background: var(--card);
-            padding: 10px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            overflow-x: auto;
-            flex-wrap: wrap;
+        .header h1 { font-size: 24px; font-weight: 600; }
+        .header .subtitle { font-size: 12px; opacity: 0.8; margin-top: 4px; }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .gas-url-input {
+            padding: 8px 12px; border: 1px solid rgba(255,255,255,0.3);
+            border-radius: var(--radius); background: rgba(255,255,255,0.1);
+            color: var(--white); width: 300px; font-size: 12px;
         }
-        .tab-btn {
-            padding: 12px 24px;
-            border: none;
-            background: transparent;
-            color: var(--text-light);
-            cursor: pointer;
-            border-radius: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s;
-            white-space: nowrap;
-        }
-        .tab-btn:hover { background: rgba(93,64,55,0.08); }
-        .tab-btn.active {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 2px 8px rgba(93,64,55,0.3);
-        }
-        .form-card {
-            background: var(--card);
-            border-radius: 16px;
-            padding: 30px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-            margin-bottom: 20px;
-        }
-        .form-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 2px solid var(--border);
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-        .form-title {
-            font-size: 20px;
-            color: var(--primary);
-            font-weight: 600;
-        }
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        .gas-url-input::placeholder { color: rgba(255,255,255,0.6); }
         .btn {
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all 0.3s;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
+            padding: 8px 16px; border: none; border-radius: var(--radius);
+            cursor: pointer; font-size: 13px; font-weight: 500;
+            transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px;
         }
-        .btn-primary {
-            background: var(--primary);
-            color: white;
+        .btn-primary { background: var(--accent); color: var(--white); }
+        .btn-primary:hover { background: #d35400; transform: translateY(-1px); }
+        .btn-success { background: var(--success); color: var(--white); }
+        .btn-success:hover { background: #219a52; }
+        .btn-danger { background: var(--danger); color: var(--white); }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-secondary { background: var(--secondary); color: var(--white); }
+        .btn-secondary:hover { background: #2c3e50; }
+        .btn-sm { padding: 5px 10px; font-size: 11px; }
+        .nav-tabs {
+            display: flex; gap: 4px; background: var(--white); padding: 8px;
+            border-radius: var(--radius); box-shadow: var(--shadow);
+            margin-bottom: 20px; overflow-x: auto; flex-wrap: wrap;
         }
-        .btn-primary:hover { background: var(--primary-light); transform: translateY(-1px); }
-        .btn-secondary {
-            background: #ECEFF1;
-            color: var(--text);
+        .nav-tab {
+            padding: 10px 18px; border: none; background: transparent;
+            color: var(--gray); cursor: pointer; border-radius: 6px;
+            font-size: 13px; font-weight: 500; transition: all 0.3s; white-space: nowrap;
         }
-        .btn-secondary:hover { background: #CFD8DC; }
-        .btn-success {
-            background: var(--success);
-            color: white;
+        .nav-tab:hover { background: var(--light); color: var(--primary); }
+        .nav-tab.active { background: var(--primary); color: var(--white); }
+        .content-area {
+            background: var(--white); border-radius: var(--radius);
+            box-shadow: var(--shadow); padding: 25px; min-height: 500px;
         }
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
         .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px; margin-bottom: 20px;
         }
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            position: relative;
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-group label {
+            font-size: 12px; font-weight: 600; color: var(--secondary);
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
-        .form-group.full-width {
-            grid-column: 1 / -1;
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 10px 12px; border: 1px solid #ddd; border-radius: var(--radius);
+            font-size: 14px; transition: border-color 0.3s; background: var(--white);
         }
-        label {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-light);
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            outline: none; border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.1);
         }
-        input, select, textarea {
-            padding: 12px 14px;
-            border: 2px solid var(--border);
-            border-radius: 10px;
-            font-size: 14px;
-            transition: all 0.3s;
-            background: #FAFAFA;
-            color: var(--text);
-            width: 100%;
+        .form-group input[type="number"] { text-align: right; }
+        .searchable-dropdown { position: relative; }
+        .searchable-dropdown input { width: 100%; }
+        .dropdown-list {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: var(--white); border: 1px solid #ddd;
+            border-radius: 0 0 var(--radius) var(--radius);
+            max-height: 200px; overflow-y: auto; z-index: 1000;
+            display: none; box-shadow: var(--shadow);
         }
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary-light);
-            background: white;
-            box-shadow: 0 0 0 3px rgba(93,64,55,0.1);
+        .dropdown-list.show { display: block; }
+        .dropdown-item {
+            padding: 8px 12px; cursor: pointer; font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
         }
-        input[type="number"] { text-align: right; }
-        textarea { resize: vertical; min-height: 80px; }
-        .dynamic-section {
-            margin-top: 25px;
-            padding-top: 25px;
-            border-top: 2px dashed var(--border);
+        .dropdown-item:hover { background: var(--light); }
+        .dropdown-item.selected { background: var(--accent); color: var(--white); }
+        .data-table {
+            width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px;
         }
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-            gap: 10px;
+        .data-table th {
+            background: var(--primary); color: var(--white); padding: 12px;
+            text-align: left; font-weight: 600; font-size: 12px;
+            text-transform: uppercase; letter-spacing: 0.5px;
         }
-        .section-title {
-            font-size: 16px;
-            color: var(--primary);
-            font-weight: 600;
+        .data-table td { padding: 10px 12px; border-bottom: 1px solid #eee; }
+        .data-table tr:hover { background: #f8f9fa; }
+        .data-table tr:nth-child(even) { background: #fafbfc; }
+        .card {
+            background: var(--white); border-radius: var(--radius);
+            padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px;
         }
-        .item-row {
-            background: #F5F5F5;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            position: relative;
-            border: 2px solid transparent;
-            transition: all 0.3s;
+        .card-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid var(--light);
         }
-        .item-row:hover {
-            border-color: var(--border);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        .card-title { font-size: 16px; font-weight: 600; color: var(--primary); }
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px; margin-bottom: 20px;
         }
-        .item-row .row-number {
-            position: absolute;
-            top: -10px;
-            left: 15px;
-            background: var(--primary);
-            color: white;
-            padding: 3px 10px;
-            border-radius: 20px;
-            font-size: 11px;
-            font-weight: 600;
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: var(--white); padding: 20px; border-radius: var(--radius);
+            box-shadow: var(--shadow);
         }
-        .remove-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background: var(--danger);
-            color: white;
-            border: none;
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s;
+        .stat-card.success { background: linear-gradient(135deg, var(--success) 0%, #2ecc71 100%); }
+        .stat-card.warning { background: linear-gradient(135deg, var(--warning) 0%, #f1c40f 100%); }
+        .stat-card.danger { background: linear-gradient(135deg, var(--danger) 0%, #c0392b 100%); }
+        .stat-card.info { background: linear-gradient(135deg, var(--info) 0%, #2980b9 100%); }
+        .stat-label { font-size: 11px; opacity: 0.8; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-size: 24px; font-weight: 700; margin-top: 5px; }
+        .alert {
+            padding: 12px 16px; border-radius: var(--radius); margin-bottom: 15px;
+            font-size: 13px; display: flex; align-items: center; gap: 10px;
         }
-        .remove-btn:hover { transform: scale(1.1); }
-        .summary-box {
-            background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-        }
-        .summary-item { text-align: center; }
-        .summary-label {
-            font-size: 11px;
-            color: var(--text-light);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 5px;
-        }
-        .summary-value {
-            font-size: 20px;
-            font-weight: 700;
-            color: var(--primary);
-        }
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-        .status-lunas { background: #E8F5E9; color: #2E7D32; }
-        .status-piutang { background: #FFF3E0; color: #E65100; }
-        .status-belum { background: #FFEBEE; color: #C62828; }
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-        .toast {
-            padding: 15px 20px;
-            border-radius: 12px;
-            color: white;
-            font-weight: 500;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            animation: slideIn 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            min-width: 300px;
-        }
-        .toast.success { background: var(--success); }
-        .toast.error { background: var(--danger); }
-        .toast.info { background: var(--info); }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .alert-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
         .loading-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(255,255,255,0.9);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            flex-direction: column;
-            gap: 15px;
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); display: none;
+            justify-content: center; align-items: center; z-index: 9999;
         }
-        .loading-overlay.active { display: flex; }
+        .loading-overlay.show { display: flex; }
         .spinner {
-            width: 50px;
-            height: 50px;
-            border: 4px solid var(--border);
-            border-top-color: var(--primary);
-            border-radius: 50%;
+            width: 50px; height: 50px; border: 4px solid var(--white);
+            border-top-color: var(--accent); border-radius: 50%;
             animation: spin 1s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: var(--card);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-            font-size: 12px;
+        .detail-row {
+            background: #f8f9fa; padding: 15px; border-radius: var(--radius);
+            margin-bottom: 10px; border-left: 4px solid var(--accent);
         }
-        .data-table th {
-            background: var(--primary);
-            color: white;
-            padding: 10px 12px;
-            text-align: left;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            font-weight: 600;
+        .detail-row-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 10px;
         }
-        .data-table td {
-            padding: 10px 12px;
-            border-bottom: 1px solid var(--border);
+        .btn-remove {
+            background: var(--danger); color: var(--white); border: none;
+            padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;
         }
-        .data-table tr:hover { background: #F5F5F5; }
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: var(--text-light);
+        .hpp-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: var(--white); padding: 20px; border-radius: var(--radius);
+            text-align: center; margin: 15px 0;
         }
-        input[readonly], input.calculated {
-            background: #EEEEEE;
-        }
-        input.calculated {
-            background: #FFF8E1;
-            border-color: #FFD54F;
-        }
-        .gas-config {
-            background: #E3F2FD;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        .gas-config h3 {
-            color: #1565C0;
-            margin-bottom: 15px;
-            font-size: 16px;
-        }
-        .gas-config input {
-            background: white;
-        }
-        /* Dropdown searchable */
-        .dropdown-list {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            max-height: 200px;
-            overflow-y: auto;
-            z-index: 1000;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            margin-top: 4px;
-        }
-        .dropdown-item {
-            padding: 10px 14px;
-            cursor: pointer;
-            border-bottom: 1px solid #eee;
-            font-size: 14px;
-            transition: background 0.2s;
-        }
-        .dropdown-item:hover {
-            background: #f5f5f5;
-        }
-        .dropdown-item:last-child {
-            border-bottom: none;
-        }
-        .resep-item {
-            display: flex;
-            gap: 10px;
-            margin: 8px 0;
-            padding: 12px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid var(--border);
-        }
-        .resep-item > div {
-            flex: 1;
-        }
-        .resep-item label {
-            font-size: 11px;
-            margin-bottom: 4px;
-            display: block;
-        }
-        .resep-item input {
-            padding: 8px 10px;
-            font-size: 13px;
-        }
+        .hpp-value { font-size: 32px; font-weight: 700; }
+        .hpp-label { font-size: 12px; opacity: 0.8; text-transform: uppercase; }
         @media (max-width: 768px) {
-            .container { padding: 10px; }
-            .form-card { padding: 20px; }
             .form-grid { grid-template-columns: 1fr; }
-            .tab-btn { padding: 10px 15px; font-size: 12px; }
-            .form-header { flex-direction: column; align-items: flex-start; }
-            .resep-item { flex-direction: column; }
+            .stats-grid { grid-template-columns: 1fr 1fr; }
+            .header { flex-direction: column; gap: 10px; }
+            .gas-url-input { width: 100%; }
+        }
+        @media print {
+            .header-actions, .nav-tabs, .btn { display: none; }
+            .content-area { box-shadow: none; }
         }
     </style>
 <base target="_blank">
 </head>
 <body>
-    <div class="header">
-        <h1>Q ENTRY SYSTEM</h1>
-        <p>QBridge Coffee Inventory & Transaction Management</p>
-    </div>
-
-    <div class="toast-container" id="toastContainer"></div>
-
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="spinner"></div>
-        <p>Processing...</p>
-    </div>
-
-    <div class="container">
-        <!-- GAS Config -->
-        <div class="gas-config">
-            <h3>🔧 Google Apps Script Configuration</h3>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label>GAS Web App URL</label>
-                    <input type="url" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec" 
-                           value="https://script.google.com/macros/s/AKfycbwk4O0ioUg5Vi1SMqkawGOlCgrvQh4Fi3Ke267jobna5leCGqKehzDGe5TTdhX8IQ/exec">
-                </div>
-                <div class="form-group">
-                    <label>Sheet ID</label>
-                    <input type="text" id="sheetId" placeholder="1QP6ewRuamaJ4SdVLQpvQDP3zwo_Lynuv4EBqfZMBoCs"
-                           value="1QP6ewRuamaJ4SdVLQpvQDP3zwo_Lynuv4EBqfZMBoCs">
-                </div>
+    <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+    <div class="app-container">
+        <div class="header">
+            <div><h1>QFin</h1><div class="subtitle">Financial Management System</div></div>
+            <div class="header-actions">
+                <input type="url" class="gas-url-input" id="gasUrl" placeholder="https://script.google.com/macros/s/AKfycbzQ4-ywpRvPzKcv7R-Fwo7gycSHnB7qWsfOLq_bKkQPLRxEF2ZjKS7dpNBxlxbs1dA/exec">
+                <button class="btn btn-primary" onclick="saveGasUrl()"><span>Save URL</span></button>
+                <button class="btn btn-success" onclick="syncAll()"><span>Sync All</span></button>
+                <button class="btn btn-secondary" onclick="loadAllData()"><span>Refresh</span></button>
             </div>
-            <p style="font-size: 12px; color: #666; margin-top: 10px;">
-                Data tersimpan di localStorage sebagai backup. Klik "Sync ke GAS" untuk push ke Google Sheets.
-            </p>
         </div>
-
-        <!-- Tab Navigation -->
-        <div class="tab-nav">
-            <button class="tab-btn active" onclick="switchTab('assembly')">☕ Assembly</button>
-            <button class="tab-btn" onclick="switchTab('pembelian')">🛒 Pembelian</button>
-            <button class="tab-btn" onclick="switchTab('kasmasuk')">💰 Kas Masuk</button>
-            <button class="tab-btn" onclick="switchTab('penjualan')">📦 Penjualan</button>
-            <button class="tab-btn" onclick="switchTab('preview')">📊 Preview</button>
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="switchTab('assembly', this)">Assembly</button>
+            <button class="nav-tab" onclick="switchTab('pembelian', this)">Pembelian</button>
+            <button class="nav-tab" onclick="switchTab('penjualan', this)">Penjualan</button>
+            <button class="nav-tab" onclick="switchTab('kas-masuk', this)">Kas Masuk</button>
+            <button class="nav-tab" onclick="switchTab('kas-keluar', this)">Kas Keluar</button>
+            <button class="nav-tab" onclick="switchTab('biaya', this)">Biaya Ops</button>
+            <button class="nav-tab" onclick="switchTab('opname', this)">Stock Opname</button>
+            <button class="nav-tab" onclick="switchTab('movement', this)">Stock Movement</button>
+            <button class="nav-tab" onclick="switchTab('preview', this)">Preview</button>
         </div>
+        <div class="content-area">
 
-        <!-- ASSEMBLY ENTRY FORM -->
-        <div id="tab-assembly" class="tab-content">
-            <div class="form-card">
-                <div class="form-header">
-                    <div>
-                        <div class="form-title">☕ Assembly Entry - Produksi Roasting & Blending</div>
-                        <p style="font-size: 13px; color: var(--text-light); margin-top: 5px;">
-                            Entry produksi: GB → RB (Roasting) atau RB → HB (House Blend)
-                        </p>
+            <!-- ASSEMBLY TAB -->
+            <div class="tab-content active" id="tab-assembly">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Assembly Entry</div>
+                        <button class="btn btn-success btn-sm" onclick="submitAssembly()">Submit Assembly</button>
                     </div>
-                    <div class="form-actions">
-                        <button class="btn btn-secondary" onclick="resetForm('assembly')">🔄 Reset</button>
-                        <button class="btn btn-primary" onclick="saveAssemblyEntry()">💾 Simpan ke GAS</button>
-                    </div>
-                </div>
-
-                <form id="form-assembly">
+                    <div class="alert alert-info" id="assemblyAlert" style="display:none;"></div>
                     <div class="form-grid">
+                        <div class="form-group"><label>Tanggal</label><input type="date" id="asmDate"></div>
+                        <div class="form-group"><label>Batch No</label><input type="text" id="asmBatch" placeholder="Contoh: 1212-RB09"></div>
                         <div class="form-group">
-                            <label>Tanggal Produksi</label>
-                            <input type="date" name="date" required onchange="generateBatchNo()">
-                        </div>
-                        <div class="form-group">
-                            <label>Batch No (Auto)</label>
-                            <input type="text" name="batch_no" readonly placeholder="DDMM-RBXX">
-                        </div>
-                        <div class="form-group" style="position:relative;">
                             <label>SKU Produk</label>
-                            <input type="text" id="skuInput" name="sku" placeholder="Ketik SKU atau nama produk..." autocomplete="off" required>
-                            <div id="skuDropdown" class="dropdown-list" style="display:none;"></div>
-                            <input type="hidden" id="kodeProdukHidden" name="kodeProduk">
-                        </div>
-                        <div class="form-group">
-                            <label>Nama Produk</label>
-                            <input type="text" id="namaBarangInput" name="nama_barang" readonly placeholder="Auto-fill dari SKU">
-                            <input type="hidden" id="namaProdukHidden" name="namaProduk">
-                        </div>
-                        <div class="form-group">
-                            <label>Jumlah Produksi (Kg)</label>
-                            <input type="number" id="jumlahProduksi" name="jumlah_produksi" step="0.01" required oninput="calculateResep()">
-                        </div>
-                        <div class="form-group">
-                            <label>Penyusutan (%)</label>
-                            <input type="number" name="penyusutan" step="0.01" value="15" onchange="calculateAssembly()">
-                        </div>
-                        <div class="form-group">
-                            <label>No Log / Referensi</label>
-                            <input type="text" name="no_log" placeholder="Optional">
-                        </div>
-                    </div>
-
-                    <!-- Resep Container -->
-                    <div id="resepContainer" style="display:none; margin-top:25px; padding-top:25px; border-top:2px dashed var(--border);">
-                        <div class="section-header">
-                            <div class="section-title">🌱 Resep Bahan Baku (Auto dari Master)</div>
-                        </div>
-                        <div id="resepList"></div>
-                    </div>
-
-                    <!-- Manual Raw Material (fallback) -->
-                    <div class="dynamic-section">
-                        <div class="section-header">
-                            <div class="section-title">🌱 Raw Material Manual (Opsional)</div>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="addRawMaterialRow()">➕ Tambah Bahan</button>
-                        </div>
-                        <div id="raw-material-container">
-                            <div class="item-row" data-row="1">
-                                <span class="row-number">Bahan 1</span>
-                                <button type="button" class="remove-btn" onclick="removeRow(this)">×</button>
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label>Nama Raw Material</label>
-                                        <select name="raw_material[]" onchange="updateRawMaterialPrice(this)">
-                                            <option value="">Pilih Bahan</option>
-                                            <optgroup label="Green Beans (GB)">
-                                                <option value="GB Arabika Jawa Barat Asalan|90000">GB Arabika Jawa Barat Asalan (Rp 90.000)</option>
-                                                <option value="GB Arabika Jawa Barat105|105000">GB Arabika Jawa Barat105 (Rp 105.000)</option>
-                                                <option value="GB Robusta Jawa Barat Asalan|68000">GB Robusta Jawa Barat Asalan (Rp 68.000)</option>
-                                                <option value="GB Robusta Temanggung|71300">GB Robusta Temanggung (Rp 71.300)</option>
-                                                <option value="GB Arabika Brazil Cerrado|110000">GB Arabika Brazil Cerrado (Rp 110.000)</option>
-                                                <option value="GB Arabika Ciwidey Natural|170240">GB Arabika Ciwidey Natural (Rp 170.240)</option>
-                                                <option value="GB Arabika Semendo Natural|110720">GB Arabika Semendo Natural (Rp 110.720)</option>
-                                                <option value="GB Flores Bajawa|160000">GB Flores Bajawa (Rp 160.000)</option>
-                                                <option value="GB Gayo|105000">GB Gayo (Rp 105.000)</option>
-                                                <option value="GB Arabika Argopuro Natural|130000">GB Arabika Argopuro Natural (Rp 130.000)</option>
-                                                <option value="GB Arabika Argopuro Wine|300000">GB Arabika Argopuro Wine (Rp 300.000)</option>
-                                                <option value="GB Arabika Bali Kintamani Natural|115000">GB Arabika Bali Kintamani (Rp 115.000)</option>
-                                                <option value="GB Arabika Pasir Angling Natural|166000">GB Arabika Pasir Angling Natural (Rp 166.000)</option>
-                                                <option value="GB Arabika Pasir Angling FW|122300">GB Arabika Pasir Angling FW (Rp 122.300)</option>
-                                            </optgroup>
-                                            <optgroup label="Roasted Beans (RB)">
-                                                <option value="RB Robusta Jawa Barat|125000">RB Robusta Jawa Barat (Rp 125.000)</option>
-                                                <option value="RB Robusta Temanggung|125000">RB Robusta Temanggung (Rp 125.000)</option>
-                                                <option value="RB Arabika Jawa Barat|145000">RB Arabika Jawa Barat (Rp 145.000)</option>
-                                                <option value="RB Arabika Jawa Barat105|150000">RB Arabika Jawa Barat105 (Rp 150.000)</option>
-                                                <option value="RB Arabika Brazil Cerrado|190000">RB Arabika Brazil Cerrado (Rp 190.000)</option>
-                                                <option value="RB Arabica Ciwidey Natural|245000">RB Arabica Ciwidey Natural (Rp 245.000)</option>
-                                                <option value="RB Arabika Natural Semendo|190000">RB Arabika Natural Semendo (Rp 190.000)</option>
-                                                <option value="RB Arabika Flores Bajawa|245000">RB Arabika Flores Bajawa (Rp 245.000)</option>
-                                                <option value="RB Gayo|180000">RB Gayo (Rp 180.000)</option>
-                                                <option value="RB Houseblend 70% Robusta 30% Arabika Reguler|150000">RB HB 70R30A Reguler (Rp 150.000)</option>
-                                                <option value="RB Houseblend 50% Robusta 50% Arabika Reguler|155000">RB HB 50R50A Reguler (Rp 155.000)</option>
-                                                <option value="RB Houseblend 40% Robusta 60% Arabika Reguler|165000">RB HB 40R60A Reguler (Rp 165.000)</option>
-                                                <option value="RB Houseblend 30% Robusta 70% Arabica (regular)|180000">RB HB 30R70A Reguler (Rp 180.000)</option>
-                                                <option value="RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)|220000">RB HB 35C65B Premium (Rp 220.000)</option>
-                                            </optgroup>
-                                            <optgroup label="Kemasan">
-                                                <option value="Botol 250ml|2000">Botol 250ml (Rp 2.000)</option>
-                                                <option value="Flat Bottom Valve 250gr|0">Flat Bottom Valve 250gr</option>
-                                                <option value="Flat Bottom Valve 500gr|0">Flat Bottom Valve 500gr</option>
-                                                <option value="Flat Bottom Valve 1000gr|0">Flat Bottom Valve 1000gr</option>
-                                                <option value="Kemasan Kopi 5kg Besar Hitam Tanpa Valve|0">Kemasan 5kg Hitam</option>
-                                                <option value="Kemasan Kopi 7kg Besar Hitam Tanpa Valve|0">Kemasan 7kg Hitam</option>
-                                                <option value="Kemasan Sample|0">Kemasan Sample</option>
-                                            </optgroup>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Jumlah Raw Material (Kg/Pcs)</label>
-                                        <input type="number" name="jumlah_raw[]" step="0.01" onchange="calculateAssembly()">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Harga Satuan (Rp)</label>
-                                        <input type="number" name="harga_raw[]" step="1" readonly class="calculated">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Total Harga (Rp)</label>
-                                        <input type="number" name="total_raw[]" step="1" readonly class="calculated">
-                                    </div>
-                                </div>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="asmSku" placeholder="Cari SKU..." oninput="searchDropdown('asmSku', 'products')" onfocus="showDropdown('asmSku')">
+                                <div class="dropdown-list" id="asmSku-list"></div>
                             </div>
                         </div>
+                        <div class="form-group"><label>Nama Barang</label><input type="text" id="asmNamaBarang" readonly placeholder="Auto-fill dari SKU"></div>
+                        <div class="form-group"><label>Jumlah Produksi</label><input type="number" id="asmQty" step="0.01" placeholder="0.00" onchange="calculateAssemblyHPP()"></div>
+                        <div class="form-group"><label>Penyusutan (%)</label><input type="number" id="asmWaste" step="0.01" placeholder="0.00" value="0" onchange="calculateAssemblyHPP()"></div>
                     </div>
-
-                    <div class="summary-box">
-                        <div class="summary-item">
-                            <div class="summary-label">Total Raw Material</div>
-                            <div class="summary-value" id="assembly-total-raw">0 Kg</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Total Harga Material</div>
-                            <div class="summary-value" id="assembly-total-harga">Rp 0</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">HPP per Kg</div>
-                            <div class="summary-value" id="assembly-hpp">Rp 0</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Penyusutan</div>
-                            <div class="summary-value" id="assembly-shrinkage">0%</div>
-                        </div>
+                    <div class="hpp-display" id="assemblyHPP" style="display:none;">
+                        <div class="hpp-label">HPP per Unit</div>
+                        <div class="hpp-value" id="hppValue">Rp 0</div>
                     </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- PEMBELIAN FORM -->
-        <div id="tab-pembelian" class="tab-content" style="display:none">
-            <div class="form-card">
-                <div class="form-header">
-                    <div>
-                        <div class="form-title">🛒 Entry Pembelian</div>
-                        <p style="font-size: 13px; color: var(--text-light); margin-top: 5px;">
-                            Pembelian beans, kemasan, biaya operasional, gaji, dll.
-                        </p>
+                    <div class="card-header" style="margin-top:20px;">
+                        <div class="card-title">Raw Materials</div>
+                        <button class="btn btn-primary btn-sm" onclick="addAssemblyDetail()">+ Tambah Bahan</button>
                     </div>
-                    <div class="form-actions">
-                        <button class="btn btn-secondary" onclick="resetForm('pembelian')">🔄 Reset</button>
-                        <button class="btn btn-primary" onclick="saveEntry('pembelian')">💾 Simpan Entry</button>
-                    </div>
+                    <div id="assemblyDetails"></div>
                 </div>
+            </div>
 
-                <form id="form-pembelian">
+            <!-- PEMBELIAN TAB -->
+            <div class="tab-content" id="tab-pembelian">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Pembelian</div>
+                        <button class="btn btn-success btn-sm" onclick="submitPembelian()">Submit Pembelian</button>
+                    </div>
+                    <div class="alert alert-info" id="pembelianAlert" style="display:none;"></div>
                     <div class="form-grid">
+                        <div class="form-group"><label>Tanggal</label><input type="date" id="pemDate"></div>
+                        <div class="form-group"><label>No Dokumen</label><input type="text" id="pemNoDokumen" placeholder="FP-XXXX"></div>
+                        <div class="form-group"><label>Cost Center</label><input type="text" id="pemCostCenter" value="Q.Co"></div>
                         <div class="form-group">
-                            <label>Tanggal Transaksi</label>
-                            <input type="date" name="tanggal" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Cost Center</label>
-                            <select name="cost_center">
-                                <option value="Q.Co">Q.Co</option>
-                                <option value="QBridge">QBridge</option>
-                                <option value="Nusa Nexus">Nusa Nexus</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Salesman / PIC</label>
-                            <select name="salesman">
-                                <option value="Umay">Umay</option>
-                                <option value="Fahmi Maulana">Fahmi Maulana</option>
-                                <option value="Rizky Syahdinar">Rizky Syahdinar</option>
-                                <option value="Arif Wardoyo">Arif Wardoyo</option>
-                                <option value="Alby">Alby</option>
-                                <option value="Azani">Azani</option>
-                                <option value="Putra">Putra</option>
-                                <option value="Reza">Reza</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>No Dokumen / FP</label>
-                            <input type="text" name="no_dokumen" placeholder="FP-XXXX">
+                            <label>Salesman</label>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="pemSalesman" placeholder="Cari salesman..." oninput="searchDropdown('pemSalesman', 'salesmen')" onfocus="showDropdown('pemSalesman')">
+                                <div class="dropdown-list" id="pemSalesman-list"></div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Kode Transaksi</label>
-                            <select name="kode_transaksi" required>
-                                <option value="">Pilih Jenis</option>
-                                <option value="Pembelian">Pembelian (Persediaan)</option>
-                                <option value="Pembelian Biaya">Pembelian Biaya (Opex)</option>
-                            </select>
+                            <select id="pemKodeTransaksi"><option value="Pembelian">Pembelian</option><option value="Pembelian Biaya">Pembelian Biaya</option></select>
                         </div>
                         <div class="form-group">
-                            <label>COA Expenses</label>
-                            <select name="coa_expenses" required>
-                                <option value="">Pilih COA</option>
-                                <optgroup label="Persediaan (125xx)">
-                                    <option value="Persediaan Barang Beans">Persediaan Barang Beans (12502)</option>
-                                    <option value="Persediaan Barang Kemasan">Persediaan Barang Kemasan (12506)</option>
-                                    <option value="Persediaan Barang Bar">Persediaan Barang Bar (12505)</option>
-                                </optgroup>
-                                <optgroup label="Biaya Operasional (710xx)">
-                                    <option value="Electricity">Electricity (71010)</option>
-                                    <option value="Pos & Meterai">Pos & Meterai (71035)</option>
-                                    <option value="Food&Transport">Food & Transport (71040)</option>
-                                    <option value="Office Facilities">Office Facilities (71060)</option>
-                                    <option value="Printing, Stationary">Printing, Stationary (71030)</option>
-                                </optgroup>
-                                <optgroup label="Biaya Lainnya">
-                                    <option value="Gaji">Gaji (70040)</option>
-                                    <option value="Komisi penjualan">Komisi Penjualan (72040)</option>
-                                    <option value="Perbaikan Gedung">Perbaikan Gedung (73040)</option>
-                                    <option value="Perbaikan Mesin">Perbaikan Mesin (73050)</option>
-                                    <option value="Inventaris Kantor Lainnya">Inventaris Kantor (15400)</option>
-                                </optgroup>
-                            </select>
+                            <label>COA</label>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="pemCOA" placeholder="Cari COA..." oninput="searchDropdown('pemCOA', 'coa')" onfocus="showDropdown('pemCOA')">
+                                <div class="dropdown-list" id="pemCOA-list"></div>
+                            </div>
                         </div>
                         <div class="form-group">
-                            <label>Nama Supplier</label>
-                            <input type="text" name="nama_supplier" list="supplierList" required>
-                            <datalist id="supplierList">
-                                <option value="PT.Kopi Satu Nusantara">
-                                <option value="SARYADI">
-                                <option value="Sheila Ina Chairunissa">
-                                <option value="KAROMI">
-                                <option value="Laura Coffee Beans">
-                                <option value="PT. Towing Kopindo Abadi">
-                                <option value="Tokopedia">
-                                <option value="Toko Galon">
-                                <option value="PLN">
-                                <option value="BIZNET">
-                                <option value="Indomart">
-                                <option value="Transprint">
-                                <option value="Altek Solusion Machine">
-                                <option value="DIY">
-                                <option value="GOSEND">
-                                <option value="Kantin">
-                                <option value="Toko Kue">
-                                <option value="Toko Listrik">
-                                <option value="Matrial">
-                                <option value="Tukang">
-                                <option value="Canvasing">
-                                <option value="Fahmi Maulana">
-                                <option value="Rizki Syahdinar">
-                                <option value="Nanda">
-                                <option value="Razak">
-                            </datalist>
-                        </div>
-                        <div class="form-group full-width">
-                            <label>Nama Barang / Keterangan</label>
-                            <input type="text" name="nama_barang" required placeholder="Contoh: GB Robusta Temanggung, Listrik, Gaji, dll">
-                        </div>
-                        <div class="form-group">
-                            <label>Notes / Detail</label>
-                            <input type="text" name="notes" placeholder="Optional detail">
-                        </div>
-                        <div class="form-group">
-                            <label>Jumlah</label>
-                            <input type="number" name="jumlah" step="0.01" required onchange="calculatePembelian()">
-                        </div>
-                        <div class="form-group">
-                            <label>Harga Satuan (Rp)</label>
-                            <input type="number" name="harga_satuan" step="1" required onchange="calculatePembelian()">
-                        </div>
-                        <div class="form-group">
-                            <label>Total (Rp)</label>
-                            <input type="number" name="total" step="1" readonly class="calculated">
+                            <label>Supplier</label>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="pemSupplier" placeholder="Cari supplier..." oninput="searchDropdown('pemSupplier', 'suppliers')" onfocus="showDropdown('pemSupplier')">
+                                <div class="dropdown-list" id="pemSupplier-list"></div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Status Bayar</label>
-                            <select name="status_bayar" required>
+                            <select id="pemStatusBayar">
                                 <option value="Lunas Transfer">Lunas Transfer</option>
-                                <option value="Lunas Cash">Lunas Cash</option>
-                                <option value="Belum Lunas">Belum Lunas</option>
+                                <option value="Lunas Tunai">Lunas Tunai</option>
+                                <option value="Hutang">Hutang</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <label>Tanggal Pembayaran</label>
-                            <input type="date" name="tanggal_pembayaran">
-                        </div>
-                        <div class="form-group">
-                            <label>Kode LOT</label>
-                            <input type="text" name="kode_lot" placeholder="XX-XXXXX-XXXX">
-                        </div>
                     </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- KAS MASUK FORM -->
-        <div id="tab-kasmasuk" class="tab-content" style="display:none">
-            <div class="form-card">
-                <div class="form-header">
-                    <div>
-                        <div class="form-title">💰 Entry Kas Masuk / Piutang</div>
-                        <p style="font-size: 13px; color: var(--text-light); margin-top: 5px;">
-                            Penerimaan pembayaran dari customer (pelunasan piutang).
-                        </p>
+                    <div class="card-header" style="margin-top:20px;">
+                        <div class="card-title">Detail Barang</div>
+                        <button class="btn btn-primary btn-sm" onclick="addPembelianDetail()">+ Tambah Barang</button>
                     </div>
-                    <div class="form-actions">
-                        <button class="btn btn-secondary" onclick="resetForm('kasmasuk')">🔄 Reset</button>
-                        <button class="btn btn-primary" onclick="saveEntry('kasmasuk')">💾 Simpan Entry</button>
-                    </div>
+                    <div id="pembelianDetails"></div>
                 </div>
-
-                <form id="form-kasmasuk">
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>Tanggal Penerimaan</label>
-                            <input type="date" name="tanggal" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Sales / Collector</label>
-                            <select name="sales">
-                                <option value="Q.co">Q.co (Office)</option>
-                                <option value="Fahmi Maulana">Fahmi Maulana</option>
-                                <option value="Rizky Syahdinar">Rizky Syahdinar</option>
-                                <option value="Arif Wardoyo">Arif Wardoyo</option>
-                                <option value="Alby">Alby</option>
-                                <option value="Azani">Azani</option>
-                                <option value="Putra">Putra</option>
-                                <option value="Reza">Reza</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>No Invoice (Referensi)</label>
-                            <input type="text" name="no_dokumen" placeholder="INVXXXX" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Cash Account</label>
-                            <select name="cash_account">
-                                <option value="Cash in Bank BCA - IDR">Cash in Bank BCA - IDR</option>
-                                <option value="Cash on Hand-IDR">Cash on Hand - IDR</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Kode Transaksi</label>
-                            <input type="text" name="kode_transaksi" value="Piutang USaha" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label>Lawan Transaksi (Customer)</label>
-                            <input type="text" name="lawan_transaksi" list="customerList" required>
-                            <datalist id="customerList">
-                                <option value="Kembali Ke Alam Group">
-                                <option value="Kopi Popi">
-                                <option value="Kopi Kita">
-                                <option value="Arion Caffe">
-                                <option value="Eau De Coffee">
-                                <option value="Herby (Hath)">
-                                <option value="Marame Café">
-                                <option value="ONIX Serang (Renovaldi)">
-                                <option value="Sense Of Space (Jani)">
-                                <option value="Satu Kala (Albi)">
-                                <option value="Warkop Temu Jumpa (Albi)">
-                                <option value="Warkop 1001 (Albi)">
-                                <option value="Arif (Makkanya Coffee)">
-                                <option value="Arif (Halaman Baru)">
-                                <option value="Arif (Cikini)">
-                                <option value="Arif (D'Este)">
-                                <option value="Arif (Newbiq)">
-                                <option value="Arif (Butik)">
-                                <option value="Arif (Explor Rasa)">
-                                <option value="Arif (Teras Angkasa)">
-                                <option value="Arif (Makkanya Express)">
-                                <option value="Arif (Zenka Salon)">
-                                <option value="Bar">
-                                <option value="Danau Sejuk">
-                                <option value="Tujuh Coffee (Herby)">
-                                <option value="Luang Coffee">
-                                <option value="Atatu Kopi @Sawanganbaru">
-                                <option value="Sembari Ngopi (Albi)">
-                                <option value="Storia Cafe">
-                                <option value="Serenona Coffeatery">
-                                <option value="Sotaku hive">
-                                <option value="Magami Coffee">
-                                <option value="Bintang Putra Pratama">
-                                <option value="Kebutuhan USA">
-                                <option value="Royal Social House Cafe & Resto">
-                                <option value="Fays Kitchen">
-                                <option value="Kampung Belang Coffee (Albi)">
-                            </datalist>
-                        </div>
-                        <div class="form-group">
-                            <label>Jumlah Kas Masuk (Rp)</label>
-                            <input type="number" name="kas_masuk" step="1" required>
-                        </div>
-                        <div class="form-group full-width">
-                            <label>Keterangan Tambahan</label>
-                            <textarea name="keterangan" placeholder="Optional: detail pembayaran, cicilan ke-X, dll"></textarea>
-                        </div>
-                    </div>
-                </form>
             </div>
-        </div>
 
-        <!-- PENJUALAN FORM -->
-        <div id="tab-penjualan" class="tab-content" style="display:none">
-            <div class="form-card">
-                <div class="form-header">
-                    <div>
-                        <div class="form-title">📦 Entry Penjualan & Invoice</div>
-                        <p style="font-size: 13px; color: var(--text-light); margin-top: 5px;">
-                            Entry penjualan ke customer: invoice, jatuh tempo, pembayaran.
-                        </p>
+            <!-- PENJUALAN TAB -->
+            <div class="tab-content" id="tab-penjualan">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Penjualan</div>
+                        <button class="btn btn-success btn-sm" onclick="submitPenjualan()">Submit Penjualan</button>
                     </div>
-                    <div class="form-actions">
-                        <button class="btn btn-secondary" onclick="resetForm('penjualan')">🔄 Reset</button>
-                        <button class="btn btn-primary" onclick="saveEntry('penjualan')">💾 Simpan Entry</button>
-                    </div>
-                </div>
-
-                <form id="form-penjualan">
+                    <div class="alert alert-info" id="penjualanAlert" style="display:none;"></div>
                     <div class="form-grid">
+                        <div class="form-group"><label>Tanggal</label><input type="date" id="penDate"></div>
+                        <div class="form-group"><label>No Invoice</label><input type="text" id="penInvoice" placeholder="INV-XXXX"></div>
                         <div class="form-group">
-                            <label>Tanggal Invoice</label>
-                            <input type="date" name="tanggal" required onchange="generateInvoiceNo()">
-                        </div>
-                        <div class="form-group">
-                            <label>Jatuh Tempo</label>
-                            <input type="date" name="jatuh_tempo">
-                        </div>
-                        <div class="form-group">
-                            <label>Cost Center</label>
-                            <select name="cost_center">
-                                <option value="Q.Co">Q.Co</option>
-                            </select>
+                            <label>Customer</label>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="penCustomer" placeholder="Cari customer..." oninput="searchDropdown('penCustomer', 'customers')" onfocus="showDropdown('penCustomer')">
+                                <div class="dropdown-list" id="penCustomer-list"></div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Salesman</label>
-                            <select name="salesman">
-                                <option value="Q.co">Q.co (Direct)</option>
-                                <option value="Fahmi Maulana">Fahmi Maulana</option>
-                                <option value="Rizky Syahdinar">Rizky Syahdinar</option>
-                                <option value="Arif Wardoyo">Arif Wardoyo</option>
-                                <option value="Alby">Alby</option>
-                                <option value="Azani">Azani</option>
-                                <option value="Putra">Putra</option>
-                                <option value="Reza">Reza</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>No Invoice (Auto)</label>
-                            <input type="text" name="no_invoice" readonly placeholder="INVXXXX">
-                        </div>
-                        <div class="form-group">
-                            <label>Kode Transaksi</label>
-                            <select name="kode_transaksi">
-                                <option value="Penjualan">Penjualan</option>
-                                <option value="Sample">Sample (Gratis)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Customer</label>
-                            <input type="text" name="customer" list="customerList" required>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="penSalesman" placeholder="Cari salesman..." oninput="searchDropdown('penSalesman', 'salesmen')" onfocus="showDropdown('penSalesman')">
+                                <div class="dropdown-list" id="penSalesman-list"></div>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Type Pembayaran</label>
-                            <select name="type_pembayaran">
+                            <select id="penTypeBayar">
                                 <option value="Lunas Transfer">Lunas Transfer</option>
-                                <option value="Lunas Cash">Lunas Cash</option>
-                                <option value="">Piutang (Belum Bayar)</option>
+                                <option value="Lunas Tunai">Lunas Tunai</option>
+                                <option value="Hutang">Hutang</option>
                             </select>
                         </div>
                         <div class="form-group">
                             <label>Status</label>
-                            <select name="status">
-                                <option value="PIUTANG">PIUTANG</option>
-                                <option value="LUNAS">LUNAS</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Tanggal Pembayaran</label>
-                            <input type="date" name="tanggal_pembayaran">
-                        </div>
-                        <div class="form-group">
-                            <label>Status Bayar</label>
-                            <select name="status_bayar">
-                                <option value="PIUTANG">PIUTANG</option>
-                                <option value="LUNAS">LUNAS</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>No Surat Jalan</label>
-                            <input type="text" name="surat_jalan" placeholder="SJXXXX">
-                        </div>
-                        <div class="form-group">
-                            <label>Batch No (Referensi Assembly)</label>
-                            <input type="text" name="batch_no" placeholder="Contoh: 1201-RB09">
+                            <select id="penStatus"><option value="Pending">Pending</option><option value="LUNAS">LUNAS</option><option value="Batal">Batal</option></select>
                         </div>
                     </div>
-
-                    <div class="dynamic-section">
-                        <div class="section-header">
-                            <div class="section-title">📋 Items / Barang Dijual</div>
-                            <button type="button" class="btn btn-secondary btn-sm" onclick="addPenjualanItem()">➕ Tambah Item</button>
+                    <div class="card-header" style="margin-top:20px;">
+                        <div class="card-title">Detail Barang</div>
+                        <button class="btn btn-primary btn-sm" onclick="addPenjualanDetail()">+ Tambah Barang</button>
+                    </div>
+                    <div id="penjualanDetails"></div>
+                    <div class="hpp-display" id="penjualanSummary" style="display:none;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+                            <div><div class="hpp-label">Total Tagihan</div><div class="hpp-value" id="penTotalTagihan">Rp 0</div></div>
+                            <div><div class="hpp-label">Total HPP</div><div class="hpp-value" id="penTotalHPP">Rp 0</div></div>
+                            <div><div class="hpp-label">Margin</div><div class="hpp-value" id="penMargin">Rp 0</div></div>
                         </div>
-                        <div id="penjualan-items-container">
-                            <div class="item-row" data-row="1">
-                                <span class="row-number">Item 1</span>
-                                <button type="button" class="remove-btn" onclick="removeRow(this)">×</button>
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label>Nama Barang</label>
-                                        <select name="nama_barang[]" required onchange="updateHargaJual(this)">
-                                            <option value="">Pilih Produk</option>
-                                            <optgroup label="Roasted Beans (RB)">
-                                                <option value="RB Robusta Temanggung|125000">RB Robusta Temanggung - Rp 125.000</option>
-                                                <option value="RB Robusta Jawa Barat|125000">RB Robusta Jawa Barat - Rp 125.000</option>
-                                                <option value="RB Arabika Jawa Barat|145000">RB Arabika Jawa Barat - Rp 145.000</option>
-                                                <option value="RB Arabika Jawa Barat105|150000">RB Arabika Jawa Barat105 - Rp 150.000</option>
-                                                <option value="RB Arabika Brazil Cerrado|190000">RB Arabika Brazil Cerrado - Rp 190.000</option>
-                                                <option value="RB Arabica Ciwidey Natural|245000">RB Arabica Ciwidey Natural - Rp 245.000</option>
-                                                <option value="RB Arabika Natural Semendo|190000">RB Arabika Natural Semendo - Rp 190.000</option>
-                                                <option value="RB Arabika Flores Bajawa|245000">RB Arabika Flores Bajawa - Rp 245.000</option>
-                                                <option value="RB Gayo|180000">RB Gayo - Rp 180.000</option>
-                                                <option value="RB Arabika Bali Kintamani Natural|198000">RB Arabika Bali Kintamani - Rp 198.000</option>
-                                                <option value="RB Arabika Argopuro Natural|220000">RB Arabika Argopuro Natural - Rp 220.000</option>
-                                                <option value="RB Arabika Argopuro Wine|300000">RB Arabika Argopuro Wine - Rp 300.000</option>
-                                            </optgroup>
-                                            <optgroup label="House Blend (HB)">
-                                                <option value="RB Houseblend 70% Robusta 30% Arabika Reguler|150000">HB 70R30A Reguler - Rp 150.000</option>
-                                                <option value="RB Houseblend 70% Robusta 30% Arabika NEW|150000">HB 70R30A NEW - Rp 150.000</option>
-                                                <option value="RB Houseblend 70% Robusta 30% Arabika Classic|160000">HB 70R30A Classic - Rp 160.000</option>
-                                                <option value="RB Houseblend 50% Robusta 50% Arabika Reguler|155000">HB 50R50A Reguler - Rp 155.000</option>
-                                                <option value="RB Houseblend 50% Robusta 50% Arabika NEW|155000">HB 50R50A NEW - Rp 155.000</option>
-                                                <option value="RB Houseblend 50% Robusta 50% Arabika Kembalikealam|160000">HB 50R50A Kembalikealam - Rp 160.000</option>
-                                                <option value="RB Houseblend 50% Robusta 50% Arabika KembalikealamNew|160000">HB 50R50A KembalikealamNew - Rp 160.000</option>
-                                                <option value="RB Houseblend 40% Robusta 60% Arabika Reguler|165000">HB 40R60A Reguler - Rp 165.000</option>
-                                                <option value="RB Houseblend 40% Robusta 60% Arabika NEW|165000">HB 40R60A NEW - Rp 165.000</option>
-                                                <option value="RB Houseblend 30% Robusta 70% Arabica (regular)|180000">HB 30R70A Reguler - Rp 180.000</option>
-                                                <option value="RB Houseblend 30% Robusta 70% Arabica NEW|180000">HB 30R70A NEW - Rp 180.000</option>
-                                                <option value="RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)|220000">HB 35C65B Premium - Rp 220.000</option>
-                                                <option value="RB Houseblend Arabika Natural 40% Arabika Gayo 60% EDC|220000">HB 40N60G EDC - Rp 220.000</option>
-                                                <option value="RB Houseblend Signature 7030|180000">HB Signature 7030 - Rp 180.000</option>
-                                            </optgroup>
-                                            <optgroup label="Packaged (250gr)">
-                                                <option value="250 gr - RB Arabika Brazil Cerrado|60000">250g RB Brazil Cerrado - Rp 60.000</option>
-                                                <option value="250 gr - RB Arabica Ciwidey Natural|75000">250g RB Ciwidey - Rp 75.000</option>
-                                                <option value="250 gr - RB Arabika Flores Bajawa|75000">250g RB Flores Bajawa - Rp 75.000</option>
-                                                <option value="250 gr - RB Arabika Natural Semendo|60000">250g RB Semendo - Rp 60.000</option>
-                                                <option value="250 gr - RB Gayo|65000">250g RB Gayo - Rp 65.000</option>
-                                                <option value="250 gr - RB Arabika Bali Kintamani Natural|130565">250g RB Bali Kintamani - Rp 130.565</option>
-                                                <option value="250 gr - RB Arabika Argopuro Natural|220000">250g RB Argopuro Natural - Rp 220.000</option>
-                                                <option value="250 gr - RB Houseblend 50% Robusta 50% Arabika Reguler|50000">250g HB 50R50A - Rp 50.000</option>
-                                            </optgroup>
-                                            <optgroup label="Packaged (500gr)">
-                                                <option value="500 gr - RB Robusta Temanggung|70000">500g RB Robusta Temanggung - Rp 70.000</option>
-                                                <option value="500 gr - RB Gayo|95000">500g RB Gayo - Rp 95.000</option>
-                                                <option value="500 gr - RB Arabika Natural Semendo|110000">500g RB Semendo - Rp 110.000</option>
-                                                <option value="500 gr - RB Arabika Brazil Cerrado|110000">500g RB Brazil Cerrado - Rp 110.000</option>
-                                                <option value="500 gr - RB Houseblend 40% Robusta 60% Arabika Reguler|90000">500g HB 40R60A - Rp 90.000</option>
-                                                <option value="500 gr - RB Houseblend 50% Robusta 50% Arabika Reguler|85000">500g HB 50R50A - Rp 85.000</option>
-                                            </optgroup>
-                                            <optgroup label="Lainnya">
-                                                <option value="Gula Aren|55000">Gula Aren - Rp 55.000</option>
-                                                <option value="Gula Aren Kata Rasa|55000">Gula Aren Kata Rasa - Rp 55.000</option>
-                                                <option value="Sewa Mesin Kopi Faema 2 Grup + Grinder|4300000">Sewa Mesin Faema 2Grup - Rp 4.300.000</option>
-                                                <option value="Sewa Mesin Simonelli Oscar 2 + Grinder|2700000">Sewa Mesin Simonelli Oscar - Rp 2.700.000</option>
-                                                <option value="Sewa Mesin Pegaso Wega 2 Group + Grinder|3500000">Sewa Mesin Pegaso Wega - Rp 3.500.000</option>
-                                                <option value="V60 Natural Ciwidey|25000">V60 Natural Ciwidey - Rp 25.000</option>
-                                                <option value="V60 Flores Bajawa|25000">V60 Flores Bajawa - Rp 25.000</option>
-                                                <option value="Macha Green Tea|25000">Macha Green Tea - Rp 25.000</option>
-                                                <option value="Caramel Latte|25000">Caramel Latte - Rp 25.000</option>
-                                                <option value="Syrup Caramel 750ml|100000">Syrup Caramel 750ml - Rp 100.000</option>
-                                                <option value="Crimer La Gia|60000">Crimer La Gia - Rp 60.000</option>
-                                                <option value="Silicone Holder Mat Tamper|60000">Silicone Holder Mat - Rp 60.000</option>
-                                                <option value="Wadah Ampas Kopi Espresso Knock Box|70000">Knock Box - Rp 70.000</option>
-                                                <option value="Tamper Kopi Espresso 51mm|70000">Tamper 51mm - Rp 70.000</option>
-                                            </optgroup>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Jumlah (Kg/Pcs)</label>
-                                        <input type="number" name="jumlah[]" step="0.01" required onchange="calculatePenjualan()">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Harga Satuan (Rp)</label>
-                                        <input type="number" name="harga_satuan[]" step="1" required onchange="calculatePenjualan()">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Total (Rp)</label>
-                                        <input type="number" name="total[]" step="1" readonly class="calculated">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Diskon (Rp)</label>
-                                        <input type="number" name="diskon[]" step="1" value="0" onchange="calculatePenjualan()">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Kemasan</label>
-                                        <select name="kemasan[]">
-                                            <option value="">-</option>
-                                            <option value="Flat Bottom Valve 250gr">Flat Bottom 250gr</option>
-                                            <option value="Flat Bottom Valve 500gr">Flat Bottom 500gr</option>
-                                            <option value="Flat Bottom Valve 1000gr">Flat Bottom 1kg</option>
-                                            <option value="Kemasan Kopi 5kg Besar Hitam Tanpa Valve">Kemasan 5kg Hitam</option>
-                                            <option value="Kemasan Kopi 7kg Besar Hitam Tanpa Valve">Kemasan 7kg Hitam</option>
-                                            <option value="Kemasan Sample">Kemasan Sample</option>
-                                            <option value="Botol 250ml">Botol 250ml</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Jumlah Kemasan</label>
-                                        <input type="number" name="jumlah_kemasan[]" step="1">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Batch No Item</label>
-                                        <input type="text" name="batch_no_item[]" placeholder="Contoh: 1201-RB09">
-                                    </div>
-                                </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KAS MASUK TAB -->
+            <div class="tab-content" id="tab-kas-masuk">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Kas Masuk</div>
+                        <button class="btn btn-success btn-sm" onclick="submitKasMasuk()">Submit Kas Masuk</button>
+                    </div>
+                    <div class="alert alert-info" id="kasMasukAlert" style="display:none;"></div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>Tanggal</label><input type="date" id="kmDate"></div>
+                        <div class="form-group"><label>No Dokumen</label><input type="text" id="kmNoDokumen" placeholder="INV-XXXX"></div>
+                        <div class="form-group">
+                            <label>Sales</label>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="kmSales" placeholder="Cari salesman..." oninput="searchDropdown('kmSales', 'salesmen')" onfocus="showDropdown('kmSales')">
+                                <div class="dropdown-list" id="kmSales-list"></div>
                             </div>
                         </div>
+                        <div class="form-group">
+                            <label>Cash Account</label>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="kmCash" placeholder="Cari cash account..." oninput="searchDropdown('kmCash', 'cash')" onfocus="showDropdown('kmCash')">
+                                <div class="dropdown-list" id="kmCash-list"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Kode Transaksi</label>
+                            <select id="kmKodeTransaksi"><option value="Piutang Usaha">Piutang Usaha</option><option value="Pendapatan Lain">Pendapatan Lain</option></select>
+                        </div>
+                        <div class="form-group">
+                            <label>Lawan Transaksi</label>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="kmLawan" placeholder="Cari customer..." oninput="searchDropdown('kmLawan', 'customers')" onfocus="showDropdown('kmLawan')">
+                                <div class="dropdown-list" id="kmLawan-list"></div>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Kas Masuk (Rp)</label><input type="number" id="kmJumlah" step="1000" placeholder="0"></div>
+                        <div class="form-group"><label>Keterangan</label><input type="text" id="kmKeterangan" placeholder="Keterangan"></div>
                     </div>
-
-                    <div class="form-grid" style="margin-top: 20px;">
-                        <div class="form-group">
-                            <label>PPn %</label>
-                            <input type="number" name="ppn_pct" step="0.01" value="0" onchange="calculatePenjualan()">
-                        </div>
-                        <div class="form-group">
-                            <label>PPN (Rp)</label>
-                            <input type="number" name="ppn" step="1" readonly class="calculated">
-                        </div>
-                        <div class="form-group">
-                            <label>PPh %</label>
-                            <input type="number" name="pph_pct" step="0.01" value="0" onchange="calculatePenjualan()">
-                        </div>
-                        <div class="form-group">
-                            <label>PPh 23 (Rp)</label>
-                            <input type="number" name="pph23" step="1" readonly class="calculated">
-                        </div>
-                    </div>
-
-                    <div class="summary-box">
-                        <div class="summary-item">
-                            <div class="summary-label">Subtotal</div>
-                            <div class="summary-value" id="penjualan-subtotal">Rp 0</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">Diskon Total</div>
-                            <div class="summary-value" id="penjualan-diskon">Rp 0</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">PPN</div>
-                            <div class="summary-value" id="penjualan-ppn">Rp 0</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">PPh 23</div>
-                            <div class="summary-value" id="penjualan-pph">Rp 0</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="summary-label">TOTAL TAGIHAN</div>
-                            <div class="summary-value" id="penjualan-total" style="color: var(--danger); font-size: 24px;">Rp 0</div>
-                        </div>
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
 
-        <!-- PREVIEW DATA TAB -->
-        <div id="tab-preview" class="tab-content" style="display:none">
-            <div class="form-card">
-                <div class="form-header">
-                    <div class="form-title">📊 Preview Data Tersimpan</div>
-                    <div class="form-actions">
-                        <button class="btn btn-secondary" onclick="loadPreviewData()">🔄 Refresh</button>
-                        <button class="btn btn-success" onclick="syncToGAS()">☁️ Sync ke Google Sheets</button>
-                        <button class="btn btn-danger" onclick="clearAllData()">🗑️ Clear All</button>
+            <!-- KAS KELUAR TAB -->
+            <div class="tab-content" id="tab-kas-keluar">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Kas Keluar</div>
+                        <button class="btn btn-success btn-sm" onclick="submitKasKeluar()">Submit Kas Keluar</button>
+                    </div>
+                    <div class="alert alert-info" id="kasKeluarAlert" style="display:none;"></div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>Tanggal</label><input type="date" id="kkDate"></div>
+                        <div class="form-group"><label>No Dokumen</label><input type="text" id="kkNoDokumen" placeholder="KK-XXXX"></div>
+                        <div class="form-group">
+                            <label>Sales</label>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="kkSales" placeholder="Cari salesman..." oninput="searchDropdown('kkSales', 'salesmen')" onfocus="showDropdown('kkSales')">
+                                <div class="dropdown-list" id="kkSales-list"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Cash Account</label>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="kkCash" placeholder="Cari cash account..." oninput="searchDropdown('kkCash', 'cash')" onfocus="showDropdown('kkCash')">
+                                <div class="dropdown-list" id="kkCash-list"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Kode Transaksi</label>
+                            <select id="kkKodeTransaksi">
+                                <option value="Pembayaran Hutang">Pembayaran Hutang</option>
+                                <option value="Biaya Operasional">Biaya Operasional</option>
+                                <option value="Pengeluaran Lain">Pengeluaran Lain</option>
+                            </select>
+                        </div>
+                        <div class="form-group"><label>Lawan Transaksi</label><input type="text" id="kkLawan" placeholder="Nama penerima"></div>
+                        <div class="form-group"><label>Kas Keluar (Rp)</label><input type="number" id="kkJumlah" step="1000" placeholder="0"></div>
+                        <div class="form-group"><label>Keterangan</label><input type="text" id="kkKeterangan" placeholder="Keterangan"></div>
                     </div>
                 </div>
+            </div>
 
-                <div class="preview-section" style="margin-bottom: 30px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 style="color: var(--primary);">☕ Assembly Entry</h3>
-                        <span class="status-badge status-lunas" id="count-assembly">0 records</span>
+            <!-- BIAYA OPS TAB -->
+            <div class="tab-content" id="tab-biaya">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Biaya Operasional</div>
+                        <button class="btn btn-success btn-sm" onclick="submitBiaya()">Submit Biaya</button>
                     </div>
-                    <div id="preview-assembly" style="overflow-x: auto;">
-                        <div class="empty-state"><p>Belum ada data assembly</p></div>
+                    <div class="alert alert-info" id="biayaAlert" style="display:none;"></div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>Tanggal</label><input type="date" id="biaDate"></div>
+                        <div class="form-group"><label>No Dokumen</label><input type="text" id="biaNoDokumen" placeholder="BY-XXXX"></div>
+                        <div class="form-group"><label>Cost Center</label><input type="text" id="biaCostCenter" value="Q.Co"></div>
+                        <div class="form-group">
+                            <label>COA</label>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="biaCOA" placeholder="Cari COA..." oninput="searchDropdown('biaCOA', 'coa')" onfocus="showDropdown('biaCOA')">
+                                <div class="dropdown-list" id="biaCOA-list"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Supplier</label>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="biaSupplier" placeholder="Cari supplier..." oninput="searchDropdown('biaSupplier', 'suppliers')" onfocus="showDropdown('biaSupplier')">
+                                <div class="dropdown-list" id="biaSupplier-list"></div>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Nama Barang/Biaya</label><input type="text" id="biaNamaBarang" placeholder="Nama barang atau biaya"></div>
+                        <div class="form-group"><label>Jumlah</label><input type="number" id="biaQty" step="1" value="1"></div>
+                        <div class="form-group"><label>Harga Satuan</label><input type="number" id="biaHarga" step="1000" placeholder="0" onchange="calculateBiayaTotal()"></div>
+                        <div class="form-group"><label>Total</label><input type="number" id="biaTotal" readonly placeholder="0"></div>
+                        <div class="form-group">
+                            <label>Status Bayar</label>
+                            <select id="biaStatus"><option value="Lunas">Lunas</option><option value="Hutang">Hutang</option></select>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="preview-section" style="margin-bottom: 30px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 style="color: var(--primary);">🛒 Pembelian</h3>
-                        <span class="status-badge status-lunas" id="count-pembelian">0 records</span>
+            <!-- STOCK OPNAME TAB -->
+            <div class="tab-content" id="tab-opname">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Stock Opname</div>
+                        <button class="btn btn-success btn-sm" onclick="submitOpname()">Submit Opname</button>
                     </div>
-                    <div id="preview-pembelian" style="overflow-x: auto;">
-                        <div class="empty-state"><p>Belum ada data pembelian</p></div>
+                    <div class="alert alert-info" id="opnameAlert" style="display:none;"></div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>Tanggal</label><input type="date" id="opDate"></div>
+                        <div class="form-group">
+                            <label>Produk</label>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="opProduk" placeholder="Cari produk..." oninput="searchDropdown('opProduk', 'products')" onfocus="showDropdown('opProduk')" onchange="fetchStockQty()">
+                                <div class="dropdown-list" id="opProduk-list"></div>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Qty Sistem (Auto)</label><input type="number" id="opQtySistem" readonly placeholder="0"></div>
+                        <div class="form-group"><label>Qty Fisik</label><input type="number" id="opQtyFisik" step="0.01" placeholder="0.00" onchange="calculateSelisih()"></div>
+                        <div class="form-group"><label>Selisih</label><input type="number" id="opSelisih" readonly placeholder="0"></div>
+                        <div class="form-group"><label>Keterangan</label><input type="text" id="opKeterangan" placeholder="Keterangan selisih"></div>
                     </div>
                 </div>
+            </div>
 
-                <div class="preview-section" style="margin-bottom: 30px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 style="color: var(--primary);">💰 Kas Masuk</h3>
-                        <span class="status-badge status-lunas" id="count-kasmasuk">0 records</span>
+            <!-- STOCK MOVEMENT TAB -->
+            <div class="tab-content" id="tab-movement">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Stock Movement</div>
+                        <button class="btn btn-success btn-sm" onclick="submitMovement()">Submit Movement</button>
                     </div>
-                    <div id="preview-kasmasuk" style="overflow-x: auto;">
-                        <div class="empty-state"><p>Belum ada data kas masuk</p></div>
+                    <div class="alert alert-info" id="movementAlert" style="display:none;"></div>
+                    <div class="form-grid">
+                        <div class="form-group"><label>Tanggal</label><input type="date" id="movDate"></div>
+                        <div class="form-group">
+                            <label>Produk</label>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="movProduk" placeholder="Cari produk..." oninput="searchDropdown('movProduk', 'products')" onfocus="showDropdown('movProduk')">
+                                <div class="dropdown-list" id="movProduk-list"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipe</label>
+                            <select id="movTipe"><option value="Masuk">Masuk</option><option value="Keluar">Keluar</option><option value="Adjustment">Adjustment</option></select>
+                        </div>
+                        <div class="form-group"><label>Qty In</label><input type="number" id="movQtyIn" step="0.01" value="0"></div>
+                        <div class="form-group"><label>Qty Out</label><input type="number" id="movQtyOut" step="0.01" value="0"></div>
+                        <div class="form-group"><label>Referensi</label><input type="text" id="movRef" placeholder="No dokumen referensi"></div>
+                        <div class="form-group"><label>Keterangan</label><input type="text" id="movKeterangan" placeholder="Keterangan"></div>
                     </div>
                 </div>
+            </div>
 
-                <div class="preview-section" style="margin-bottom: 30px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3 style="color: var(--primary);">📦 Penjualan</h3>
-                        <span class="status-badge status-lunas" id="count-penjualan">0 records</span>
-                    </div>
-                    <div id="preview-penjualan" style="overflow-x: auto;">
-                        <div class="empty-state"><p>Belum ada data penjualan</p></div>
+            <!-- PREVIEW TAB -->
+            <div class="tab-content" id="tab-preview">
+                <div class="stats-grid">
+                    <div class="stat-card"><div class="stat-label">Total Produk</div><div class="stat-value" id="statTotalProduk">0</div></div>
+                    <div class="stat-card success"><div class="stat-label">Total Penjualan</div><div class="stat-value" id="statTotalPenjualan">Rp 0</div></div>
+                    <div class="stat-card warning"><div class="stat-label">Total Pembelian</div><div class="stat-value" id="statTotalPembelian">Rp 0</div></div>
+                    <div class="stat-card info"><div class="stat-label">Kas Masuk</div><div class="stat-value" id="statKasMasuk">Rp 0</div></div>
+                    <div class="stat-card danger"><div class="stat-label">Kas Keluar</div><div class="stat-value" id="statKasKeluar">Rp 0</div></div>
+                </div>
+                <div class="card">
+                    <div class="card-header"><div class="card-title">Data Master</div></div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table">
+                            <thead><tr><th>Table</th><th>Jumlah Record</th><th>Last Sync</th><th>Action</th></tr></thead>
+                            <tbody id="masterTableBody"></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
@@ -1189,931 +550,548 @@
     </div>
 
     <script>
-
-// ========================
-// GLOBAL STATE & CONFIG
-// ========================
-const STORAGE_KEYS = {
-    assembly: 'q_entry_assembly',
-    pembelian: 'q_entry_pembelian',
-    kasmasuk: 'q_entry_kasmasuk',
-    penjualan: 'q_entry_penjualan'
-};
-
-// SKU to Nama Barang mapping (dari Master Produk)
-const SKU_MAP = {
-    'RB01': 'RB Robusta Temanggung',
-    'RB01-250': '250 gr - RB Robusta Temanggung',
-    'RB01-500': '500 gr - RB Robusta Temanggung',
-    'RB02': 'RB Robusta Jawa Barat',
-    'RB02-250': '250 gr - RB Robusta Jawa Barat',
-    'RB02-500': '500 gr - RB Robusta Jawa Barat',
-    'RB03': 'RB Ijen Wine',
-    'RB04': 'RB Gayo Wine',
-    'RB04-250': '250 gr - RB Gayo Wine',
-    'RB04-500': '500 gr - RB Gayo Wine',
-    'RB05': 'RB Gayo',
-    'RB05-250': '250 gr - RB Gayo',
-    'RB05-500': '500 gr - RB Gayo',
-    'RB06': 'RB Arabika Natural Semendo',
-    'RB06-250': '250 gr - RB Arabika Natural Semendo',
-    'RB06-500': '500 gr - RB Arabika Natural Semendo',
-    'RB07': 'RB Arabika Jawa Barat',
-    'RB07-250': '250 gr - RB Arabika Jawa Barat',
-    'RB07-500': '500 gr - RB Arabika Jawa Barat',
-    'RB08': 'RB Arabika Flores Bajawa',
-    'RB08-250': '250 gr - RB Arabika Flores Bajawa',
-    'RB08-500': '500 gr - RB Arabika Flores Bajawa',
-    'RB09': 'RB Arabika Brazil Cerrado',
-    'RB09-250': '250 gr - RB Arabika Brazil Cerrado',
-    'RB09-500': '500 gr - RB Arabika Brazil Cerrado',
-    'RB10': 'RB Arabika Angling Natural',
-    'RB10-250': '250 gr - RB Arabika Angling Natural',
-    'RB10-500': '500 gr - RB Arabika Angling Natural',
-    'RB11': 'RB Arabika Angling Honey',
-    'RB11-250': '250 gr - RB Arabika Angling Honey',
-    'RB11-500': '500 gr - RB Arabika Angling Honey',
-    'RB12': 'RB Arabika Angling Full Wash',
-    'RB12-250': '250 gr - RB Arabika Angling Full Wash',
-    'RB12-500': '500 gr - RB Arabika Angling Full Wash',
-    'RB13': 'RB Arabica Garut FW',
-    'RB13-250': '250 gr - RB Arabica Garut FW',
-    'RB13-500': '500 gr - RB Arabica Garut FW',
-    'RB14': 'RB Arabica Ciwidey Natural',
-    'RB14-250': '250 gr - RB Arabica Ciwidey Natural',
-    'RB14-500': '500 gr - RB Arabica Ciwidey Natural',
-    'RB15': 'RB Arabika Bali Kintamani Natural',
-    'RB15-250': '250 gr - RB Arabika Bali Kintamani Natural',
-    'RB15-500': '500 gr - RB Arabika Bali Kintamani Natural',
-    'RB20': 'RB Arabika Jawa Barat105',
-    'RB21': 'RB Arabika Argopuro Natural',
-    'RB21-250': '250 gr - RB Arabika Argopuro Natural',
-    'RB21-500': '500 gr - RB Arabika Argopuro Natural',
-    'RB24': 'RB Arabika Argopuro Wine',
-    'RB25': 'RB Arabika Bali Kintamani Natural',
-    'HB02073070R': 'RB Houseblend 30% Robusta, 70% Arabica (regular)',
-    'HB02073070R-250': '250 gr - RB Houseblend 30% Robusta, 70% Arabica (regular)',
-    'HB02073070R-500': '500 gr - RB Houseblend 30% Robusta, 70% Arabica (regular)',
-    'HB02073070RNEW': 'RB Houseblend 30% Robusta 70% Arabica NEW',
-    'HB02074060R': 'RB Houseblend 40% Robusta 60% Arabika Reguler',
-    'HB02074060R-250': '250 gr - RB Houseblend 40% Robusta 60% Arabika Reguler',
-    'HB02074060R-500': '500 gr - RB Houseblend 40% Robusta 60% Arabika Reguler',
-    'HB02074060RNEW': 'RB Houseblend 40% Robusta 60% Arabika NEW',
-    'HB02075050R': 'RB Houseblend 50% Robusta 50% Arabika Reguler',
-    'HB02075050R-250': '250 gr - RB Houseblend 50% Robusta 50% Arabika Reguler',
-    'HB02075050R-500': '500 gr - RB Houseblend 50% Robusta 50% Arabika Reguler',
-    'HB02075050RNEW': 'RB Houseblend 50% Robusta 50% Arabika NEW',
-    'HB02077030R': 'RB Houseblend 70% Robusta 30% Arabika Reguler',
-    'HB02077030R-250': '250 gr - RB Houseblend 70% Robusta 30% Arabika Reguler',
-    'HB02077030R-500': '500 gr - RB Houseblend 70% Robusta 30% Arabika Reguler',
-    'HB02077030RNEW': 'RB Houseblend 70% Robusta 30% Arabika NEW',
-    'HB0514060P': 'RB Houseblend 40% Robusta 60% Arabika Premium',
-    'HB0514060P-250': '250 gr - RB Houseblend 40% Robusta 60% Arabika Premium',
-    'HB0514060P-500': '500 gr - RB Houseblend 40% Robusta 60% Arabika Premium',
-    'HB0515050P': 'RB Houseblend 50% Robusta 50% Arabika Premium',
-    'HB0515050P-250': '250 gr - RB Houseblend 50% Robusta 50% Arabika Premium',
-    'HB0515050P-500': '500 gr - RB Houseblend 50% Robusta 50% Arabika Premium',
-    'HB05017030P': 'RB Houseblend 70% Arabika 30% Robusta Premium',
-    'HB05017030P-250': '250 gr - RB Houseblend 70% Arabika 30% Robusta Premium',
-    'HB05017030P-500': '500 gr - RB Houseblend 70% Arabika 30% Robusta Premium',
-    'HB07015050KA': 'RB Houseblend 50% Robusta 50% Arabika Kembalikealam',
-    'HB07015050KANew': 'RB Houseblend 50% Robusta 50% Arabika KembalikealamNew',
-    'HB14093565P': 'RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)',
-    'HB14093565P-250': '250 gr - RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)',
-    'HB14093565P-500': '500 gr - RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)',
-    'HB14098020': 'RB Houseblend 80% Arabika Brazil 20% Arabika Ciwidey Natural',
-    'HB14098020-250': '250 gr - RB Houseblend 80% Arabika Brazil 20% Arabika Ciwidey Natural',
-    'HB14098020-500': '500 gr - RB Houseblend 80% Arabika Brazil 20% Arabika Ciwidey Natural',
-    'SIGNHB020709': 'RB Houseblend Signature 7030',
-    'HB01207030C': 'RB Houseblend 70% Robusta 30% Arabika Classic',
-    'HB02205050R': 'RB Houseblend 50% Robusta 50% Arabika Classic',
-    'HB02205050R-250': '250 gr - RB Houseblend 50% Robusta 50% Arabika Classic',
-    'HB02205050R-500': '500 gr - RB Houseblend 50% Robusta 50% Arabika Classic',
-    'HB05084060': 'RB Arabika Gayo 40% Arabika Bajawa 60% EDC',
-    'HB14054060': 'RB Houseblend Arabika Natural 40% Arabika Gayo 60% EDC',
-    'RB07145050': 'RB Houseblend 50% Arabika Jawa Barat 50% Natural Ciwidey'
-};
-
-// GAS URL
-function getGASUrl() {
-    return document.getElementById('gasUrl').value;
-}
-
-// ========================
-// TAB NAVIGATION
-// ========================
-function switchTab(tabName) {
-    document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
-    document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-    document.getElementById('tab-' + tabName).style.display = 'block';
-    event.target.classList.add('active');
-
-    if (tabName === 'preview') {
-        loadPreviewData();
-    }
-}
-
-// ========================
-// TOAST NOTIFICATIONS
-// ========================
-function showToast(message, type = 'info') {
-    const container = document.getElementById('toastContainer');
-    const toast = document.createElement('div');
-    toast.className = 'toast ' + type;
-    toast.innerHTML = type === 'success' ? '✅ ' : type === 'error' ? '❌ ' : 'ℹ️ ';
-    toast.innerHTML += message;
-    container.appendChild(toast);
-    setTimeout(() => {
-        toast.style.animation = 'fadeOut 0.3s ease';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
-}
-
-// ========================
-// LOADING OVERLAY
-// ========================
-function showLoading(show) {
-    document.getElementById('loadingOverlay').classList.toggle('active', show);
-}
-
-// ========================
-// FORM RESET
-// ========================
-function resetForm(type) {
-    document.getElementById('form-' + type).reset();
-    if (type === 'assembly') {
-        document.getElementById('raw-material-container').innerHTML = getRawMaterialTemplate(1);
-        document.getElementById('resepContainer').style.display = 'none';
-        document.getElementById('resepList').innerHTML = '';
-        window.currentResep = null;
-        calculateAssembly();
-    }
-    if (type === 'penjualan') {
-        document.getElementById('penjualan-items-container').innerHTML = getPenjualanItemTemplate(1);
-        calculatePenjualan();
-    }
-    showToast('Form ' + type + ' direset', 'info');
-}
-
-// ========================
-// ASSEMBLY ENTRY - GAS INTEGRATED
-// ========================
-function generateBatchNo() {
-    const dateInput = document.querySelector('#form-assembly [name="date"]');
-    const skuInput = document.getElementById('skuInput');
-    if (!dateInput.value || !skuInput.value) return;
-
-    const d = new Date(dateInput.value);
-    const dd = String(d.getDate()).padStart(2, '0');
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    const sku = skuInput.value;
-    document.querySelector('#form-assembly [name="batch_no"]').value = dd + mm + '-' + sku;
-}
-
-// --- Searchable SKU Dropdown ---
-const skuInput = document.getElementById('skuInput');
-const skuDropdown = document.getElementById('skuDropdown');
-let skuDebounceTimer;
-
-if (skuInput) {
-    skuInput.addEventListener('input', function() {
-        const query = this.value.trim();
-        clearTimeout(skuDebounceTimer);
-
-        if (query.length >= 1) {
-            skuDebounceTimer = setTimeout(() => {
-                searchSKU(query);
-            }, 200);
-        } else {
-            skuDropdown.style.display = 'none';
-        }
-    });
-
-    skuInput.addEventListener('focus', function() {
-        if (this.value.trim().length >= 1) {
-            searchSKU(this.value.trim());
-        }
-    });
-}
-
-function searchSKU(query) {
-    const results = [];
-    const queryLower = query.toLowerCase();
-
-    // Search dari SKU_MAP
-    Object.entries(SKU_MAP).forEach(([kode, nama]) => {
-        if (kode.toLowerCase().includes(queryLower) || nama.toLowerCase().includes(queryLower)) {
-            results.push({ kode, nama });
-        }
-    });
-
-    if (results.length > 0) {
-        skuDropdown.innerHTML = '';
-        skuDropdown.style.display = 'block';
-
-        results.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'dropdown-item';
-            div.innerHTML = `<strong>${item.kode}</strong> - ${item.nama}`;
-            div.addEventListener('click', function() {
-                selectSKU(item.kode, item.nama);
-            });
-            skuDropdown.appendChild(div);
-        });
-    } else {
-        skuDropdown.innerHTML = '<div class="dropdown-item" style="color:#999;">Tidak ditemukan</div>';
-        skuDropdown.style.display = 'block';
-    }
-}
-
-function selectSKU(kode, nama) {
-    skuInput.value = kode;
-    document.getElementById('kodeProdukHidden').value = kode;
-    document.getElementById('namaBarangInput').value = nama;
-    document.getElementById('namaProdukHidden').value = nama;
-    skuDropdown.style.display = 'none';
-    generateBatchNo();
-
-    // Fetch resep dari GAS
-    loadResepFromGAS(nama);
-}
-
-// Hide dropdown on click outside
-document.addEventListener('click', function(e) {
-    if (skuDropdown && !skuInput.contains(e.target) && !skuDropdown.contains(e.target)) {
-        skuDropdown.style.display = 'none';
-    }
-});
-
-// --- Load Resep dari GAS ---
-async function loadResepFromGAS(namaProduk) {
-    const gasUrl = getGASUrl();
-    if (!gasUrl || gasUrl.includes('YOUR_SCRIPT_ID')) {
-        showToast('GAS URL belum diisi', 'error');
-        return;
-    }
-
-    showLoading(true);
-    try {
-        const response = await fetch(`${gasUrl}?action=getResep&nama=${encodeURIComponent(namaProduk)}`);
-        const result = await response.json();
-        showLoading(false);
-
-        const container = document.getElementById('resepContainer');
-        const list = document.getElementById('resepList');
-
-        if (result.success && result.data.length > 0) {
-            window.currentResep = result.data;
-
-            list.innerHTML = '';
-            result.data.forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'resep-item';
-                div.innerHTML = `
-                    <div>
-                        <label>Raw Material ${index + 1}</label>
-                        <input type="text" class="rm-nama-${index}" value="${item.rawMaterial}" readonly>
-                    </div>
-                    <div>
-                        <label>Komposisi</label>
-                        <input type="text" class="rm-komposisi-${index}" value="${(item.komposisi * 100).toFixed(0)}%" readonly>
-                    </div>
-                    <div>
-                        <label>Jumlah RM</label>
-                        <input type="number" class="rm-jumlah-${index}" value="0" readonly step="0.01">
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-
-            container.style.display = 'block';
-
-            // Recalculate kalau jumlah produksi sudah ada
-            const qty = parseFloat(document.getElementById('jumlahProduksi').value) || 0;
-            if (qty > 0) calculateResep();
-
-            showToast(`Resep ditemukan: ${result.data.length} bahan baku`, 'success');
-        } else {
-            window.currentResep = null;
-            container.style.display = 'none';
-            list.innerHTML = '';
-            showToast('Resep tidak ditemukan di Master_Resep', 'warning');
-        }
-    } catch (err) {
-        showLoading(false);
-        console.error('Error load resep:', err);
-        showToast('Error load resep: ' + err.message, 'error');
-    }
-}
-
-// --- Calculate Resep ---
-function calculateResep() {
-    if (!window.currentResep) return;
-
-    const qty = parseFloat(document.getElementById('jumlahProduksi').value) || 0;
-
-    window.currentResep.forEach((item, index) => {
-        const jumlahInput = document.querySelector(`.rm-jumlah-${index}`);
-        if (jumlahInput) {
-            jumlahInput.value = (qty * item.komposisi).toFixed(2);
-        }
-    });
-}
-
-// Listen jumlah produksi changes
-document.getElementById('jumlahProduksi').addEventListener('input', calculateResep);
-
-// --- Save Assembly Entry ke GAS ---
-async function saveAssemblyEntry() {
-    const form = document.getElementById('form-assembly');
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        showToast('Mohon lengkapi semua field yang required', 'error');
-        return;
-    }
-
-    const gasUrl = getGASUrl();
-    if (!gasUrl || gasUrl.includes('YOUR_SCRIPT_ID')) {
-        showToast('Mohon isi GAS Web App URL terlebih dahulu', 'error');
-        return;
-    }
-
-    const kodeProduk = document.getElementById('kodeProdukHidden').value;
-    const namaProduk = document.getElementById('namaProdukHidden').value;
-    const jumlahProduksi = parseFloat(document.getElementById('jumlahProduksi').value) || 0;
-    const tanggal = document.querySelector('#form-assembly [name="date"]').value;
-    const catatan = document.querySelector('#form-assembly [name="no_log"]').value;
-
-    if (!kodeProduk || !namaProduk || !jumlahProduksi) {
-        showToast('Kode Produk, Nama Produk, dan Jumlah Produksi wajib diisi', 'error');
-        return;
-    }
-
-    showLoading(true);
-
-    try {
-        const response = await fetch(gasUrl, {
-            method: 'POST',
-            body: JSON.stringify({
-                action: 'submitAssembly',
-                kodeProduk: kodeProduk,
-                namaProduk: namaProduk,
-                jumlahProduksi: jumlahProduksi,
-                tanggal: tanggal,
-                catatan: catatan
-            })
-        });
-
-        const result = await response.json();
-        showLoading(false);
-
-        if (result.success) {
-            showToast('✅ ' + result.message, 'success');
-
-            // Simpan juga ke localStorage sebagai backup
-            const data = {
-                _timestamp: new Date().toISOString(),
-                _id: 'assembly_' + Date.now(),
-                date: tanggal,
-                batch_no: result.batchNo,
-                sku: kodeProduk,
-                nama_barang: namaProduk,
-                jumlah_produksi: jumlahProduksi,
-                resep: window.currentResep || []
-            };
-            const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.assembly) || '[]');
-            stored.push(data);
-            localStorage.setItem(STORAGE_KEYS.assembly, JSON.stringify(stored));
-
-            resetForm('assembly');
-            updateBadgeCounts();
-        } else {
-            showToast('❌ Error: ' + result.error, 'error');
-        }
-    } catch (err) {
-        showLoading(false);
-        showToast('❌ Network Error: ' + err.message, 'error');
-        console.error(err);
-    }
-}
-
-// ========================
-// RAW MATERIAL FUNCTIONS (Manual fallback)
-// ========================
-function getRawMaterialTemplate(num) {
-    return `<div class="item-row" data-row="${num}">
-        <span class="row-number">Bahan ${num}</span>
-        <button type="button" class="remove-btn" onclick="removeRow(this)">×</button>
-        <div class="form-grid">
-            <div class="form-group">
-                <label>Nama Raw Material</label>
-                <select name="raw_material[]" onchange="updateRawMaterialPrice(this)">
-                    <option value="">Pilih Bahan</option>
-                    <optgroup label="Green Beans (GB)">
-                        <option value="GB Arabika Jawa Barat Asalan|90000">GB Arabika Jawa Barat Asalan (Rp 90.000)</option>
-                        <option value="GB Arabika Jawa Barat105|105000">GB Arabika Jawa Barat105 (Rp 105.000)</option>
-                        <option value="GB Robusta Jawa Barat Asalan|68000">GB Robusta Jawa Barat Asalan (Rp 68.000)</option>
-                        <option value="GB Robusta Temanggung|71300">GB Robusta Temanggung (Rp 71.300)</option>
-                        <option value="GB Arabika Brazil Cerrado|110000">GB Arabika Brazil Cerrado (Rp 110.000)</option>
-                        <option value="GB Arabika Ciwidey Natural|170240">GB Arabika Ciwidey Natural (Rp 170.240)</option>
-                        <option value="GB Arabika Semendo Natural|110720">GB Arabika Semendo Natural (Rp 110.720)</option>
-                        <option value="GB Flores Bajawa|160000">GB Flores Bajawa (Rp 160.000)</option>
-                        <option value="GB Gayo|105000">GB Gayo (Rp 105.000)</option>
-                        <option value="GB Arabika Argopuro Natural|130000">GB Arabika Argopuro Natural (Rp 130.000)</option>
-                        <option value="GB Arabika Argopuro Wine|300000">GB Arabika Argopuro Wine (Rp 300.000)</option>
-                        <option value="GB Arabika Bali Kintamani Natural|115000">GB Arabika Bali Kintamani (Rp 115.000)</option>
-                        <option value="GB Arabika Pasir Angling Natural|166000">GB Arabika Pasir Angling Natural (Rp 166.000)</option>
-                        <option value="GB Arabika Pasir Angling FW|122300">GB Arabika Pasir Angling FW (Rp 122.300)</option>
-                    </optgroup>
-                    <optgroup label="Roasted Beans (RB)">
-                        <option value="RB Robusta Jawa Barat|125000">RB Robusta Jawa Barat (Rp 125.000)</option>
-                        <option value="RB Robusta Temanggung|125000">RB Robusta Temanggung (Rp 125.000)</option>
-                        <option value="RB Arabika Jawa Barat|145000">RB Arabika Jawa Barat (Rp 145.000)</option>
-                        <option value="RB Arabika Jawa Barat105|150000">RB Arabika Jawa Barat105 (Rp 150.000)</option>
-                        <option value="RB Arabika Brazil Cerrado|190000">RB Arabika Brazil Cerrado (Rp 190.000)</option>
-                        <option value="RB Arabica Ciwidey Natural|245000">RB Arabica Ciwidey Natural (Rp 245.000)</option>
-                        <option value="RB Arabika Natural Semendo|190000">RB Arabika Natural Semendo (Rp 190.000)</option>
-                        <option value="RB Arabika Flores Bajawa|245000">RB Arabika Flores Bajawa (Rp 245.000)</option>
-                        <option value="RB Gayo|180000">RB Gayo (Rp 180.000)</option>
-                        <option value="RB Houseblend 70% Robusta 30% Arabika Reguler|150000">RB HB 70R30A Reguler (Rp 150.000)</option>
-                        <option value="RB Houseblend 50% Robusta 50% Arabika Reguler|155000">RB HB 50R50A Reguler (Rp 155.000)</option>
-                        <option value="RB Houseblend 40% Robusta 60% Arabika Reguler|165000">RB HB 40R60A Reguler (Rp 165.000)</option>
-                        <option value="RB Houseblend 30% Robusta 70% Arabica (regular)|180000">RB HB 30R70A Reguler (Rp 180.000)</option>
-                        <option value="RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)|220000">RB HB 35C65B Premium (Rp 220.000)</option>
-                    </optgroup>
-                    <optgroup label="Kemasan">
-                        <option value="Botol 250ml|2000">Botol 250ml (Rp 2.000)</option>
-                        <option value="Flat Bottom Valve 250gr|0">Flat Bottom Valve 250gr</option>
-                        <option value="Flat Bottom Valve 500gr|0">Flat Bottom Valve 500gr</option>
-                        <option value="Flat Bottom Valve 1000gr|0">Flat Bottom Valve 1000gr</option>
-                        <option value="Kemasan Kopi 5kg Besar Hitam Tanpa Valve|0">Kemasan 5kg Hitam</option>
-                        <option value="Kemasan Kopi 7kg Besar Hitam Tanpa Valve|0">Kemasan 7kg Hitam</option>
-                        <option value="Kemasan Sample|0">Kemasan Sample</option>
-                    </optgroup>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Jumlah Raw Material (Kg/Pcs)</label>
-                <input type="number" name="jumlah_raw[]" step="0.01" onchange="calculateAssembly()">
-            </div>
-            <div class="form-group">
-                <label>Harga Satuan (Rp)</label>
-                <input type="number" name="harga_raw[]" step="1" readonly class="calculated">
-            </div>
-            <div class="form-group">
-                <label>Total Harga (Rp)</label>
-                <input type="number" name="total_raw[]" step="1" readonly class="calculated">
-            </div>
-        </div>
-    </div>`;
-}
-
-function addRawMaterialRow() {
-    const container = document.getElementById('raw-material-container');
-    const count = container.querySelectorAll('.item-row').length + 1;
-    container.insertAdjacentHTML('beforeend', getRawMaterialTemplate(count));
-}
-
-function updateRawMaterialPrice(select) {
-    const row = select.closest('.item-row');
-    const val = select.value;
-    if (!val) return;
-    const parts = val.split('|');
-    const price = parseFloat(parts[1]) || 0;
-    row.querySelector('[name="harga_raw[]"]').value = price;
-    calculateAssembly();
-}
-
-function calculateAssembly() {
-    const rows = document.querySelectorAll('#raw-material-container .item-row');
-    let totalQty = 0;
-    let totalHarga = 0;
-
-    rows.forEach(row => {
-        const qty = parseFloat(row.querySelector('[name="jumlah_raw[]"]').value) || 0;
-        const price = parseFloat(row.querySelector('[name="harga_raw[]"]').value) || 0;
-        const total = qty * price;
-        row.querySelector('[name="total_raw[]"]').value = total;
-        totalQty += qty;
-        totalHarga += total;
-    });
-
-    const produksi = parseFloat(document.querySelector('#form-assembly [name="jumlah_produksi"]').value) || 0;
-    const shrinkage = parseFloat(document.querySelector('#form-assembly [name="penyusutan"]').value) || 0;
-    const hpp = produksi > 0 ? totalHarga / produksi : 0;
-
-    document.getElementById('assembly-total-raw').textContent = totalQty.toFixed(2) + ' Kg';
-    document.getElementById('assembly-total-harga').textContent = 'Rp ' + totalHarga.toLocaleString('id-ID');
-    document.getElementById('assembly-hpp').textContent = 'Rp ' + hpp.toLocaleString('id-ID', {maximumFractionDigits: 0});
-    document.getElementById('assembly-shrinkage').textContent = shrinkage + '%';
-}
-
-// ========================
-// PEMBELIAN FUNCTIONS
-// ========================
-function calculatePembelian() {
-    const jumlah = parseFloat(document.querySelector('#form-pembelian [name="jumlah"]').value) || 0;
-    const harga = parseFloat(document.querySelector('#form-pembelian [name="harga_satuan"]').value) || 0;
-    document.querySelector('#form-pembelian [name="total"]').value = jumlah * harga;
-}
-
-// ========================
-// PENJUALAN FUNCTIONS
-// ========================
-function generateInvoiceNo() {
-    const dateInput = document.querySelector('#form-penjualan [name="tanggal"]');
-    if (!dateInput.value) return;
-
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEYS.penjualan) || '[]');
-    const count = data.length + 1;
-    const d = new Date(dateInput.value);
-    const yy = String(d.getFullYear()).slice(-2);
-    const mm = String(d.getMonth() + 1).padStart(2, '0');
-    document.querySelector('#form-penjualan [name="no_invoice"]').value = 'INV' + yy + mm + String(count).padStart(3, '0');
-}
-
-function getPenjualanItemTemplate(num) {
-    return `<div class="item-row" data-row="${num}">
-        <span class="row-number">Item ${num}</span>
-        <button type="button" class="remove-btn" onclick="removeRow(this)">×</button>
-        <div class="form-grid">
-            <div class="form-group">
-                <label>Nama Barang</label>
-                <select name="nama_barang[]" required onchange="updateHargaJual(this)">
-                    <option value="">Pilih Produk</option>
-                    <optgroup label="Roasted Beans (RB)">
-                        <option value="RB Robusta Temanggung|125000">RB Robusta Temanggung - Rp 125.000</option>
-                        <option value="RB Robusta Jawa Barat|125000">RB Robusta Jawa Barat - Rp 125.000</option>
-                        <option value="RB Arabika Jawa Barat|145000">RB Arabika Jawa Barat - Rp 145.000</option>
-                        <option value="RB Arabika Jawa Barat105|150000">RB Arabika Jawa Barat105 - Rp 150.000</option>
-                        <option value="RB Arabika Brazil Cerrado|190000">RB Arabika Brazil Cerrado - Rp 190.000</option>
-                        <option value="RB Arabica Ciwidey Natural|245000">RB Arabica Ciwidey Natural - Rp 245.000</option>
-                        <option value="RB Arabika Natural Semendo|190000">RB Arabika Natural Semendo - Rp 190.000</option>
-                        <option value="RB Arabika Flores Bajawa|245000">RB Arabika Flores Bajawa - Rp 245.000</option>
-                        <option value="RB Gayo|180000">RB Gayo - Rp 180.000</option>
-                        <option value="RB Arabika Bali Kintamani Natural|198000">RB Arabika Bali Kintamani - Rp 198.000</option>
-                        <option value="RB Arabika Argopuro Natural|220000">RB Arabika Argopuro Natural - Rp 220.000</option>
-                        <option value="RB Arabika Argopuro Wine|300000">RB Arabika Argopuro Wine - Rp 300.000</option>
-                    </optgroup>
-                    <optgroup label="House Blend (HB)">
-                        <option value="RB Houseblend 70% Robusta 30% Arabika Reguler|150000">HB 70R30A Reguler - Rp 150.000</option>
-                        <option value="RB Houseblend 70% Robusta 30% Arabika NEW|150000">HB 70R30A NEW - Rp 150.000</option>
-                        <option value="RB Houseblend 70% Robusta 30% Arabika Classic|160000">HB 70R30A Classic - Rp 160.000</option>
-                        <option value="RB Houseblend 50% Robusta 50% Arabika Reguler|155000">HB 50R50A Reguler - Rp 155.000</option>
-                        <option value="RB Houseblend 50% Robusta 50% Arabika NEW|155000">HB 50R50A NEW - Rp 155.000</option>
-                        <option value="RB Houseblend 50% Robusta 50% Arabika Kembalikealam|160000">HB 50R50A Kembalikealam - Rp 160.000</option>
-                        <option value="RB Houseblend 50% Robusta 50% Arabika KembalikealamNew|160000">HB 50R50A KembalikealamNew - Rp 160.000</option>
-                        <option value="RB Houseblend 40% Robusta 60% Arabika Reguler|165000">HB 40R60A Reguler - Rp 165.000</option>
-                        <option value="RB Houseblend 40% Robusta 60% Arabika NEW|165000">HB 40R60A NEW - Rp 165.000</option>
-                        <option value="RB Houseblend 30% Robusta 70% Arabica (regular)|180000">HB 30R70A Reguler - Rp 180.000</option>
-                        <option value="RB Houseblend 30% Robusta 70% Arabica NEW|180000">HB 30R70A NEW - Rp 180.000</option>
-                        <option value="RB Houseblend 35% Arabika Ciwidey, 65% Arabika Brazil (Premium)|220000">HB 35C65B Premium - Rp 220.000</option>
-                        <option value="RB Houseblend Arabika Natural 40% Arabika Gayo 60% EDC|220000">HB 40N60G EDC - Rp 220.000</option>
-                        <option value="RB Houseblend Signature 7030|180000">HB Signature 7030 - Rp 180.000</option>
-                    </optgroup>
-                    <optgroup label="Packaged (250gr)">
-                        <option value="250 gr - RB Arabika Brazil Cerrado|60000">250g RB Brazil Cerrado - Rp 60.000</option>
-                        <option value="250 gr - RB Arabica Ciwidey Natural|75000">250g RB Ciwidey - Rp 75.000</option>
-                        <option value="250 gr - RB Arabika Flores Bajawa|75000">250g RB Flores Bajawa - Rp 75.000</option>
-                        <option value="250 gr - RB Arabika Natural Semendo|60000">250g RB Semendo - Rp 60.000</option>
-                        <option value="250 gr - RB Gayo|65000">250g RB Gayo - Rp 65.000</option>
-                        <option value="250 gr - RB Arabika Bali Kintamani Natural|130565">250g RB Bali Kintamani - Rp 130.565</option>
-                        <option value="250 gr - RB Arabika Argopuro Natural|220000">250g RB Argopuro Natural - Rp 220.000</option>
-                        <option value="250 gr - RB Houseblend 50% Robusta 50% Arabika Reguler|50000">250g HB 50R50A - Rp 50.000</option>
-                    </optgroup>
-                    <optgroup label="Packaged (500gr)">
-                        <option value="500 gr - RB Robusta Temanggung|70000">500g RB Robusta Temanggung - Rp 70.000</option>
-                        <option value="500 gr - RB Gayo|95000">500g RB Gayo - Rp 95.000</option>
-                        <option value="500 gr - RB Arabika Natural Semendo|110000">500g RB Semendo - Rp 110.000</option>
-                        <option value="500 gr - RB Arabika Brazil Cerrado|110000">500g RB Brazil Cerrado - Rp 110.000</option>
-                        <option value="500 gr - RB Houseblend 40% Robusta 60% Arabika Reguler|90000">500g HB 40R60A - Rp 90.000</option>
-                        <option value="500 gr - RB Houseblend 50% Robusta 50% Arabika Reguler|85000">500g HB 50R50A - Rp 85.000</option>
-                    </optgroup>
-                    <optgroup label="Lainnya">
-                        <option value="Gula Aren|55000">Gula Aren - Rp 55.000</option>
-                        <option value="Gula Aren Kata Rasa|55000">Gula Aren Kata Rasa - Rp 55.000</option>
-                        <option value="Sewa Mesin Kopi Faema 2 Grup + Grinder|4300000">Sewa Mesin Faema 2Grup - Rp 4.300.000</option>
-                        <option value="Sewa Mesin Simonelli Oscar 2 + Grinder|2700000">Sewa Mesin Simonelli Oscar - Rp 2.700.000</option>
-                        <option value="Sewa Mesin Pegaso Wega 2 Group + Grinder|3500000">Sewa Mesin Pegaso Wega - Rp 3.500.000</option>
-                        <option value="V60 Natural Ciwidey|25000">V60 Natural Ciwidey - Rp 25.000</option>
-                        <option value="V60 Flores Bajawa|25000">V60 Flores Bajawa - Rp 25.000</option>
-                        <option value="Macha Green Tea|25000">Macha Green Tea - Rp 25.000</option>
-                        <option value="Caramel Latte|25000">Caramel Latte - Rp 25.000</option>
-                        <option value="Syrup Caramel 750ml|100000">Syrup Caramel 750ml - Rp 100.000</option>
-                        <option value="Crimer La Gia|60000">Crimer La Gia - Rp 60.000</option>
-                        <option value="Silicone Holder Mat Tamper|60000">Silicone Holder Mat - Rp 60.000</option>
-                        <option value="Wadah Ampas Kopi Espresso Knock Box|70000">Knock Box - Rp 70.000</option>
-                        <option value="Tamper Kopi Espresso 51mm|70000">Tamper 51mm - Rp 70.000</option>
-                    </optgroup>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Jumlah (Kg/Pcs)</label>
-                <input type="number" name="jumlah[]" step="0.01" required onchange="calculatePenjualan()">
-            </div>
-            <div class="form-group">
-                <label>Harga Satuan (Rp)</label>
-                <input type="number" name="harga_satuan[]" step="1" required onchange="calculatePenjualan()">
-            </div>
-            <div class="form-group">
-                <label>Total (Rp)</label>
-                <input type="number" name="total[]" step="1" readonly class="calculated">
-            </div>
-            <div class="form-group">
-                <label>Diskon (Rp)</label>
-                <input type="number" name="diskon[]" step="1" value="0" onchange="calculatePenjualan()">
-            </div>
-            <div class="form-group">
-                <label>Kemasan</label>
-                <select name="kemasan[]">
-                    <option value="">-</option>
-                    <option value="Flat Bottom Valve 250gr">Flat Bottom 250gr</option>
-                    <option value="Flat Bottom Valve 500gr">Flat Bottom 500gr</option>
-                    <option value="Flat Bottom Valve 1000gr">Flat Bottom 1kg</option>
-                    <option value="Kemasan Kopi 5kg Besar Hitam Tanpa Valve">Kemasan 5kg Hitam</option>
-                    <option value="Kemasan Kopi 7kg Besar Hitam Tanpa Valve">Kemasan 7kg Hitam</option>
-                    <option value="Kemasan Sample">Kemasan Sample</option>
-                    <option value="Botol 250ml">Botol 250ml</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Jumlah Kemasan</label>
-                <input type="number" name="jumlah_kemasan[]" step="1">
-            </div>
-            <div class="form-group">
-                <label>Batch No Item</label>
-                <input type="text" name="batch_no_item[]" placeholder="Contoh: 1201-RB09">
-            </div>
-        </div>
-    </div>`;
-}
-
-function addPenjualanItem() {
-    const container = document.getElementById('penjualan-items-container');
-    const count = container.querySelectorAll('.item-row').length + 1;
-    container.insertAdjacentHTML('beforeend', getPenjualanItemTemplate(count));
-}
-
-function updateHargaJual(select) {
-    const row = select.closest('.item-row');
-    const val = select.value;
-    if (!val) return;
-    const parts = val.split('|');
-    const price = parseFloat(parts[1]) || 0;
-    row.querySelector('[name="harga_satuan[]"]').value = price;
-    calculatePenjualan();
-}
-
-function calculatePenjualan() {
-    const rows = document.querySelectorAll('#penjualan-items-container .item-row');
-    let subtotal = 0;
-    let totalDiskon = 0;
-
-    rows.forEach(row => {
-        const qty = parseFloat(row.querySelector('[name="jumlah[]"]').value) || 0;
-        const price = parseFloat(row.querySelector('[name="harga_satuan[]"]').value) || 0;
-        const diskon = parseFloat(row.querySelector('[name="diskon[]"]').value) || 0;
-        const total = (qty * price) - diskon;
-        row.querySelector('[name="total[]"]').value = total > 0 ? total : 0;
-        subtotal += (qty * price);
-        totalDiskon += diskon;
-    });
-
-    const ppnPct = parseFloat(document.querySelector('#form-penjualan [name="ppn_pct"]').value) || 0;
-    const pphPct = parseFloat(document.querySelector('#form-penjualan [name="pph_pct"]').value) || 0;
-
-    const ppn = subtotal * (ppnPct / 100);
-    const pph = subtotal * (pphPct / 100);
-    const total = subtotal - totalDiskon + ppn - pph;
-
-    document.querySelector('#form-penjualan [name="ppn"]').value = ppn;
-    document.querySelector('#form-penjualan [name="pph23"]').value = pph;
-
-    document.getElementById('penjualan-subtotal').textContent = 'Rp ' + subtotal.toLocaleString('id-ID');
-    document.getElementById('penjualan-diskon').textContent = 'Rp ' + totalDiskon.toLocaleString('id-ID');
-    document.getElementById('penjualan-ppn').textContent = 'Rp ' + ppn.toLocaleString('id-ID');
-    document.getElementById('penjualan-pph').textContent = 'Rp ' + pph.toLocaleString('id-ID');
-    document.getElementById('penjualan-total').textContent = 'Rp ' + total.toLocaleString('id-ID');
-}
-
-// ========================
-// ROW MANAGEMENT
-// ========================
-function removeRow(btn) {
-    const row = btn.closest('.item-row');
-    const container = row.parentElement;
-    if (container.querySelectorAll('.item-row').length <= 1) {
-        showToast('Minimal 1 baris diperlukan', 'warning');
-        return;
-    }
-    row.remove();
-    container.querySelectorAll('.item-row').forEach((r, i) => {
-        r.querySelector('.row-number').textContent = (r.closest('#raw-material-container') ? 'Bahan ' : 'Item ') + (i + 1);
-    });
-    calculateAssembly();
-    calculatePenjualan();
-}
-
-// ========================
-// SAVE ENTRY (LocalStorage - untuk non-Assembly)
-// ========================
-function saveEntry(type) {
-    const form = document.getElementById('form-' + type);
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        showToast('Mohon lengkapi semua field yang required', 'error');
-        return;
-    }
-
-    showLoading(true);
-
-    setTimeout(() => {
-        let data = {};
-        const formData = new FormData(form);
-
-        formData.forEach((value, key) => {
-            if (key.endsWith('[]')) {
-                const cleanKey = key.slice(0, -2);
-                if (!data[cleanKey]) data[cleanKey] = [];
-                data[cleanKey].push(value);
-            } else {
-                data[key] = value;
-            }
-        });
-
-        data._timestamp = new Date().toISOString();
-        data._id = type + '_' + Date.now();
-
-        const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
-        stored.push(data);
-        localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(stored));
-
-        showLoading(false);
-        showToast('Entry ' + type + ' berhasil disimpan!', 'success');
-        resetForm(type);
-        updateBadgeCounts();
-    }, 500);
-}
-
-// ========================
-// PREVIEW DATA
-// ========================
-function loadPreviewData() {
-    const types = ['assembly', 'pembelian', 'kasmasuk', 'penjualan'];
-
-    types.forEach(type => {
-        const data = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
-        document.getElementById('count-' + type).textContent = data.length + ' records';
-
-        const container = document.getElementById('preview-' + type);
-        if (data.length === 0) {
-            container.innerHTML = '<div class="empty-state"><p>Belum ada data ' + type + '</p></div>';
-            return;
-        }
-
-        let html = '<table class="data-table"><thead><tr>';
-
-        if (type === 'assembly') {
-            html += '<th>Tanggal</th><th>Batch</th><th>SKU</th><th>Produk</th><th>Qty</th><th>HPP</th><th>Material</th>';
-        } else if (type === 'pembelian') {
-            html += '<th>Tanggal</th><th>Supplier</th><th>Barang</th><th>COA</th><th>Jumlah</th><th>Total</th><th>Status</th>';
-        } else if (type === 'kasmasuk') {
-            html += '<th>Tanggal</th><th>Customer</th><th>No Invoice</th><th>Kas Masuk</th><th>Account</th>';
-        } else if (type === 'penjualan') {
-            html += '<th>Tanggal</th><th>Invoice</th><th>Customer</th><th>Status</th><th>Total</th><th>Items</th>';
-        }
-        html += '<th>Aksi</th></tr></thead><tbody>';
-
-        data.forEach((row, idx) => {
-            html += '<tr>';
-            if (type === 'assembly') {
-                html += `<td>${row.date || '-'}</td>`;
-                html += `<td>${row.batch_no || '-'}</td>`;
-                html += `<td>${row.sku || '-'}</td>`;
-                html += `<td>${row.nama_barang || '-'}</td>`;
-                html += `<td class="number">${row.jumlah_produksi || 0}</td>`;
-                html += `<td class="number">Rp ${parseFloat(row._totalHarga || 0).toLocaleString('id-ID')}</td>`;
-                html += `<td>${(row.raw_material || []).length} items</td>`;
-            } else if (type === 'pembelian') {
-                html += `<td>${row.tanggal || '-'}</td>`;
-                html += `<td>${row.nama_supplier || '-'}</td>`;
-                html += `<td>${row.nama_barang || '-'}</td>`;
-                html += `<td>${row.coa_expenses || '-'}</td>`;
-                html += `<td class="number">${row.jumlah || 0}</td>`;
-                html += `<td class="number">Rp ${parseFloat(row.total || 0).toLocaleString('id-ID')}</td>`;
-                html += `<td><span class="status-badge ${row.status_bayar === 'Belum Lunas' ? 'status-belum' : 'status-lunas'}">${row.status_bayar || '-'}</span></td>`;
-            } else if (type === 'kasmasuk') {
-                html += `<td>${row.tanggal || '-'}</td>`;
-                html += `<td>${row.lawan_transaksi || '-'}</td>`;
-                html += `<td>${row.no_dokumen || '-'}</td>`;
-                html += `<td class="number">Rp ${parseFloat(row.kas_masuk || 0).toLocaleString('id-ID')}</td>`;
-                html += `<td>${row.cash_account || '-'}</td>`;
-            } else if (type === 'penjualan') {
-                html += `<td>${row.tanggal || '-'}</td>`;
-                html += `<td>${row.no_invoice || '-'}</td>`;
-                html += `<td>${row.customer || '-'}</td>`;
-                html += `<td><span class="status-badge ${row.status === 'PIUTANG' ? 'status-piutang' : 'status-lunas'}">${row.status || '-'}</span></td>`;
-                html += `<td class="number">Rp ${parseFloat(row._totalTagihan || 0).toLocaleString('id-ID')}</td>`;
-                html += `<td>${(row.nama_barang || []).length} items</td>`;
-            }
-            html += `<td><button class="btn btn-danger btn-sm" onclick="deleteEntry('${type}', ${idx})">🗑️</button></td>`;
-            html += '</tr>';
-        });
-
-        html += '</tbody></table>';
-        container.innerHTML = html;
-    });
-}
-
-function deleteEntry(type, idx) {
-    if (!confirm('Yakin hapus entry ini?')) return;
-    const data = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
-    data.splice(idx, 1);
-    localStorage.setItem(STORAGE_KEYS[type], JSON.stringify(data));
-    loadPreviewData();
-    updateBadgeCounts();
-    showToast('Entry dihapus', 'info');
-}
-
-function clearAllData() {
-    if (!confirm('Yakin hapus SEMUA data? Ini tidak bisa dibatalkan!')) return;
-    Object.values(STORAGE_KEYS).forEach(key => localStorage.removeItem(key));
-    loadPreviewData();
-    updateBadgeCounts();
-    showToast('Semua data dihapus', 'info');
-}
-
-function updateBadgeCounts() {
-    Object.keys(STORAGE_KEYS).forEach(type => {
-        const data = JSON.parse(localStorage.getItem(STORAGE_KEYS[type]) || '[]');
-        const badge = document.getElementById('badge-' + type);
-        if (badge) {
-            badge.textContent = data.length;
-            badge.style.display = data.length > 0 ? 'block' : 'none';
-        }
-    });
-}
-
-// ========================
-// GAS SYNC
-// ========================
-async function syncToGAS() {
-    const gasUrl = getGASUrl();
-    if (!gasUrl || gasUrl.includes('YOUR_SCRIPT_ID')) {
-        showToast('Mohon isi GAS Web App URL terlebih dahulu', 'error');
-        return;
-    }
-
-    showLoading(true);
-
-    const payload = {
-        sheetId: document.getElementById('sheetId').value,
-        assembly: JSON.parse(localStorage.getItem(STORAGE_KEYS.assembly) || '[]'),
-        pembelian: JSON.parse(localStorage.getItem(STORAGE_KEYS.pembelian) || '[]'),
-        kasmasuk: JSON.parse(localStorage.getItem(STORAGE_KEYS.kasmasuk) || '[]'),
-        penjualan: JSON.parse(localStorage.getItem(STORAGE_KEYS.penjualan) || '[]')
+    // ============================================================
+    // CONFIGURATION & CACHE
+    // ============================================================
+    const CACHE_TTL = 5 * 60 * 1000;
+    const CACHE_KEY = 'qfin_cache_';
+
+    let masterData = {
+        products: [], resep: [], customers: [], suppliers: [],
+        salesmen: [], coa: [], cash: [], kemasan: []
     };
+    let assemblyDetails = [], pembelianDetails = [], penjualanDetails = [];
 
-    try {
-        const response = await fetch(gasUrl, {
-            method: 'POST',
-            body: JSON.stringify(payload),
-            headers: { 'Content-Type': 'application/json' }
-        });
-        const result = await response.json();
-        showLoading(false);
-
-        if (result.success) {
-            showToast('Sync ke Google Sheets berhasil! ' + result.message, 'success');
-        } else {
-            showToast('Sync gagal: ' + result.message, 'error');
-        }
-    } catch (e) {
-        showLoading(false);
-        showToast('Error sync: ' + e.message, 'error');
-        console.error(e);
+    function getGasUrl() {
+        return localStorage.getItem('qfin_gas_url') || document.getElementById('gasUrl').value || '';
     }
-}
+    function saveGasUrl() {
+        const url = document.getElementById('gasUrl').value;
+        if (url) { localStorage.setItem('qfin_gas_url', url); showAlert('success', 'GAS URL saved'); }
+    }
 
-// ========================
-// INIT
-// ========================
-document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date().toISOString().split('T')[0];
-    document.querySelectorAll('input[type="date"]').forEach(input => {
-        if (!input.value) input.value = today;
+    async function callGAS(action, data = {}) {
+        const url = getGasUrl();
+        if (!url) { showAlert('danger', 'GAS URL not configured'); return { success: false }; }
+        showLoading(true);
+        try {
+            const response = await fetch(url, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, ...data })
+            });
+            const result = await response.json();
+            showLoading(false); return result;
+        } catch (error) {
+            showLoading(false); showAlert('danger', 'Error: ' + error.message);
+            return { success: false, message: error.message };
+        }
+    }
+
+    function getCache(key) {
+        const cached = localStorage.getItem(CACHE_KEY + key);
+        if (!cached) return null;
+        const parsed = JSON.parse(cached);
+        if (Date.now() - parsed.timestamp > CACHE_TTL) {
+            localStorage.removeItem(CACHE_KEY + key); return null;
+        }
+        return parsed.data;
+    }
+    function setCache(key, data) {
+        localStorage.setItem(CACHE_KEY + key, JSON.stringify({ timestamp: Date.now(), data }));
+    }
+
+    async function loadMasterData() {
+        const tables = ['Master_Produk', 'Master_Resep', 'Master_Customer', 'Master_Supplier', 'Master_Salesman', 'Master_COA', 'Master_CashAccount'];
+        for (const table of tables) {
+            const cached = getCache(table);
+            if (cached) { updateMasterData(table, cached); continue; }
+            const result = await callGAS('getAll', { table });
+            if (result.success && result.data) { setCache(table, result.data); updateMasterData(table, result.data); }
+        }
+        updatePreviewStats();
+    }
+
+    function updateMasterData(table, data) {
+        switch(table) {
+            case 'Master_Produk': masterData.products = data; break;
+            case 'Master_Resep': masterData.resep = data; break;
+            case 'Master_Customer': masterData.customers = data; break;
+            case 'Master_Supplier': masterData.suppliers = data; break;
+            case 'Master_Salesman': masterData.salesmen = data; break;
+            case 'Master_COA': masterData.coa = data; break;
+            case 'Master_CashAccount': masterData.cash = data; break;
+        }
+    }
+
+    // ============================================================
+    // DROPDOWNS
+    // ============================================================
+    function searchDropdown(inputId, dataType) {
+        const input = document.getElementById(inputId);
+        const list = document.getElementById(inputId + '-list');
+        const searchTerm = input.value.toLowerCase();
+        const data = masterData[dataType] || [];
+        const filtered = data.filter(item => {
+            const label = (item.nama_produk || item.nama_customer || item.nama_supplier || item.nama_salesman || item.nama_coa || item.nama_cash || item.nama_resep || item.nama || '').toLowerCase();
+            const value = (item.id_produk || item.id_customer || item.id_supplier || item.id_salesman || item.id_coa || item.id_cash || item.id_resep || item.id || '').toLowerCase();
+            return label.includes(searchTerm) || value.includes(searchTerm);
+        }).slice(0, 20);
+        list.innerHTML = filtered.map(item => {
+            const value = item.id_produk || item.id_customer || item.id_supplier || item.id_salesman || item.id_coa || item.id_cash || item.id_resep || item.id;
+            const label = item.nama_produk || item.nama_customer || item.nama_supplier || item.nama_salesman || item.nama_coa || item.nama_cash || item.nama_resep || item.nama;
+            return `<div class="dropdown-item" onclick="selectDropdown('${inputId}', '${value}', '${label.replace(/'/g, "\'")}')">${label} (${value})</div>`;
+        }).join('');
+        list.classList.add('show');
+    }
+    function showDropdown(inputId) { searchDropdown(inputId, getDataTypeForInput(inputId)); }
+    function getDataTypeForInput(inputId) {
+        if (inputId.includes('Sku') || inputId.includes('Produk') || inputId.includes('Barang')) return 'products';
+        if (inputId.includes('Customer') || inputId.includes('Lawan')) return 'customers';
+        if (inputId.includes('Supplier')) return 'suppliers';
+        if (inputId.includes('Sales') || inputId.includes('Salesman')) return 'salesmen';
+        if (inputId.includes('COA')) return 'coa';
+        if (inputId.includes('Cash')) return 'cash';
+        return 'products';
+    }
+    function selectDropdown(inputId, value, label) {
+        const input = document.getElementById(inputId);
+        input.value = label; input.dataset.value = value;
+        document.getElementById(inputId + '-list').classList.remove('show');
+        if (inputId === 'asmSku') { document.getElementById('asmNamaBarang').value = label.split(' (')[0]; loadRecipeForProduct(value); }
+        if (inputId === 'opProduk') fetchStockQty();
+    }
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.searchable-dropdown')) document.querySelectorAll('.dropdown-list').forEach(l => l.classList.remove('show'));
     });
 
-    updateBadgeCounts();
+    // ============================================================
+    // TABS & UI
+    // ============================================================
+    function switchTab(tabName, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-' + tabName).classList.add('active');
+        if (btn) btn.classList.add('active');
+        setDefaultDates();
+    }
+    function setDefaultDates() {
+        const today = new Date().toISOString().split('T')[0];
+        document.querySelectorAll('input[type="date"]').forEach(d => { if (!d.value) d.value = today; });
+    }
+    function showLoading(show) { document.getElementById('loadingOverlay').classList.toggle('show', show); }
+    function showAlert(type, message, elementId) {
+        const el = elementId ? document.getElementById(elementId) : document.getElementById('assemblyAlert');
+        if (el) { el.className = 'alert alert-' + type; el.textContent = message; el.style.display = 'flex'; setTimeout(() => el.style.display = 'none', 5000); }
+    }
+    function formatNumber(num) {
+        if (num === undefined || num === null) return '0';
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
 
-    const savedUrl = localStorage.getItem('gas_url');
-    const savedSheetId = localStorage.getItem('gas_sheet_id');
-    if (savedUrl) document.getElementById('gasUrl').value = savedUrl;
-    if (savedSheetId) document.getElementById('sheetId').value = savedSheetId;
+    // ============================================================
+    // ASSEMBLY
+    // ============================================================
+    function addAssemblyDetail() {
+        const id = assemblyDetails.length;
+        const div = document.createElement('div'); div.className = 'detail-row'; div.id = `asm-detail-${id}`;
+        div.innerHTML = `
+            <div class="detail-row-header"><span><strong>Bahan #${id + 1}</strong></span><button class="btn-remove" onclick="removeAssemblyDetail(${id})">Hapus</button></div>
+            <div class="form-grid">
+                <div class="form-group"><label>Raw Material</label><div class="searchable-dropdown"><input type="text" id="asm-raw-${id}" placeholder="Cari raw material..." oninput="searchDropdown('asm-raw-${id}', 'products')" onfocus="showDropdown('asm-raw-${id}')"><div class="dropdown-list" id="asm-raw-${id}-list"></div></div></div>
+                <div class="form-group"><label>Jumlah (kg)</label><input type="number" id="asm-raw-qty-${id}" step="0.01" placeholder="0.00" onchange="calculateAssemblyHPP()"></div>
+                <div class="form-group"><label>Harga per kg</label><input type="number" id="asm-raw-price-${id}" step="1000" placeholder="0" onchange="calculateAssemblyHPP()"></div>
+            </div>`;
+        document.getElementById('assemblyDetails').appendChild(div);
+        assemblyDetails.push(id);
+    }
+    function removeAssemblyDetail(id) {
+        const el = document.getElementById(`asm-detail-${id}`); if (el) el.remove();
+        assemblyDetails = assemblyDetails.filter(i => i !== id); calculateAssemblyHPP();
+    }
+    async function loadRecipeForProduct(sku) {
+        const result = await callGAS('getResep', { id_produk: sku });
+        if (result.success && result.data && result.data.length > 0) {
+            document.getElementById('assemblyDetails').innerHTML = ''; assemblyDetails = [];
+            result.data.forEach((r, idx) => {
+                addAssemblyDetail();
+                const rawInput = document.getElementById(`asm-raw-${idx}`);
+                if (rawInput) { rawInput.value = r.bahan; rawInput.dataset.value = r.bahan; }
+                const qtyInput = document.getElementById(`asm-raw-qty-${idx}`);
+                if (qtyInput) { const komposisi = parseFloat(r.komposisi) || 0; const qtyProduksi = parseFloat(document.getElementById('asmQty').value) || 0; qtyInput.value = (komposisi * qtyProduksi).toFixed(2); }
+            });
+            calculateAssemblyHPP();
+        }
+    }
+    function calculateAssemblyHPP() {
+        let totalMaterial = 0;
+        const qtyProduksi = parseFloat(document.getElementById('asmQty').value) || 0;
+        assemblyDetails.forEach(id => {
+            const qty = parseFloat(document.getElementById(`asm-raw-qty-${id}`)?.value) || 0;
+            const price = parseFloat(document.getElementById(`asm-raw-price-${id}`)?.value) || 0;
+            totalMaterial += qty * price;
+        });
+        const hpp = qtyProduksi > 0 ? totalMaterial / qtyProduksi : 0;
+        document.getElementById('assemblyHPP').style.display = 'block';
+        document.getElementById('hppValue').textContent = 'Rp ' + formatNumber(hpp.toFixed(0));
+    }
+    async function submitAssembly() {
+        const details = assemblyDetails.map(id => ({
+            raw_material: document.getElementById(`asm-raw-${id}`)?.value || '',
+            raw_material_id: document.getElementById(`asm-raw-${id}`)?.dataset.value || '',
+            jumlah_raw_material: parseFloat(document.getElementById(`asm-raw-qty-${id}`)?.value) || 0,
+            harga_raw_material: parseFloat(document.getElementById(`asm-raw-price-${id}`)?.value) || 0
+        })).filter(d => d.raw_material);
+        const qtyProduksi = parseFloat(document.getElementById('asmQty').value) || 0;
+        const totalMaterial = details.reduce((sum, d) => sum + (d.jumlah_raw_material * d.harga_raw_material), 0);
+        const hpp = qtyProduksi > 0 ? totalMaterial / qtyProduksi : 0;
+        const data = {
+            tanggal: document.getElementById('asmDate').value, batch_no: document.getElementById('asmBatch').value,
+            sku: document.getElementById('asmSku').dataset.value || document.getElementById('asmSku').value,
+            nama_barang: document.getElementById('asmNamaBarang').value, jumlah_produksi: qtyProduksi,
+            penyusutan: parseFloat(document.getElementById('asmWaste').value) || 0,
+            total_harga_material: totalMaterial, hpp: hpp, details: details
+        };
+        const result = await callGAS('submitAssembly', data);
+        if (result.success) { showAlert('success', 'Assembly berhasil! ID: ' + result.id_assembly, 'assemblyAlert'); clearAssemblyForm(); }
+        else showAlert('danger', 'Gagal: ' + result.message, 'assemblyAlert');
+    }
+    function clearAssemblyForm() {
+        document.getElementById('asmBatch').value = ''; document.getElementById('asmSku').value = '';
+        document.getElementById('asmSku').dataset.value = ''; document.getElementById('asmNamaBarang').value = '';
+        document.getElementById('asmQty').value = ''; document.getElementById('asmWaste').value = '0';
+        document.getElementById('assemblyDetails').innerHTML = ''; assemblyDetails = [];
+        document.getElementById('assemblyHPP').style.display = 'none';
+    }
 
-    document.getElementById('gasUrl').addEventListener('change', e => localStorage.setItem('gas_url', e.target.value));
-    document.getElementById('sheetId').addEventListener('change', e => localStorage.setItem('gas_sheet_id', e.target.value));
-});
+    // ============================================================
+    // PEMBELIAN
+    // ============================================================
+    function addPembelianDetail() {
+        const id = pembelianDetails.length;
+        const div = document.createElement('div'); div.className = 'detail-row'; div.id = `pem-detail-${id}`;
+        div.innerHTML = `
+            <div class="detail-row-header"><span><strong>Barang #${id + 1}</strong></span><button class="btn-remove" onclick="removePembelianDetail(${id})">Hapus</button></div>
+            <div class="form-grid">
+                <div class="form-group"><label>Nama Barang</label><div class="searchable-dropdown"><input type="text" id="pem-barang-${id}" placeholder="Cari barang..." oninput="searchDropdown('pem-barang-${id}', 'products')" onfocus="showDropdown('pem-barang-${id}')"><div class="dropdown-list" id="pem-barang-${id}-list"></div></div></div>
+                <div class="form-group"><label>Jumlah</label><input type="number" id="pem-qty-${id}" step="0.01" placeholder="0"></div>
+                <div class="form-group"><label>Harga Satuan</label><input type="number" id="pem-price-${id}" step="1000" placeholder="0"></div>
+                <div class="form-group"><label>Kode LOT</label><input type="text" id="pem-lot-${id}" placeholder="Kode LOT"></div>
+            </div>`;
+        document.getElementById('pembelianDetails').appendChild(div);
+        pembelianDetails.push(id);
+    }
+    function removePembelianDetail(id) { const el = document.getElementById(`pem-detail-${id}`); if (el) el.remove(); pembelianDetails = pembelianDetails.filter(i => i !== id); }
+    async function submitPembelian() {
+        const details = pembelianDetails.map(id => ({
+            nama_barang: document.getElementById(`pem-barang-${id}`)?.value || '',
+            id_produk: document.getElementById(`pem-barang-${id}`)?.dataset.value || '',
+            jumlah: parseFloat(document.getElementById(`pem-qty-${id}`)?.value) || 0,
+            harga_satuan: parseFloat(document.getElementById(`pem-price-${id}`)?.value) || 0,
+            total: (parseFloat(document.getElementById(`pem-qty-${id}`)?.value) || 0) * (parseFloat(document.getElementById(`pem-price-${id}`)?.value) || 0),
+            kode_lot: document.getElementById(`pem-lot-${id}`)?.value || ''
+        })).filter(d => d.nama_barang);
+        const total = details.reduce((sum, d) => sum + d.total, 0);
+        const data = {
+            tanggal: document.getElementById('pemDate').value, cost_center: document.getElementById('pemCostCenter').value,
+            salesman: document.getElementById('pemSalesman').value, no_dokumen: document.getElementById('pemNoDokumen').value,
+            kode_transaksi: document.getElementById('pemKodeTransaksi').value, coa: document.getElementById('pemCOA').value,
+            nama_supplier: document.getElementById('pemSupplier').value, notes: '', total: total,
+            status_bayar: document.getElementById('pemStatusBayar').value, details: details
+        };
+        const result = await callGAS('submitPembelian', data);
+        if (result.success) { showAlert('success', 'Pembelian berhasil! ID: ' + result.id_pembelian, 'pembelianAlert'); clearPembelianForm(); }
+        else showAlert('danger', 'Gagal: ' + result.message, 'pembelianAlert');
+    }
+    function clearPembelianForm() {
+        document.getElementById('pemNoDokumen').value = ''; document.getElementById('pemSupplier').value = '';
+        document.getElementById('pemCOA').value = ''; document.getElementById('pembelianDetails').innerHTML = '';
+        pembelianDetails = [];
+    }
+
+    // ============================================================
+    // PENJUALAN
+    // ============================================================
+    function addPenjualanDetail() {
+        const id = penjualanDetails.length;
+        const div = document.createElement('div'); div.className = 'detail-row'; div.id = `pen-detail-${id}`;
+        div.innerHTML = `
+            <div class="detail-row-header"><span><strong>Barang #${id + 1}</strong></span><button class="btn-remove" onclick="removePenjualanDetail(${id})">Hapus</button></div>
+            <div class="form-grid">
+                <div class="form-group"><label>Nama Barang</label><div class="searchable-dropdown"><input type="text" id="pen-barang-${id}" placeholder="Cari barang..." oninput="searchDropdown('pen-barang-${id}', 'products')" onfocus="showDropdown('pen-barang-${id}')" onchange="calculatePenjualanHPP(${id})"><div class="dropdown-list" id="pen-barang-${id}-list"></div></div></div>
+                <div class="form-group"><label>Jumlah</label><input type="number" id="pen-qty-${id}" step="0.01" placeholder="0" onchange="calculatePenjualanItemTotal(${id})"></div>
+                <div class="form-group"><label>Harga Satuan</label><input type="number" id="pen-price-${id}" step="1000" placeholder="0" onchange="calculatePenjualanItemTotal(${id})"></div>
+                <div class="form-group"><label>Total</label><input type="number" id="pen-total-${id}" readonly placeholder="0"></div>
+                <div class="form-group"><label>Diskon</label><input type="number" id="pen-diskon-${id}" step="1000" value="0" onchange="calculatePenjualanItemTotal(${id})"></div>
+                <div class="form-group"><label>HPP (Auto)</label><input type="number" id="pen-hpp-${id}" readonly placeholder="0"></div>
+                <div class="form-group"><label>Kemasan</label><input type="text" id="pen-kemasan-${id}" placeholder="Kemasan"></div>
+                <div class="form-group"><label>Batch No</label><input type="text" id="pen-batch-${id}" placeholder="Batch No"></div>
+            </div>`;
+        document.getElementById('penjualanDetails').appendChild(div);
+        penjualanDetails.push(id);
+    }
+    function removePenjualanDetail(id) { const el = document.getElementById(`pen-detail-${id}`); if (el) el.remove(); penjualanDetails = penjualanDetails.filter(i => i !== id); calculatePenjualanSummary(); }
+    async function calculatePenjualanHPP(id) {
+        const barangInput = document.getElementById(`pen-barang-${id}`);
+        const sku = barangInput?.dataset.value || barangInput?.value; if (!sku) return;
+        const result = await callGAS('getHPP', { id_produk: sku });
+        if (result.success && result.data) { const hpp = result.data.hpp_per_unit || 0; const hppInput = document.getElementById(`pen-hpp-${id}`); if (hppInput) hppInput.value = hpp; }
+    }
+    function calculatePenjualanItemTotal(id) {
+        const qty = parseFloat(document.getElementById(`pen-qty-${id}`)?.value) || 0;
+        const price = parseFloat(document.getElementById(`pen-price-${id}`)?.value) || 0;
+        const diskon = parseFloat(document.getElementById(`pen-diskon-${id}`)?.value) || 0;
+        const total = (qty * price) - diskon;
+        const totalInput = document.getElementById(`pen-total-${id}`); if (totalInput) totalInput.value = total;
+        calculatePenjualanSummary();
+    }
+    function calculatePenjualanSummary() {
+        let totalTagihan = 0, totalHPP = 0;
+        penjualanDetails.forEach(id => {
+            const total = parseFloat(document.getElementById(`pen-total-${id}`)?.value) || 0;
+            const qty = parseFloat(document.getElementById(`pen-qty-${id}`)?.value) || 0;
+            const hpp = parseFloat(document.getElementById(`pen-hpp-${id}`)?.value) || 0;
+            totalTagihan += total; totalHPP += qty * hpp;
+        });
+        document.getElementById('penjualanSummary').style.display = 'block';
+        document.getElementById('penTotalTagihan').textContent = 'Rp ' + formatNumber(totalTagihan);
+        document.getElementById('penTotalHPP').textContent = 'Rp ' + formatNumber(totalHPP);
+        document.getElementById('penMargin').textContent = 'Rp ' + formatNumber(totalTagihan - totalHPP);
+    }
+    async function submitPenjualan() {
+        const details = penjualanDetails.map(id => ({
+            nama_barang: document.getElementById(`pen-barang-${id}`)?.value || '',
+            id_produk: document.getElementById(`pen-barang-${id}`)?.dataset.value || '',
+            jumlah: parseFloat(document.getElementById(`pen-qty-${id}`)?.value) || 0,
+            harga_satuan: parseFloat(document.getElementById(`pen-price-${id}`)?.value) || 0,
+            total: parseFloat(document.getElementById(`pen-total-${id}`)?.value) || 0,
+            diskon: parseFloat(document.getElementById(`pen-diskon-${id}`)?.value) || 0,
+            total_diskon: parseFloat(document.getElementById(`pen-total-${id}`)?.value) || 0,
+            kemasan: document.getElementById(`pen-kemasan-${id}`)?.value || '',
+            batch_no: document.getElementById(`pen-batch-${id}`)?.value || ''
+        })).filter(d => d.nama_barang);
+        const totalTagihan = details.reduce((sum, d) => sum + d.total, 0);
+        const data = {
+            tanggal: document.getElementById('penDate').value, jatuh_tempo: '',
+            cost_center: 'Q.Co', salesman: document.getElementById('penSalesman').value,
+            no_invoice: document.getElementById('penInvoice').value, kode_transaksi: 'Penjualan',
+            customer: document.getElementById('penCustomer').value, total_tagihan: totalTagihan,
+            type_pembayaran: document.getElementById('penTypeBayar').value,
+            status: document.getElementById('penStatus').value, total_bayar: 0, tanggal_pembayaran: '',
+            status_bayar: document.getElementById('penStatus').value === 'LUNAS' ? 'LUNAS' : 'Hutang',
+            details: details
+        };
+        const result = await callGAS('submitPenjualan', data);
+        if (result.success) { showAlert('success', 'Penjualan berhasil! ID: ' + result.id_penjualan, 'penjualanAlert'); clearPenjualanForm(); }
+        else showAlert('danger', 'Gagal: ' + result.message, 'penjualanAlert');
+    }
+    function clearPenjualanForm() {
+        document.getElementById('penInvoice').value = ''; document.getElementById('penCustomer').value = '';
+        document.getElementById('penSalesman').value = ''; document.getElementById('penjualanDetails').innerHTML = '';
+        penjualanDetails = []; document.getElementById('penjualanSummary').style.display = 'none';
+    }
+
+    // ============================================================
+    // KAS MASUK
+    // ============================================================
+    async function submitKasMasuk() {
+        const data = {
+            tanggal: document.getElementById('kmDate').value, sales: document.getElementById('kmSales').value,
+            no_dokumen: document.getElementById('kmNoDokumen').value, cash_account: document.getElementById('kmCash').value,
+            kode_transaksi: document.getElementById('kmKodeTransaksi').value, lawan_transaksi: document.getElementById('kmLawan').value,
+            kas_masuk: parseFloat(document.getElementById('kmJumlah').value) || 0, keterangan: document.getElementById('kmKeterangan').value
+        };
+        const result = await callGAS('submitKasMasuk', data);
+        if (result.success) { showAlert('success', 'Kas Masuk berhasil! ID: ' + result.id_kas, 'kasMasukAlert'); clearKasMasukForm(); }
+        else showAlert('danger', 'Gagal: ' + result.message, 'kasMasukAlert');
+    }
+    function clearKasMasukForm() {
+        document.getElementById('kmNoDokumen').value = ''; document.getElementById('kmJumlah').value = '';
+        document.getElementById('kmLawan').value = ''; document.getElementById('kmKeterangan').value = '';
+    }
+
+    // ============================================================
+    // KAS KELUAR
+    // ============================================================
+    async function submitKasKeluar() {
+        const data = {
+            tanggal: document.getElementById('kkDate').value, sales: document.getElementById('kkSales').value,
+            no_dokumen: document.getElementById('kkNoDokumen').value, cash_account: document.getElementById('kkCash').value,
+            kode_transaksi: document.getElementById('kkKodeTransaksi').value, lawan_transaksi: document.getElementById('kkLawan').value,
+            kas_keluar: parseFloat(document.getElementById('kkJumlah').value) || 0, keterangan: document.getElementById('kkKeterangan').value
+        };
+        const result = await callGAS('submitKasKeluar', data);
+        if (result.success) { showAlert('success', 'Kas Keluar berhasil! ID: ' + result.id_kas, 'kasKeluarAlert'); clearKasKeluarForm(); }
+        else showAlert('danger', 'Gagal: ' + result.message, 'kasKeluarAlert');
+    }
+    function clearKasKeluarForm() {
+        document.getElementById('kkNoDokumen').value = ''; document.getElementById('kkJumlah').value = '';
+        document.getElementById('kkLawan').value = ''; document.getElementById('kkKeterangan').value = '';
+    }
+
+    // ============================================================
+    // BIAYA
+    // ============================================================
+    function calculateBiayaTotal() {
+        const qty = parseFloat(document.getElementById('biaQty').value) || 1;
+        const harga = parseFloat(document.getElementById('biaHarga').value) || 0;
+        document.getElementById('biaTotal').value = qty * harga;
+    }
+    async function submitBiaya() {
+        const qty = parseFloat(document.getElementById('biaQty').value) || 1;
+        const harga = parseFloat(document.getElementById('biaHarga').value) || 0;
+        const data = {
+            tanggal: document.getElementById('biaDate').value, cost_center: document.getElementById('biaCostCenter').value,
+            no_dokumen: document.getElementById('biaNoDokumen').value, coa: document.getElementById('biaCOA').value,
+            nama_supplier: document.getElementById('biaSupplier').value, nama_barang: document.getElementById('biaNamaBarang').value,
+            jumlah: qty, harga_satuan: harga, total: qty * harga, status_bayar: document.getElementById('biaStatus').value
+        };
+        const result = await callGAS('submitBiaya', data);
+        if (result.success) { showAlert('success', 'Biaya berhasil! ID: ' + result.id_biaya, 'biayaAlert'); clearBiayaForm(); }
+        else showAlert('danger', 'Gagal: ' + result.message, 'biayaAlert');
+    }
+    function clearBiayaForm() {
+        document.getElementById('biaNoDokumen').value = ''; document.getElementById('biaNamaBarang').value = '';
+        document.getElementById('biaHarga').value = ''; document.getElementById('biaTotal').value = '';
+    }
+
+    // ============================================================
+    // STOCK OPNAME
+    // ============================================================
+    async function fetchStockQty() {
+        const produkInput = document.getElementById('opProduk');
+        const sku = produkInput?.dataset.value || produkInput?.value; if (!sku) return;
+        const result = await callGAS('getStock', { id_produk: sku });
+        if (result.success && result.data) { document.getElementById('opQtySistem').value = result.data.saldo || 0; calculateSelisih(); }
+    }
+    function calculateSelisih() {
+        const sistem = parseFloat(document.getElementById('opQtySistem').value) || 0;
+        const fisik = parseFloat(document.getElementById('opQtyFisik').value) || 0;
+        document.getElementById('opSelisih').value = fisik - sistem;
+    }
+    async function submitOpname() {
+        const data = {
+            tanggal: document.getElementById('opDate').value,
+            id_produk: document.getElementById('opProduk').dataset.value || document.getElementById('opProduk').value,
+            nama_produk: document.getElementById('opProduk').value,
+            qty_fisik: parseFloat(document.getElementById('opQtyFisik').value) || 0,
+            keterangan: document.getElementById('opKeterangan').value
+        };
+        const result = await callGAS('submitOpname', data);
+        if (result.success) { showAlert('success', 'Opname berhasil! Selisih: ' + result.selisih, 'opnameAlert'); clearOpnameForm(); }
+        else showAlert('danger', 'Gagal: ' + result.message, 'opnameAlert');
+    }
+    function clearOpnameForm() {
+        document.getElementById('opProduk').value = ''; document.getElementById('opProduk').dataset.value = '';
+        document.getElementById('opQtySistem').value = ''; document.getElementById('opQtyFisik').value = '';
+        document.getElementById('opSelisih').value = ''; document.getElementById('opKeterangan').value = '';
+    }
+
+    // ============================================================
+    // STOCK MOVEMENT
+    // ============================================================
+    async function submitMovement() {
+        const data = {
+            tanggal: document.getElementById('movDate').value,
+            id_produk: document.getElementById('movProduk').dataset.value || document.getElementById('movProduk').value,
+            nama_produk: document.getElementById('movProduk').value,
+            tipe: document.getElementById('movTipe').value,
+            qty_in: parseFloat(document.getElementById('movQtyIn').value) || 0,
+            qty_out: parseFloat(document.getElementById('movQtyOut').value) || 0,
+            referensi: document.getElementById('movRef').value,
+            keterangan: document.getElementById('movKeterangan').value
+        };
+        const result = await callGAS('submitMovement', data);
+        if (result.success) { showAlert('success', 'Movement berhasil! Saldo: ' + result.saldo, 'movementAlert'); clearMovementForm(); }
+        else showAlert('danger', 'Gagal: ' + result.message, 'movementAlert');
+    }
+    function clearMovementForm() {
+        document.getElementById('movProduk').value = ''; document.getElementById('movProduk').dataset.value = '';
+        document.getElementById('movQtyIn').value = '0'; document.getElementById('movQtyOut').value = '0';
+        document.getElementById('movRef').value = ''; document.getElementById('movKeterangan').value = '';
+    }
+
+    // ============================================================
+    // PREVIEW & SYNC
+    // ============================================================
+    async function updatePreviewStats() {
+        const produk = await callGAS('getAll', { table: 'Master_Produk' });
+        const penjualan = await callGAS('getAll', { table: 'Penjualan' });
+        const pembelian = await callGAS('getAll', { table: 'Pembelian' });
+        const kasMasuk = await callGAS('getAll', { table: 'Kas_Masuk' });
+        const kasKeluar = await callGAS('getAll', { table: 'Kas_Keluar' });
+
+        document.getElementById('statTotalProduk').textContent = (produk.success ? produk.data.length : 0);
+        document.getElementById('statTotalPenjualan').textContent = 'Rp ' + formatNumber((penjualan.success ? penjualan.data.reduce((s, r) => s + (parseFloat(r.total_tagihan) || 0), 0) : 0).toFixed(0));
+        document.getElementById('statTotalPembelian').textContent = 'Rp ' + formatNumber((pembelian.success ? pembelian.data.reduce((s, r) => s + (parseFloat(r.total) || 0), 0) : 0).toFixed(0));
+        document.getElementById('statKasMasuk').textContent = 'Rp ' + formatNumber((kasMasuk.success ? kasMasuk.data.reduce((s, r) => s + (parseFloat(r.kas_masuk) || 0), 0) : 0).toFixed(0));
+        document.getElementById('statKasKeluar').textContent = 'Rp ' + formatNumber((kasKeluar.success ? kasKeluar.data.reduce((s, r) => s + (parseFloat(r.kas_keluar) || 0), 0) : 0).toFixed(0));
+
+        // Master table
+        const tables = [
+            { name: 'Master_Produk', label: 'Master Produk' },
+            { name: 'Master_Resep', label: 'Master Resep' },
+            { name: 'Master_Customer', label: 'Master Customer' },
+            { name: 'Master_Supplier', label: 'Master Supplier' },
+            { name: 'Master_Salesman', label: 'Master Salesman' },
+            { name: 'Master_COA', label: 'Master COA' },
+            { name: 'Master_CashAccount', label: 'Master Cash Account' },
+            { name: 'Assembly_Entry', label: 'Assembly Entry' },
+            { name: 'Pembelian', label: 'Pembelian' },
+            { name: 'Penjualan', label: 'Penjualan' },
+            { name: 'Kas_Masuk', label: 'Kas Masuk' },
+            { name: 'Kas_Keluar', label: 'Kas Keluar' }
+        ];
+
+        let tbody = '';
+        for (const t of tables) {
+            const result = getCache(t.name);
+            const count = result ? result.length : 0;
+            const lastSync = localStorage.getItem(CACHE_KEY + t.name + '_time') || 'Never';
+            tbody += `<tr><td>${t.label}</td><td>${count}</td><td>${lastSync}</td><td><button class="btn btn-sm btn-primary" onclick="refreshTable('${t.name}')">Refresh</button></td></tr>`;
+        }
+        document.getElementById('masterTableBody').innerHTML = tbody;
+    }
+
+    async function refreshTable(table) {
+        const result = await callGAS('getAll', { table });
+        if (result.success) { setCache(table, result.data); localStorage.setItem(CACHE_KEY + table + '_time', new Date().toLocaleString()); updateMasterData(table, result.data); updatePreviewStats(); }
+    }
+
+    async function loadAllData() {
+        await loadMasterData();
+        showAlert('success', 'All data refreshed', 'assemblyAlert');
+    }
+
+    async function syncAll() {
+        // Sync localStorage backup to GAS
+        const backup = JSON.parse(localStorage.getItem('qfin_backup') || '[]');
+        if (backup.length > 0) {
+            const result = await callGAS('syncAll', { records: backup });
+            if (result.success) { localStorage.removeItem('qfin_backup'); showAlert('success', 'Sync completed: ' + result.count + ' records'); }
+        } else { showAlert('info', 'No local data to sync'); }
+    }
+
+    // Backup function - called before every submit
+    function backupEntry(table, data) {
+        const backup = JSON.parse(localStorage.getItem('qfin_backup') || '[]');
+        backup.push({ table, data, timestamp: new Date().toISOString() });
+        localStorage.setItem('qfin_backup', JSON.stringify(backup));
+    }
+
+    // ============================================================
+    // INIT
+    // ============================================================
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load saved GAS URL
+        const savedUrl = localStorage.getItem('qfin_gas_url');
+        if (savedUrl) document.getElementById('gasUrl').value = savedUrl;
+
+        // Set default dates
+        setDefaultDates();
+
+        // Load master data
+        loadMasterData();
+    });
     </script>
 </body>
 </html>
