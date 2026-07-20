@@ -232,7 +232,7 @@
                             </div>
                         </div>
                         <div class="form-group"><label>Nama Barang</label><input type="text" id="asmNamaBarang" readonly placeholder="Auto-fill dari SKU"></div>
-                        <div class="form-group"><label>Jumlah Produksi</label><input type="number" id="asmQty" step="0.01" placeholder="0.00" onchange="calculateAssemblyHPP()"></div>
+                        <div class="form-group"><label>Jumlah Produksi</label><input type="number" id="asmQty" step="0.01" placeholder="0.00" onchange="onAssemblyQtyChange()"></div>
                         <div class="form-group"><label>Penyusutan (%)</label><input type="number" id="asmWaste" step="0.01" placeholder="0.00" value="0" onchange="calculateAssemblyHPP()"></div>
                     </div>
                     <div class="hpp-display" id="assemblyHPP" style="display:none;">
@@ -562,6 +562,10 @@
         salesmen: [], coa: [], cash: [], kemasan: []
     };
     let assemblyDetails = [], pembelianDetails = [], penjualanDetails = [];
+    // Maps detailId -> komposisi for rows that came from Master_Resep, so their
+    // quantity (kg) can be recalculated automatically whenever Jumlah Produksi
+    // changes. Rows added manually via "+ Tambah Bahan" are not in this map.
+    let assemblyRecipeMap = {};
 
     function getGasUrl() {
         return localStorage.getItem('qfin_gas_url') || document.getElementById('gasUrl').value || '';
@@ -739,36 +743,61 @@
     // ============================================================
     // ASSEMBLY
     // ============================================================
-    function addAssemblyDetail() {
+    function addAssemblyDetail(fromRecipe = false) {
         const id = assemblyDetails.length;
         const div = document.createElement('div'); div.className = 'detail-row'; div.id = `asm-detail-${id}`;
+        const tag = fromRecipe ? ' <span style="font-weight:400;color:var(--gray);font-size:11px;">(otomatis dari Master_Resep)</span>' : '';
+        const qtyReadonly = fromRecipe ? 'readonly style="background:#f4f4f4;"' : '';
         div.innerHTML = `
-            <div class="detail-row-header"><span><strong>Bahan #${id + 1}</strong></span><button class="btn-remove" onclick="removeAssemblyDetail(${id})">Hapus</button></div>
+            <div class="detail-row-header"><span><strong>Bahan #${id + 1}</strong>${tag}</span><button class="btn-remove" onclick="removeAssemblyDetail(${id})">Hapus</button></div>
             <div class="form-grid">
                 <div class="form-group"><label>Raw Material</label><div class="searchable-dropdown"><input type="text" id="asm-raw-${id}" placeholder="Cari raw material..." oninput="searchDropdown('asm-raw-${id}', 'products')" onfocus="showDropdown('asm-raw-${id}')"><div class="dropdown-list" id="asm-raw-${id}-list"></div></div></div>
-                <div class="form-group"><label>Jumlah (kg)</label><input type="number" id="asm-raw-qty-${id}" step="0.01" placeholder="0.00" onchange="calculateAssemblyHPP()"></div>
+                <div class="form-group"><label>Jumlah (kg)</label><input type="number" id="asm-raw-qty-${id}" step="0.01" placeholder="0.00" onchange="calculateAssemblyHPP()" ${qtyReadonly}></div>
                 <div class="form-group"><label>Harga per kg</label><input type="number" id="asm-raw-price-${id}" step="1000" placeholder="0" onchange="calculateAssemblyHPP()"></div>
             </div>`;
         document.getElementById('assemblyDetails').appendChild(div);
         assemblyDetails.push(id);
+        return id;
     }
     function removeAssemblyDetail(id) {
         const el = document.getElementById(`asm-detail-${id}`); if (el) el.remove();
-        assemblyDetails = assemblyDetails.filter(i => i !== id); calculateAssemblyHPP();
+        assemblyDetails = assemblyDetails.filter(i => i !== id);
+        delete assemblyRecipeMap[id];
+        calculateAssemblyHPP();
     }
     async function loadRecipeForProduct(sku) {
         const result = await callGAS('getResep', { id_produk: sku });
+        document.getElementById('assemblyDetails').innerHTML = ''; assemblyDetails = []; assemblyRecipeMap = {};
         if (result.success && result.data && result.data.length > 0) {
-            document.getElementById('assemblyDetails').innerHTML = ''; assemblyDetails = [];
-            result.data.forEach((r, idx) => {
-                addAssemblyDetail();
-                const rawInput = document.getElementById(`asm-raw-${idx}`);
-                if (rawInput) { rawInput.value = r.bahan; rawInput.dataset.value = r.bahan; }
-                const qtyInput = document.getElementById(`asm-raw-qty-${idx}`);
-                if (qtyInput) { const komposisi = parseFloat(r.komposisi) || 0; const qtyProduksi = parseFloat(document.getElementById('asmQty').value) || 0; qtyInput.value = (komposisi * qtyProduksi).toFixed(2); }
+            result.data.forEach((r) => {
+                const id = addAssemblyDetail(true);
+                const rawInput = document.getElementById(`asm-raw-${id}`);
+                if (rawInput) { rawInput.value = r.bahan; rawInput.dataset.value = r.bahan_id || r.bahan; }
+                const priceInput = document.getElementById(`asm-raw-price-${id}`);
+                if (priceInput && r.harga_bahan) { priceInput.value = r.harga_bahan; }
+                assemblyRecipeMap[id] = parseFloat(r.komposisi) || 0;
             });
-            calculateAssemblyHPP();
+            applyRecipeQuantities();
+            showAlert('info', `${result.data.length} bahan baku dimuat otomatis dari Master_Resep. Qty akan menyesuaikan Jumlah Produksi.`, 'assemblyAlert');
+        } else {
+            showAlert('warning', 'Tidak ada resep di Master_Resep untuk produk ini. Tambahkan bahan secara manual dengan "+ Tambah Bahan".', 'assemblyAlert');
         }
+        calculateAssemblyHPP();
+    }
+    // Recomputes qty (kg) for every recipe-driven row (komposisi x Jumlah
+    // Produksi) without re-fetching from the backend. Rows added manually
+    // via "+ Tambah Bahan" are untouched since they're not in assemblyRecipeMap.
+    function applyRecipeQuantities() {
+        const qtyProduksi = parseFloat(document.getElementById('asmQty').value) || 0;
+        Object.keys(assemblyRecipeMap).forEach(id => {
+            const komposisi = assemblyRecipeMap[id];
+            const qtyInput = document.getElementById(`asm-raw-qty-${id}`);
+            if (qtyInput) qtyInput.value = (komposisi * qtyProduksi).toFixed(2);
+        });
+    }
+    function onAssemblyQtyChange() {
+        applyRecipeQuantities();
+        calculateAssemblyHPP();
     }
     function calculateAssemblyHPP() {
         let totalMaterial = 0;
@@ -807,7 +836,7 @@
         document.getElementById('asmBatch').value = ''; document.getElementById('asmSku').value = '';
         document.getElementById('asmSku').dataset.value = ''; document.getElementById('asmNamaBarang').value = '';
         document.getElementById('asmQty').value = ''; document.getElementById('asmWaste').value = '0';
-        document.getElementById('assemblyDetails').innerHTML = ''; assemblyDetails = [];
+        document.getElementById('assemblyDetails').innerHTML = ''; assemblyDetails = []; assemblyRecipeMap = {};
         document.getElementById('assemblyHPP').style.display = 'none';
     }
 
