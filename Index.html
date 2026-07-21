@@ -213,6 +213,8 @@
             <button class="nav-tab" onclick="switchTab('movement', this)">Stock Movement</button>
             <button class="nav-tab" onclick="switchTab('master-data', this)">Master Data</button>
             <button class="nav-tab" onclick="switchTab('pricelist', this)">Pricelist</button>
+            <button class="nav-tab" onclick="switchTab('neraca', this)">Neraca</button>
+            <button class="nav-tab" onclick="switchTab('rugilaba', this)">Rugi Laba</button>
             <button class="nav-tab" onclick="switchTab('preview', this)">Preview</button>
         </div>
         <div class="content-area">
@@ -536,6 +538,46 @@
                                 </tr>
                             </thead>
                             <tbody id="pricelistTableBody"><tr><td colspan="7" style="text-align:center;color:var(--gray);">Klik Generate untuk memuat pricelist</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- NERACA TAB -->
+            <div class="tab-content" id="tab-neraca">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Neraca</div>
+                        <div>
+                            <button class="btn btn-secondary btn-sm" onclick="loadNeracaReport()">Refresh</button>
+                            <button class="btn btn-primary btn-sm" onclick="printFinancialReport('neraca')">Cetak</button>
+                        </div>
+                    </div>
+                    <div class="alert alert-info" id="neracaAlert" style="display:none;"></div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="neracaTable">
+                            <thead><tr><th>Neraca</th></tr></thead>
+                            <tbody id="neracaTableBody"><tr><td>Klik Refresh untuk memuat data</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RUGI LABA TAB -->
+            <div class="tab-content" id="tab-rugilaba">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Rugi Laba</div>
+                        <div>
+                            <button class="btn btn-secondary btn-sm" onclick="loadRugiLabaReport()">Refresh</button>
+                            <button class="btn btn-primary btn-sm" onclick="printFinancialReport('rugilaba')">Cetak</button>
+                        </div>
+                    </div>
+                    <div class="alert alert-info" id="rugiLabaAlert" style="display:none;"></div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="rugiLabaTable">
+                            <thead><tr><th>Rugi Laba</th></tr></thead>
+                            <tbody id="rugiLabaTableBody"><tr><td>Klik Refresh untuk memuat data</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -882,6 +924,8 @@
         if (tabName === 'kas-masuk') autoFillNextDoc('kmNoDokumen', 'Kas_Masuk', 'no_dokumen');
         if (tabName === 'stock' && stockTableData === null) loadStockTable();
         if (tabName === 'master-data') loadMasterDataList();
+        if (tabName === 'neraca' && neracaReportData === null) loadNeracaReport();
+        if (tabName === 'rugilaba' && rugiLabaReportData === null) loadRugiLabaReport();
     }
     async function autoFillNextDoc(inputId, table, field) {
         const input = document.getElementById(inputId);
@@ -1797,6 +1841,81 @@
                 <tbody>${rowsHtml}</tbody>
             </table>
         </div>
+        </body></html>`;
+        const win = window.open('', '_blank');
+        if (win) { win.document.write(html); win.document.close(); }
+    }
+
+    // ============================================================
+    // NERACA & RUGI LABA
+    // ============================================================
+    let neracaReportData = null;
+    let rugiLabaReportData = null;
+
+    async function loadNeracaReport() {
+        document.getElementById('neracaTableBody').innerHTML = '<tr><td>Menghitung...</td></tr>';
+        const result = await callGAS('generateNeracaReport', {}, 90000);
+        if (!result.success) { showAlert('danger', 'Gagal: ' + result.message, 'neracaAlert'); return; }
+        neracaReportData = result;
+        renderFinancialTable('neracaTable', result);
+        if (result.balance) {
+            showAlert('success', 'Neraca balance di semua kolom (selisih Rp 0).', 'neracaAlert');
+        } else {
+            const selisihText = Object.entries(result.selisih_per_kolom).map(([k, v]) => `${k}: Rp${formatNumber(v)}`).join(', ');
+            showAlert('danger', 'Neraca TIDAK balance - selisih per kolom: ' + selisihText, 'neracaAlert');
+        }
+    }
+    async function loadRugiLabaReport() {
+        document.getElementById('rugiLabaTableBody').innerHTML = '<tr><td>Menghitung...</td></tr>';
+        const result = await callGAS('generateRugiLabaReportDetailed', {}, 90000);
+        if (!result.success) { showAlert('danger', 'Gagal: ' + result.message, 'rugiLabaAlert'); return; }
+        rugiLabaReportData = result;
+        renderFinancialTable('rugiLabaTable', result);
+        document.getElementById('rugiLabaAlert').style.display = 'none';
+    }
+    // Shared renderer for both reports - they return the same shape
+    // (columns + rows, where a row is either a label+values line, a
+    // isTotal-flagged bold line, or a blank separator).
+    function renderFinancialTable(tableId, report) {
+        const head = document.getElementById(tableId).querySelector('thead');
+        const body = document.getElementById(tableId + 'Body');
+        const cols = report.columns;
+        head.innerHTML = '<tr><th></th>' + cols.map(c => `<th style="text-align:right;">${c}</th>`).join('') + '</tr>';
+        body.innerHTML = report.rows.map(r => {
+            if (r.separator) return `<tr><td colspan="${cols.length + 1}" style="border:none;height:10px;padding:0;"></td></tr>`;
+            const style = r.isTotal ? 'font-weight:bold;background:#f4f6fb;' : '';
+            return `<tr style="${style}"><td>${r.label}</td>` + cols.map(c => `<td style="text-align:right;">${formatNumber(r.values[c])}</td>`).join('') + `</tr>`;
+        }).join('');
+    }
+    function printFinancialReport(type) {
+        const report = type === 'neraca' ? neracaReportData : rugiLabaReportData;
+        const title = type === 'neraca' ? 'NERACA' : 'LAPORAN RUGI LABA';
+        if (!report) { showAlert('danger', 'Belum ada data - klik Refresh dulu', type === 'neraca' ? 'neracaAlert' : 'rugiLabaAlert'); return; }
+        const cols = report.columns;
+        const rowsHtml = report.rows.map(r => {
+            if (r.separator) return `<tr><td colspan="${cols.length + 1}" style="border:none;height:8px;"></td></tr>`;
+            const style = r.isTotal ? 'font-weight:bold;background:#eef2fb;' : '';
+            return `<tr style="${style}"><td>${r.label}</td>` + cols.map(c => `<td style="text-align:right;">${formatNumber(r.values[c])}</td>`).join('') + `</tr>`;
+        }).join('');
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>${title}</title>
+        <style>
+            body { font-family: Arial, sans-serif; margin: 0; padding: 20px; color: #222; font-size: 12px; }
+            h1 { color: #2451a6; text-align: center; }
+            .tanggal { text-align: center; color: #666; margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #999; padding: 5px 8px; }
+            th { background: #eef2fb; text-align: right; }
+            th:first-child, td:first-child { text-align: left; }
+            .print-btn { margin: 16px auto; display: block; padding: 10px 24px; background: #2451a6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+            @media print { .print-btn { display: none; } body { font-size: 10px; } }
+        </style></head><body>
+        <button class="print-btn" onclick="window.print()">Cetak / Simpan sebagai PDF</button>
+        <h1>${title}</h1>
+        <div class="tanggal">Per ${new Date().toLocaleDateString('id-ID')}</div>
+        <table>
+            <thead><tr><th style="text-align:left;"></th>${cols.map(c => `<th>${c}</th>`).join('')}</tr></thead>
+            <tbody>${rowsHtml}</tbody>
+        </table>
         </body></html>`;
         const win = window.open('', '_blank');
         if (win) { win.document.write(html); win.document.close(); }
