@@ -433,13 +433,20 @@
                         <div class="card-title">Stock</div>
                         <button class="btn btn-primary btn-sm" onclick="loadStockTable()">Refresh</button>
                     </div>
-                    <div class="form-group" style="max-width:320px;margin-bottom:12px;">
-                        <input type="text" id="stockSearch" placeholder="Cari produk..." oninput="renderStockTable()">
+                    <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+                        <div class="form-group" style="max-width:320px;margin-bottom:0;">
+                            <input type="text" id="stockSearch" placeholder="Cari produk..." oninput="renderStockTable()">
+                        </div>
+                        <div class="form-group" style="max-width:220px;margin-bottom:0;">
+                            <select id="stockKategoriFilter" onchange="renderStockTable()">
+                                <option value="">Semua Kategori</option>
+                            </select>
+                        </div>
                     </div>
                     <div style="overflow-x:auto;">
                         <table class="data-table" id="stockTable">
-                            <thead><tr><th>Produk</th><th style="text-align:right;">Masuk</th><th style="text-align:right;">Keluar</th><th style="text-align:right;">Saldo</th></tr></thead>
-                            <tbody id="stockTableBody"><tr><td colspan="4" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat data</td></tr></tbody>
+                            <thead><tr><th>Produk</th><th>Batch No</th><th>Tanggal</th><th style="text-align:right;">Diproduksi</th><th style="text-align:right;">Terjual</th><th style="text-align:right;">Sisa</th></tr></thead>
+                            <tbody id="stockTableBody"><tr><td colspan="6" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat data</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -637,7 +644,7 @@
         // frontend reads masterData.resep directly (recipes are fetched
         // on-demand via the getResep action when a SKU is picked in
         // Assembly), so fetching it eagerly on every load was pure waste.
-        const tables = ['Master_Produk', 'Master_Customer', 'Master_Supplier', 'Master_Salesman', 'Master_COA', 'Master_CashAccount'];
+        const tables = ['Master_Produk', 'Master_Customer', 'Master_Supplier', 'Master_Salesman', 'Master_COA', 'Master_CashAccount', 'Master_Kemasan'];
         const missing = [];
         tables.forEach(table => {
             const cached = getCache(table);
@@ -668,6 +675,7 @@
             case 'Master_Salesman': masterData.salesmen = data; break;
             case 'Master_COA': masterData.coa = data; break;
             case 'Master_CashAccount': masterData.cash = data; break;
+            case 'Master_Kemasan': masterData.kemasan = data; break;
         }
     }
 
@@ -680,13 +688,13 @@
         const searchTerm = input.value.toLowerCase();
         const data = masterData[dataType] || [];
         const filtered = data.filter(item => {
-            const label = (item.nama_produk || item.nama_customer || item.nama_supplier || item.nama_salesman || item.nama_coa || item.nama_cash || item.nama_resep || item.nama || '').toLowerCase();
-            const value = (item.id_produk || item.id_customer || item.id_supplier || item.id_salesman || item.id_coa || item.id_cash || item.id_resep || item.id || '').toLowerCase();
+            const label = (item.nama_produk || item.nama_customer || item.nama_supplier || item.nama_salesman || item.nama_coa || item.nama_cash || item.nama_resep || item.nama_kemasan || item.nama || '').toLowerCase();
+            const value = (item.id_produk || item.id_customer || item.id_supplier || item.id_salesman || item.id_coa || item.id_cash || item.id_resep || item.id_kemasan || item.id || '').toLowerCase();
             return label.includes(searchTerm) || value.includes(searchTerm);
         }).slice(0, 20);
         list.innerHTML = filtered.map(item => {
-            const value = item.id_produk || item.id_customer || item.id_supplier || item.id_salesman || item.id_coa || item.id_cash || item.id_resep || item.id;
-            const label = item.nama_produk || item.nama_customer || item.nama_supplier || item.nama_salesman || item.nama_coa || item.nama_cash || item.nama_resep || item.nama;
+            const value = item.id_produk || item.id_customer || item.id_supplier || item.id_salesman || item.id_coa || item.id_cash || item.id_resep || item.id_kemasan || item.id;
+            const label = item.nama_produk || item.nama_customer || item.nama_supplier || item.nama_salesman || item.nama_coa || item.nama_cash || item.nama_resep || item.nama_kemasan || item.nama;
             return `<div class="dropdown-item" onclick="selectDropdown('${inputId}', '${value}', '${label.replace(/'/g, "\\'")}')">${label} (${value})</div>`;
         }).join('');
         list.classList.add('show');
@@ -699,6 +707,7 @@
         if (inputId.includes('Sales') || inputId.includes('Salesman')) return 'salesmen';
         if (inputId.includes('COA')) return 'coa';
         if (inputId.includes('Cash')) return 'cash';
+        if (inputId.includes('kemasan') || inputId.includes('Kemasan')) return 'kemasan';
         return 'products';
     }
     function selectDropdown(inputId, value, label) {
@@ -1122,7 +1131,7 @@
                 <div class="form-group"><label>Total</label><input type="number" id="pen-total-${id}" readonly placeholder="0"></div>
                 <div class="form-group"><label>Diskon</label><input type="number" id="pen-diskon-${id}" step="1000" value="0" onchange="calculatePenjualanItemTotal(${id})"></div>
                 <div class="form-group"><label>HPP (Auto)</label><input type="number" id="pen-hpp-${id}" readonly placeholder="0"></div>
-                <div class="form-group"><label>Kemasan</label><input type="text" id="pen-kemasan-${id}" placeholder="Kemasan"></div>
+                <div class="form-group"><label>Kemasan</label><div class="searchable-dropdown"><input type="text" id="pen-kemasan-${id}" placeholder="Pilih kemasan..." oninput="searchDropdown('pen-kemasan-${id}', 'kemasan')" onfocus="showDropdown('pen-kemasan-${id}')"><div class="dropdown-list" id="pen-kemasan-${id}-list"></div></div></div>
                 <div class="form-group">
                     <label>Batch No</label>
                     <input type="text" id="pen-batch-${id}" placeholder="Batch No" list="pen-batch-list-${id}">
@@ -1140,26 +1149,22 @@
         const result = await callGAS('getHPP', { id_produk: sku });
         if (result.success && result.data) { const hpp = result.data.hpp_per_unit || 0; const hppInput = document.getElementById(`pen-hpp-${id}`); if (hppInput) hppInput.value = hpp; }
 
-        // Kemasan: from Master_Kemasan (matched by size extracted from the
-        // product name), not Master_Produk - Kemasan is a distinct
-        // packaging catalog, not the product's own unit of measure.
+        // Kemasan is a plain dropdown the user picks manually (see the
+        // searchable-dropdown in the HTML) - no auto-detection needed.
         const product = (masterData.products || []).find(p => p.id_produk === sku);
-        const kemasanResult = await callGAS('getKemasanForProduk', { id_produk: sku });
-        const kemasanInput = document.getElementById(`pen-kemasan-${id}`);
-        if (kemasanInput && kemasanResult.success && kemasanResult.data) kemasanInput.value = kemasanResult.data.nama_kemasan || '';
 
-        // Batch No: auto-filled with the most recent Assembly batch for
-        // this SKU (getBatchesForProduk sorts newest-first) - not just a
-        // suggestion the user has to pick manually. The datalist stays
-        // available if they need to pick a different (e.g. older) batch.
+        // Batch No: auto-filled with the OLDEST batch that still has stock
+        // remaining (FIFO) - getBatchesForProduk only returns batches with
+        // sisa > 0, sorted oldest-first, so batches[0] is exactly right.
+        // If nothing comes back, every batch for this product is sold out.
         const batchResult = await callGAS('getBatchesForProduk', { id_produk: sku });
         const datalist = document.getElementById(`pen-batch-list-${id}`);
         const batchInput = document.getElementById(`pen-batch-${id}`);
         const batches = batchResult.success ? batchResult.data : [];
         if (datalist) {
-            datalist.innerHTML = batches.map(b => `<option value="${b.batch_no}">${b.tanggal || ''} — ${formatNumber(b.jumlah_produksi)} unit</option>`).join('');
+            datalist.innerHTML = batches.map(b => `<option value="${b.batch_no}">${b.tanggal || ''} — sisa ${formatNumber(b.sisa)} dari ${formatNumber(b.jumlah_produksi)}</option>`).join('');
         }
-        if (batchInput && batches.length > 0) batchInput.value = batches[0].batch_no;
+        if (batchInput) batchInput.value = batches.length > 0 ? batches[0].batch_no : '';
 
         // Stock check: if there's nothing produced yet for this product,
         // block the row entirely (rather than just warning after the fact)
@@ -1392,23 +1397,34 @@
     // STOCK
     // ============================================================
     async function loadStockTable() {
-        document.getElementById('stockTableBody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
-        const result = await callGAS('getAllStock', {});
+        document.getElementById('stockTableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
+        const result = await callGAS('getStockBreakdown', {});
         stockTableData = result.success ? result.data : [];
+        const kategoriSelect = document.getElementById('stockKategoriFilter');
+        const currentValue = kategoriSelect.value;
+        const kategoris = [...new Set(stockTableData.map(r => r.kategori).filter(k => k))].sort();
+        kategoriSelect.innerHTML = '<option value="">Semua Kategori</option>' + kategoris.map(k => `<option value="${k}">${k}</option>`).join('');
+        kategoriSelect.value = kategoris.includes(currentValue) ? currentValue : '';
         renderStockTable();
     }
     function renderStockTable() {
         const body = document.getElementById('stockTableBody');
-        if (!stockTableData) { body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat data</td></tr>'; return; }
+        if (!stockTableData) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat data</td></tr>'; return; }
         const query = (document.getElementById('stockSearch').value || '').toLowerCase();
-        const rows = stockTableData.filter(r => (r.nama_produk || '').toLowerCase().includes(query));
-        if (rows.length === 0) { body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>'; return; }
+        const kategoriFilter = document.getElementById('stockKategoriFilter').value;
+        const rows = stockTableData.filter(r =>
+            (r.nama_produk || '').toLowerCase().includes(query) &&
+            (!kategoriFilter || r.kategori === kategoriFilter)
+        );
+        if (rows.length === 0) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>'; return; }
         body.innerHTML = rows.map(r => `
-            <tr>
+            <tr style="${r.sisa <= 0 ? 'opacity:0.5;' : ''}">
                 <td>${r.nama_produk}</td>
-                <td style="text-align:right;">${formatNumber(r.masuk)}</td>
-                <td style="text-align:right;">${formatNumber(r.keluar)}</td>
-                <td style="text-align:right;font-weight:${r.saldo <= 0 ? 'bold;color:#dc3545' : 'bold'};">${formatNumber(r.saldo)}</td>
+                <td>${r.batch_no}</td>
+                <td>${r.tanggal ? new Date(r.tanggal).toLocaleDateString('id-ID') : ''}</td>
+                <td style="text-align:right;">${formatNumber(r.diproduksi)}</td>
+                <td style="text-align:right;">${formatNumber(r.terjual)}</td>
+                <td style="text-align:right;font-weight:bold;${r.sisa <= 0 ? 'color:#dc3545;' : ''}">${formatNumber(r.sisa)}</td>
             </tr>`).join('');
     }
 
