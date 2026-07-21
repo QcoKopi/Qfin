@@ -238,12 +238,10 @@
                         <div class="form-group"><label>Nama Barang</label><input type="text" id="asmNamaBarang" readonly placeholder="Auto-fill dari SKU"></div>
                         <div class="form-group"><label>Jumlah Produksi</label><input type="number" id="asmQty" step="0.01" placeholder="0.00" onchange="onAssemblyQtyChange()"></div>
                         <div class="form-group"><label>Penyusutan (%) — Otomatis</label><input type="number" id="asmWaste" step="0.01" placeholder="0.00" value="0" readonly style="background:#f4f4f4;"></div>
-                        <div class="form-group"><label>Overhead (%)</label><input type="number" id="asmOverheadPercent" step="0.1" placeholder="10" value="10" onchange="calculateAssemblyHPP()"></div>
                     </div>
                     <div class="hpp-display" id="assemblyHPP" style="display:none;">
-                        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
                             <div><div class="hpp-label">Total Bahan</div><div class="hpp-value" id="hppTotalBahan" style="font-size:20px;">Rp 0</div></div>
-                            <div><div class="hpp-label">Overhead</div><div class="hpp-value" id="hppOverhead" style="font-size:20px;">Rp 0</div></div>
                             <div><div class="hpp-label">HPP per Unit</div><div class="hpp-value" id="hppValue">Rp 0</div></div>
                         </div>
                     </div>
@@ -526,7 +524,6 @@
                     </div>
                     <div class="alert alert-info" id="pricelistAlert" style="display:none;"></div>
                     <div style="display:flex;gap:16px;margin-bottom:12px;">
-                        <div class="form-group" style="max-width:180px;margin-bottom:0;"><label>Overhead Default (%)</label><input type="number" id="plOverheadDefault" value="10" step="1"></div>
                         <div class="form-group" style="max-width:220px;margin-bottom:0;"><label>Markup Kemasan Default (%)</label><input type="number" id="plMarkupDefault" value="20" step="1"></div>
                         <div class="form-group" style="max-width:320px;margin-bottom:0;"><label>Cari Produk</label><input type="text" id="plSearch" placeholder="Cari..." oninput="renderPricelistTable()"></div>
                     </div>
@@ -534,11 +531,11 @@
                         <table class="data-table" id="pricelistTable">
                             <thead>
                                 <tr>
-                                    <th>Produk</th><th>Berat (kg)</th><th>HPP/kg</th><th>Overhead %</th>
+                                    <th>Produk</th><th>Berat (kg)</th><th>HPP/kg</th>
                                     <th>Kemasan</th><th>Harga Kemasan</th><th>Markup %</th><th>Harga Jual</th>
                                 </tr>
                             </thead>
-                            <tbody id="pricelistTableBody"><tr><td colspan="8" style="text-align:center;color:var(--gray);">Klik Generate untuk memuat pricelist</td></tr></tbody>
+                            <tbody id="pricelistTableBody"><tr><td colspan="7" style="text-align:center;color:var(--gray);">Klik Generate untuk memuat pricelist</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -619,10 +616,10 @@
                     </div>
 
                     <div class="form-grid" id="md-fields-Master_COA" style="display:none;">
-                        <div class="form-group"><label>Nama COA</label><input type="text" id="mdCoaNama" placeholder="Nama akun COA"></div>
-                        <div class="form-group"><label>Tipe</label>
-                            <select id="mdCoaTipe"><option value="Pendapatan">Pendapatan</option><option value="Biaya">Biaya</option><option value="Aset">Aset</option><option value="Liabilitas">Liabilitas</option></select>
-                        </div>
+                        <div class="form-group"><label>Kode COA</label><input type="text" id="mdCoaKode" placeholder="Misal: 71070-00"></div>
+                        <div class="form-group"><label>Kategori 1</label><input type="text" id="mdCoaKategori1" placeholder="Misal: 7. Biaya Operasional"></div>
+                        <div class="form-group"><label>Kategori 2</label><input type="text" id="mdCoaKategori2" placeholder="Misal: 7.2 Biaya Kantor"></div>
+                        <div class="form-group"><label>Nama Akun</label><input type="text" id="mdCoaNama" placeholder="Nama akun"></div>
                     </div>
                 </div>
 
@@ -825,13 +822,13 @@
         const searchTerm = input.value.toLowerCase();
         const data = masterData[dataType] || [];
         const filtered = data.filter(item => {
-            const label = (item.nama_produk || item.nama_customer || item.nama_supplier || item.nama_salesman || item.nama_coa || item.nama_cash || item.nama_resep || item.nama_kemasan || item.nama || '').toLowerCase();
-            const value = (item.id_produk || item.id_customer || item.id_supplier || item.id_salesman || item.id_coa || item.id_cash || item.id_resep || item.id_kemasan || item.id || '').toLowerCase();
+            const label = (item.nama_produk || item.nama_customer || item.nama_supplier || item.nama_salesman || item.nama_akun || item.nama_cash || item.nama_resep || item.nama_kemasan || item.nama || '').toLowerCase();
+            const value = (item.id_produk || item.id_customer || item.id_supplier || item.id_salesman || item.coa || item.id_cash || item.id_resep || item.id_kemasan || item.id || '').toLowerCase();
             return label.includes(searchTerm) || value.includes(searchTerm);
         }).slice(0, 20);
         list.innerHTML = filtered.map(item => {
-            const value = item.id_produk || item.id_customer || item.id_supplier || item.id_salesman || item.id_coa || item.id_cash || item.id_resep || item.id_kemasan || item.id;
-            const label = item.nama_produk || item.nama_customer || item.nama_supplier || item.nama_salesman || item.nama_coa || item.nama_cash || item.nama_resep || item.nama_kemasan || item.nama;
+            const value = item.id_produk || item.id_customer || item.id_supplier || item.id_salesman || item.coa || item.id_cash || item.id_resep || item.id_kemasan || item.id;
+            const label = item.nama_produk || item.nama_customer || item.nama_supplier || item.nama_salesman || item.nama_akun || item.nama_cash || item.nama_resep || item.nama_kemasan || item.nama;
             return `<div class="dropdown-item" onclick="selectDropdown('${inputId}', '${value}', '${label.replace(/'/g, "\\'")}')">${label} (${value})</div>`;
         }).join('');
         list.classList.add('show');
@@ -1048,15 +1045,10 @@
             const price = parseFloat(document.getElementById(`asm-raw-price-${id}`)?.value) || 0;
             totalMaterial += qty * price;
         });
-        const overheadPercent = parseFloat(document.getElementById('asmOverheadPercent')?.value) || 0;
-        const overheadAmount = totalMaterial * (overheadPercent / 100);
-        const totalBiaya = totalMaterial + overheadAmount;
-        const hpp = qtyProduksi > 0 ? totalBiaya / qtyProduksi : 0;
+        const hpp = qtyProduksi > 0 ? totalMaterial / qtyProduksi : 0;
         document.getElementById('assemblyHPP').style.display = 'block';
         const bahanEl = document.getElementById('hppTotalBahan');
         if (bahanEl) bahanEl.textContent = 'Rp ' + formatNumber(totalMaterial.toFixed(0));
-        const ohEl = document.getElementById('hppOverhead');
-        if (ohEl) ohEl.textContent = 'Rp ' + formatNumber(overheadAmount.toFixed(0)) + ` (${overheadPercent}%)`;
         document.getElementById('hppValue').textContent = 'Rp ' + formatNumber(hpp.toFixed(0));
     }
     async function submitAssembly() {
@@ -1068,15 +1060,12 @@
         })).filter(d => d.raw_material);
         const qtyProduksi = parseFloat(document.getElementById('asmQty').value) || 0;
         const totalMaterial = details.reduce((sum, d) => sum + (d.jumlah_raw_material * d.harga_raw_material), 0);
-        const overheadPercent = parseFloat(document.getElementById('asmOverheadPercent').value) || 0;
-        const overheadAmount = totalMaterial * (overheadPercent / 100);
-        const hpp = qtyProduksi > 0 ? (totalMaterial + overheadAmount) / qtyProduksi : 0;
+        const hpp = qtyProduksi > 0 ? totalMaterial / qtyProduksi : 0;
         const data = {
             tanggal: document.getElementById('asmDate').value, batch_no: document.getElementById('asmBatch').value,
             sku: document.getElementById('asmSku').dataset.value || document.getElementById('asmSku').value,
             nama_barang: document.getElementById('asmNamaBarang').value, jumlah_produksi: qtyProduksi,
             penyusutan: parseFloat(document.getElementById('asmWaste').value) || 0,
-            overhead_percent: overheadPercent, overhead_amount: overheadAmount,
             total_harga_material: totalMaterial, hpp: hpp, details: details
         };
         const result = await callGAS('submitAssembly', data);
@@ -1088,7 +1077,6 @@
         document.getElementById('asmSku').value = '';
         document.getElementById('asmSku').dataset.value = ''; document.getElementById('asmNamaBarang').value = '';
         document.getElementById('asmQty').value = ''; document.getElementById('asmWaste').value = '0';
-        document.getElementById('asmOverheadPercent').value = '10';
         document.getElementById('assemblyDetails').innerHTML = ''; assemblyDetails = []; assemblyRecipeMap = {}; gbDetailIds = [];
         document.getElementById('assemblyHPP').style.display = 'none';
     }
@@ -1628,7 +1616,7 @@
     let masterDataListCache = [];
     const MD_NAME_FIELD = {
         Master_Produk: 'nama_produk', Master_Kemasan: 'nama_kemasan', Master_Resep: 'nama_resep',
-        Master_Customer: 'nama_customer', Master_Supplier: 'nama_supplier', Master_Salesman: 'nama_salesman', Master_COA: 'nama_coa'
+        Master_Customer: 'nama_customer', Master_Supplier: 'nama_supplier', Master_Salesman: 'nama_salesman', Master_COA: 'nama_akun'
     };
     function onMasterDataJenisChange() {
         const jenis = document.getElementById('mdJenis').value;
@@ -1687,8 +1675,10 @@
             });
         } else if (jenis === 'Master_COA') {
             data = Object.assign(data, {
-                nama_coa: document.getElementById('mdCoaNama').value,
-                tipe: document.getElementById('mdCoaTipe').value
+                coa: document.getElementById('mdCoaKode').value,
+                kategori_1: document.getElementById('mdCoaKategori1').value,
+                kategori_2: document.getElementById('mdCoaKategori2').value,
+                nama_akun: document.getElementById('mdCoaNama').value
             });
         }
 
@@ -1735,9 +1725,8 @@
     // ============================================================
     let pricelistData = null;
     async function generatePricelistTable() {
-        document.getElementById('pricelistTableBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);">Menghitung...</td></tr>';
+        document.getElementById('pricelistTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);">Menghitung...</td></tr>';
         const result = await callGAS('generatePricelist', {
-            overhead_percent: document.getElementById('plOverheadDefault').value,
             markup_percent: document.getElementById('plMarkupDefault').value
         });
         if (result.success) {
@@ -1749,17 +1738,16 @@
     }
     function renderPricelistTable() {
         const body = document.getElementById('pricelistTableBody');
-        if (!pricelistData) { body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);">Klik Generate untuk memuat pricelist</td></tr>'; return; }
+        if (!pricelistData) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);">Klik Generate untuk memuat pricelist</td></tr>'; return; }
         const query = (document.getElementById('plSearch').value || '').toLowerCase();
         const visibleIdx = pricelistData.map((r, i) => i).filter(i => pricelistData[i].nama_produk.toLowerCase().includes(query));
-        if (visibleIdx.length === 0) { body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>'; return; }
+        if (visibleIdx.length === 0) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>'; return; }
         body.innerHTML = visibleIdx.map(i => {
             const r = pricelistData[i];
             return `<tr>
                 <td>${r.nama_produk}</td>
                 <td>${r.berat_kg}</td>
                 <td><input type="number" value="${r.hpp_per_kg}" style="width:100px;" oninput="updatePricelistRow(${i}, 'hpp_per_kg', this.value)"></td>
-                <td><input type="number" value="${r.overhead_percent}" style="width:70px;" oninput="updatePricelistRow(${i}, 'overhead_percent', this.value)"></td>
                 <td>${r.nama_kemasan || '-'}</td>
                 <td><input type="number" value="${r.harga_kemasan}" style="width:100px;" oninput="updatePricelistRow(${i}, 'harga_kemasan', this.value)"></td>
                 <td><input type="number" value="${r.markup_percent}" style="width:70px;" oninput="updatePricelistRow(${i}, 'markup_percent', this.value)"></td>
@@ -1770,9 +1758,7 @@
     function updatePricelistRow(i, field, value) {
         const r = pricelistData[i];
         r[field] = parseFloat(value) || 0;
-        const baseCost = r.hpp_per_kg * r.berat_kg;
-        const overheadAmount = baseCost * (r.overhead_percent / 100);
-        const subtotal = baseCost + overheadAmount + r.harga_kemasan;
+        const subtotal = (r.hpp_per_kg * r.berat_kg) + r.harga_kemasan;
         r.harga_jual = Math.round(r.nama_kemasan ? subtotal * (1 + r.markup_percent / 100) : subtotal);
         document.getElementById(`pl-hasil-${i}`).textContent = 'Rp ' + formatNumber(r.harga_jual);
     }
