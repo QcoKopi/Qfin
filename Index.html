@@ -651,6 +651,39 @@
                         </table>
                     </div>
                 </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Piutang per Invoice (Rekonsiliasi)</div>
+                        <div>
+                            <button class="btn btn-secondary btn-sm" onclick="loadPiutangReconciliation()">Refresh</button>
+                            <button class="btn btn-primary btn-sm" onclick="downloadReconciliationCsv('piutang')">Download CSV</button>
+                        </div>
+                    </div>
+                    <div class="form-group" style="max-width:320px;"><input type="text" id="prSearch" placeholder="Cari no invoice/customer..." oninput="renderPiutangReconciliation()"></div>
+                    <div style="overflow-x:auto;max-height:60vh;overflow-y:auto;">
+                        <table class="data-table" id="piutangReconTable">
+                            <thead><tr><th>No Invoice Piutang</th><th>Customer</th><th>Tanggal</th><th style="text-align:right;">Jumlah</th><th>No Invoice Pembayaran</th><th>Status</th></tr></thead>
+                            <tbody id="piutangReconTableBody"><tr><td colspan="6" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Hutang per Dokumen (Rekonsiliasi)</div>
+                        <div>
+                            <button class="btn btn-secondary btn-sm" onclick="loadHutangReconciliation()">Refresh</button>
+                            <button class="btn btn-primary btn-sm" onclick="downloadReconciliationCsv('hutang')">Download CSV</button>
+                        </div>
+                    </div>
+                    <div class="alert alert-info" id="hutangReconAlert" style="display:none;">Catatan: cicilan Pembayaran Hutang terpisah (bukan lunas saat beli) tidak terikat ke 1 dokumen tertentu, jadi tidak melunaskan baris spesifik di sini - lihat saldo total per supplier di tabel Hutang Usaha di atas.</div>
+                    <div class="form-group" style="max-width:320px;"><input type="text" id="hrSearch" placeholder="Cari no dokumen/supplier..." oninput="renderHutangReconciliation()"></div>
+                    <div style="overflow-x:auto;max-height:60vh;overflow-y:auto;">
+                        <table class="data-table" id="hutangReconTable">
+                            <thead><tr><th>No Dokumen Hutang</th><th>Supplier</th><th>Tanggal</th><th style="text-align:right;">Jumlah</th><th>No Dokumen Pembayaran</th><th>Status</th></tr></thead>
+                            <tbody id="hutangReconTableBody"><tr><td colspan="6" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
 
             <!-- MASTER DATA TAB -->
@@ -1004,6 +1037,8 @@
         if (tabName === 'rugilaba' && rugiLabaReportData === null) loadRugiLabaReport();
         if (tabName === 'bukubesar' && bukuBesarData === null) loadBukuBesar();
         if (tabName === 'piutanghutang' && piutangHutangData === null) loadPiutangHutangDetail();
+        if (tabName === 'piutanghutang' && piutangReconData === null) loadPiutangReconciliation();
+        if (tabName === 'piutanghutang' && hutangReconData === null) loadHutangReconciliation();
     }
     async function autoFillNextDoc(inputId, table, field) {
         const input = document.getElementById(inputId);
@@ -2227,6 +2262,66 @@
         });
         const label = kind === 'piutang' ? 'Customer' : 'Supplier';
         downloadCsv(kind + '-detail.csv', [label, 'Saldo Total', 'Keterangan Transaksi', 'Jumlah Transaksi'], rows);
+    }
+
+    // Per-invoice reconciliation (1 row = 1 invoice/document, with a clear
+    // Lunas/Piutang or Lunas/Hutang status) - distinct from the aggregated
+    // per-customer/supplier view above.
+    let piutangReconData = null, hutangReconData = null;
+    async function loadPiutangReconciliation() {
+        document.getElementById('piutangReconTableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
+        const result = await callGAS('generatePiutangReconciliation', {}, 60000);
+        if (!result.success) { showAlert('danger', 'Gagal: ' + result.message, 'piutangHutangAlert'); return; }
+        piutangReconData = result.data;
+        renderPiutangReconciliation();
+    }
+    function renderPiutangReconciliation() {
+        if (!piutangReconData) return;
+        const query = (document.getElementById('prSearch').value || '').toLowerCase();
+        const filtered = piutangReconData.filter(r => (r.no_invoice_piutang + ' ' + r.customer).toLowerCase().includes(query));
+        const body = document.getElementById('piutangReconTableBody');
+        if (filtered.length === 0) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>'; return; }
+        body.innerHTML = filtered.map(r => `<tr>
+            <td>${r.no_invoice_piutang}</td>
+            <td>${r.customer}</td>
+            <td>${r.tanggal}</td>
+            <td style="text-align:right;">${formatNumber(r.jumlah)}</td>
+            <td>${r.no_invoice_pembayaran || '-'}</td>
+            <td style="font-weight:bold;color:${r.status === 'Lunas' ? 'var(--success)' : 'var(--danger)'};">${r.status}</td>
+        </tr>`).join('');
+    }
+    async function loadHutangReconciliation() {
+        document.getElementById('hutangReconTableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
+        const result = await callGAS('generateHutangReconciliation', {}, 60000);
+        if (!result.success) { showAlert('danger', 'Gagal: ' + result.message, 'hutangReconAlert'); return; }
+        hutangReconData = result.data;
+        renderHutangReconciliation();
+    }
+    function renderHutangReconciliation() {
+        if (!hutangReconData) return;
+        const query = (document.getElementById('hrSearch').value || '').toLowerCase();
+        const filtered = hutangReconData.filter(r => (r.no_dokumen_hutang + ' ' + r.supplier).toLowerCase().includes(query));
+        const body = document.getElementById('hutangReconTableBody');
+        if (filtered.length === 0) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>'; return; }
+        body.innerHTML = filtered.map(r => `<tr>
+            <td>${r.no_dokumen_hutang}</td>
+            <td>${r.supplier}</td>
+            <td>${r.tanggal}</td>
+            <td style="text-align:right;">${formatNumber(r.jumlah)}</td>
+            <td>${r.no_dokumen_pembayaran || '-'}</td>
+            <td style="font-weight:bold;color:${r.status === 'Lunas' ? 'var(--success)' : 'var(--danger)'};">${r.status}</td>
+        </tr>`).join('');
+    }
+    function downloadReconciliationCsv(kind) {
+        if (kind === 'piutang') {
+            if (!piutangReconData) { showAlert('danger', 'Belum ada data - klik Refresh dulu', 'piutangHutangAlert'); return; }
+            const rows = piutangReconData.map(r => [r.no_invoice_piutang, r.customer, r.tanggal, r.jumlah, r.no_invoice_pembayaran, r.status]);
+            downloadCsv('piutang-per-invoice.csv', ['No Invoice Piutang', 'Customer', 'Tanggal', 'Jumlah', 'No Invoice Pembayaran', 'Status'], rows);
+        } else {
+            if (!hutangReconData) { showAlert('danger', 'Belum ada data - klik Refresh dulu', 'hutangReconAlert'); return; }
+            const rows = hutangReconData.map(r => [r.no_dokumen_hutang, r.supplier, r.tanggal, r.jumlah, r.no_dokumen_pembayaran, r.status]);
+            downloadCsv('hutang-per-dokumen.csv', ['No Dokumen Hutang', 'Supplier', 'Tanggal', 'Jumlah', 'No Dokumen Pembayaran', 'Status'], rows);
+        }
     }
 
     // ============================================================
