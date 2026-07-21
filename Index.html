@@ -756,7 +756,18 @@
     }
     function formatNumber(num) {
         if (num === undefined || num === null) return '0';
-        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        const n = typeof num === 'number' ? num : parseFloat(num);
+        if (isNaN(n)) return '0';
+        // Round off floating-point noise (e.g. summing many decimal
+        // quantities can produce 33.499999999999996 instead of 33.5) before
+        // formatting - otherwise those extra digits were getting thousands
+        // separators inserted into them too, since the old version treated
+        // the whole string (integer AND decimal digits) as one number to group.
+        const rounded = Math.round(n * 100) / 100;
+        const parts = Math.abs(rounded).toString().split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        const sign = rounded < 0 ? '-' : '';
+        return sign + parts.join(',');
     }
 
     // ============================================================
@@ -1137,14 +1148,18 @@
         const kemasanInput = document.getElementById(`pen-kemasan-${id}`);
         if (kemasanInput && kemasanResult.success && kemasanResult.data) kemasanInput.value = kemasanResult.data.nama_kemasan || '';
 
-        // Suggest real, traceable Assembly batches for this product instead
-        // of leaving Batch No as pure free text.
+        // Batch No: auto-filled with the most recent Assembly batch for
+        // this SKU (getBatchesForProduk sorts newest-first) - not just a
+        // suggestion the user has to pick manually. The datalist stays
+        // available if they need to pick a different (e.g. older) batch.
         const batchResult = await callGAS('getBatchesForProduk', { id_produk: sku });
         const datalist = document.getElementById(`pen-batch-list-${id}`);
+        const batchInput = document.getElementById(`pen-batch-${id}`);
+        const batches = batchResult.success ? batchResult.data : [];
         if (datalist) {
-            datalist.innerHTML = (batchResult.success ? batchResult.data : [])
-                .map(b => `<option value="${b.batch_no}">${b.tanggal || ''} — ${formatNumber(b.jumlah_produksi)} unit</option>`).join('');
+            datalist.innerHTML = batches.map(b => `<option value="${b.batch_no}">${b.tanggal || ''} — ${formatNumber(b.jumlah_produksi)} unit</option>`).join('');
         }
+        if (batchInput && batches.length > 0) batchInput.value = batches[0].batch_no;
 
         // Stock check: if there's nothing produced yet for this product,
         // block the row entirely (rather than just warning after the fact)
