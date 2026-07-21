@@ -362,6 +362,10 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label>Kode Transaksi</label>
+                            <select id="penKodeTransaksi"><option value="Penjualan">Penjualan</option><option value="Sample">Sample</option></select>
+                        </div>
+                        <div class="form-group">
                             <label>Status</label>
                             <select id="penStatus"><option value="Pending">Pending</option><option value="LUNAS">LUNAS</option><option value="Batal">Batal</option></select>
                         </div>
@@ -445,8 +449,8 @@
                     </div>
                     <div style="overflow-x:auto;">
                         <table class="data-table" id="stockTable">
-                            <thead><tr><th>Produk</th><th>Batch No</th><th>Tanggal</th><th style="text-align:right;">Diproduksi</th><th style="text-align:right;">Terjual</th><th style="text-align:right;">Sisa</th></tr></thead>
-                            <tbody id="stockTableBody"><tr><td colspan="6" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat data</td></tr></tbody>
+                            <thead><tr><th style="width:24px;"></th><th>Produk</th><th>Batch No</th><th>Tanggal</th><th style="text-align:right;">Diproduksi</th><th style="text-align:right;">Terjual</th><th style="text-align:right;">Sisa</th></tr></thead>
+                            <tbody id="stockTableBody"><tr><td colspan="7" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat data</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -550,6 +554,7 @@
     // automatic Penyusutan (%) calculation.
     let gbDetailIds = [];
     let stockTableData = null;
+    let stockExpandedGroups = new Set();
 
     function getGasUrl() {
         return localStorage.getItem('qfin_gas_url') || document.getElementById('gasUrl').value || '';
@@ -1221,7 +1226,7 @@
         const data = {
             tanggal: document.getElementById('penDate').value, jatuh_tempo: '',
             cost_center: 'Q.Co', salesman: document.getElementById('penSalesman').value,
-            no_invoice: document.getElementById('penInvoice').value, kode_transaksi: 'Penjualan',
+            no_invoice: document.getElementById('penInvoice').value, kode_transaksi: document.getElementById('penKodeTransaksi').value,
             customer: document.getElementById('penCustomer').value, total_tagihan: totalTagihan,
             type_pembayaran: document.getElementById('penTypeBayar').value,
             status: document.getElementById('penStatus').value, total_bayar: 0, tanggal_pembayaran: '',
@@ -1231,12 +1236,13 @@
         const result = await callGAS('submitPenjualan', data);
         if (result.success) {
             let msg = 'Penjualan berhasil! ID: ' + result.id_penjualan;
+            if (data.kode_transaksi === 'Sample') msg += '. Biaya sample otomatis tercatat di Pembelian.';
             if (result.stock_warnings && result.stock_warnings.length > 0) {
                 showAlert('warning', 'Tersimpan, tapi stok kurang untuk: ' + result.stock_warnings.join('; '), 'penjualanAlert');
             } else {
                 showAlert('success', msg, 'penjualanAlert');
             }
-            printInvoice(data);
+            if (data.kode_transaksi !== 'Sample') printInvoice(data);
             clearPenjualanForm();
         }
         else showAlert('danger', 'Gagal: ' + result.message, 'penjualanAlert');
@@ -1340,6 +1346,7 @@
     function clearPenjualanForm() {
         document.getElementById('penInvoice').value = ''; document.getElementById('penCustomer').value = '';
         document.getElementById('penSalesman').value = ''; document.getElementById('penjualanDetails').innerHTML = '';
+        document.getElementById('penKodeTransaksi').value = 'Penjualan';
         penjualanDetails = []; document.getElementById('penjualanSummary').style.display = 'none';
         autoFillNextDoc('penInvoice', 'Penjualan_App', 'no_invoice');
     }
@@ -1397,7 +1404,7 @@
     // STOCK
     // ============================================================
     async function loadStockTable() {
-        document.getElementById('stockTableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
+        document.getElementById('stockTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
         const result = await callGAS('getStockBreakdown', {});
         stockTableData = result.success ? result.data : [];
         const kategoriSelect = document.getElementById('stockKategoriFilter');
@@ -1409,23 +1416,64 @@
     }
     function renderStockTable() {
         const body = document.getElementById('stockTableBody');
-        if (!stockTableData) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat data</td></tr>'; return; }
+        if (!stockTableData) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat data</td></tr>'; return; }
         const query = (document.getElementById('stockSearch').value || '').toLowerCase();
         const kategoriFilter = document.getElementById('stockKategoriFilter').value;
         const rows = stockTableData.filter(r =>
             (r.nama_produk || '').toLowerCase().includes(query) &&
             (!kategoriFilter || r.kategori === kategoriFilter)
         );
-        if (rows.length === 0) { body.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>'; return; }
-        body.innerHTML = rows.map(r => `
-            <tr style="${r.sisa <= 0 ? 'opacity:0.5;' : ''}">
-                <td>${r.nama_produk}</td>
-                <td>${r.batch_no}</td>
-                <td>${r.tanggal ? new Date(r.tanggal).toLocaleDateString('id-ID') : ''}</td>
-                <td style="text-align:right;">${formatNumber(r.diproduksi)}</td>
-                <td style="text-align:right;">${formatNumber(r.terjual)}</td>
-                <td style="text-align:right;font-weight:bold;${r.sisa <= 0 ? 'color:#dc3545;' : ''}">${formatNumber(r.sisa)}</td>
-            </tr>`).join('');
+        if (rows.length === 0) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>'; return; }
+
+        // Group batch-level rows by product so each product shows one
+        // summary line (total diproduksi/terjual/sisa) with its individual
+        // batches collapsed underneath, expandable on click.
+        const groups = {};
+        rows.forEach(r => {
+            const key = r.id_produk;
+            if (!groups[key]) groups[key] = { nama_produk: r.nama_produk, diproduksi: 0, terjual: 0, sisa: 0, batches: [] };
+            groups[key].diproduksi += r.diproduksi;
+            groups[key].terjual += r.terjual;
+            groups[key].sisa += r.sisa;
+            groups[key].batches.push(r);
+        });
+        const groupKeys = Object.keys(groups).sort((a, b) => (groups[a].nama_produk || '').localeCompare(groups[b].nama_produk || ''));
+
+        let html = '';
+        groupKeys.forEach(key => {
+            const g = groups[key];
+            const isExpanded = stockExpandedGroups.has(key);
+            const safeKey = key.replace(/'/g, "\\'");
+            html += `
+                <tr style="cursor:pointer;background:#f4f6fb;font-weight:bold;${g.sisa <= 0 ? 'opacity:0.6;' : ''}" onclick="toggleStockGroup('${safeKey}')">
+                    <td>${isExpanded ? '▼' : '▶'}</td>
+                    <td>${g.nama_produk}</td>
+                    <td style="color:var(--gray);font-weight:normal;">${g.batches.length} batch</td>
+                    <td></td>
+                    <td style="text-align:right;">${formatNumber(g.diproduksi)}</td>
+                    <td style="text-align:right;">${formatNumber(g.terjual)}</td>
+                    <td style="text-align:right;${g.sisa <= 0 ? 'color:#dc3545;' : ''}">${formatNumber(g.sisa)}</td>
+                </tr>`;
+            if (isExpanded) {
+                g.batches.forEach(b => {
+                    html += `
+                        <tr style="${b.sisa <= 0 ? 'opacity:0.5;' : ''}">
+                            <td></td>
+                            <td></td>
+                            <td style="padding-left:16px;color:var(--gray);">${b.batch_no}</td>
+                            <td>${b.tanggal ? new Date(b.tanggal).toLocaleDateString('id-ID') : ''}</td>
+                            <td style="text-align:right;">${formatNumber(b.diproduksi)}</td>
+                            <td style="text-align:right;">${formatNumber(b.terjual)}</td>
+                            <td style="text-align:right;font-weight:bold;${b.sisa <= 0 ? 'color:#dc3545;' : ''}">${formatNumber(b.sisa)}</td>
+                        </tr>`;
+                });
+            }
+        });
+        body.innerHTML = html;
+    }
+    function toggleStockGroup(key) {
+        if (stockExpandedGroups.has(key)) stockExpandedGroups.delete(key); else stockExpandedGroups.add(key);
+        renderStockTable();
     }
 
     // ============================================================
@@ -1496,7 +1544,7 @@
         const kasKeluar = bulk['Kas_Keluar'] || { success: false };
 
         document.getElementById('statTotalProduk').textContent = masterData.products.length || 0;
-        document.getElementById('statTotalPenjualan').textContent = 'Rp ' + formatNumber((penjualan.success ? penjualan.data.reduce((s, r) => s + (parseFloat(r.total_tagihan) || 0), 0) : 0).toFixed(0));
+        document.getElementById('statTotalPenjualan').textContent = 'Rp ' + formatNumber((penjualan.success ? penjualan.data.filter(r => (r.kode_transaksi || '').toLowerCase() !== 'sample').reduce((s, r) => s + (parseFloat(r.total_tagihan) || 0), 0) : 0).toFixed(0));
         document.getElementById('statTotalPembelian').textContent = 'Rp ' + formatNumber((pembelian.success ? pembelian.data.reduce((s, r) => s + (parseFloat(r.total) || 0), 0) : 0).toFixed(0));
         document.getElementById('statKasMasuk').textContent = 'Rp ' + formatNumber((kasMasuk.success ? kasMasuk.data.reduce((s, r) => s + (parseFloat(r.kas_masuk) || 0), 0) : 0).toFixed(0));
         document.getElementById('statKasKeluar').textContent = 'Rp ' + formatNumber((kasKeluar.success ? kasKeluar.data.reduce((s, r) => s + (parseFloat(r.kas_keluar) || 0), 0) : 0).toFixed(0));
