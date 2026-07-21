@@ -208,6 +208,7 @@
             <button class="nav-tab" onclick="switchTab('resep-mapping', this)">Resep Mapping</button>
             <button class="nav-tab" onclick="switchTab('penjualan', this)">Penjualan</button>
             <button class="nav-tab" onclick="switchTab('kas-masuk', this)">Kas Masuk</button>
+            <button class="nav-tab" onclick="switchTab('stock', this)">Stock</button>
             <button class="nav-tab" onclick="switchTab('opname', this)">Stock Opname</button>
             <button class="nav-tab" onclick="switchTab('movement', this)">Stock Movement</button>
             <button class="nav-tab" onclick="switchTab('preview', this)">Preview</button>
@@ -425,6 +426,25 @@
                 </div>
             </div>
 
+            <!-- STOCK TAB -->
+            <div class="tab-content" id="tab-stock">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Stock</div>
+                        <button class="btn btn-primary btn-sm" onclick="loadStockTable()">Refresh</button>
+                    </div>
+                    <div class="form-group" style="max-width:320px;margin-bottom:12px;">
+                        <input type="text" id="stockSearch" placeholder="Cari produk..." oninput="renderStockTable()">
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="stockTable">
+                            <thead><tr><th>Produk</th><th style="text-align:right;">Masuk</th><th style="text-align:right;">Keluar</th><th style="text-align:right;">Saldo</th></tr></thead>
+                            <tbody id="stockTableBody"><tr><td colspan="4" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat data</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <!-- STOCK OPNAME TAB -->
             <div class="tab-content" id="tab-opname">
                 <div class="card">
@@ -522,6 +542,7 @@
     // entered manually (not auto from komposisi) and their total feeds the
     // automatic Penyusutan (%) calculation.
     let gbDetailIds = [];
+    let stockTableData = null;
 
     function getGasUrl() {
         return localStorage.getItem('qfin_gas_url') || document.getElementById('gasUrl').value || '';
@@ -716,6 +737,7 @@
         if (tabName === 'pembelian') autoFillNextDoc('pemNoDokumen', 'Pembelian_App', 'no_dokumen');
         if (tabName === 'penjualan') autoFillNextDoc('penInvoice', 'Penjualan_App', 'no_invoice');
         if (tabName === 'kas-masuk') autoFillNextDoc('kmNoDokumen', 'Kas_Masuk', 'no_dokumen');
+        if (tabName === 'stock' && stockTableData === null) loadStockTable();
     }
     async function autoFillNextDoc(inputId, table, field) {
         const input = document.getElementById(inputId);
@@ -1349,6 +1371,30 @@
         document.getElementById('kmNoInvoiceRef').value = ''; document.getElementById('kmInvoiceInfo').textContent = '';
         document.getElementById('kmSumberDana').value = '';
         autoFillNextDoc('kmNoDokumen', 'Kas_Masuk', 'no_dokumen');
+    }
+
+    // ============================================================
+    // STOCK
+    // ============================================================
+    async function loadStockTable() {
+        document.getElementById('stockTableBody').innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
+        const result = await callGAS('getAllStock', {});
+        stockTableData = result.success ? result.data : [];
+        renderStockTable();
+    }
+    function renderStockTable() {
+        const body = document.getElementById('stockTableBody');
+        if (!stockTableData) { body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat data</td></tr>'; return; }
+        const query = (document.getElementById('stockSearch').value || '').toLowerCase();
+        const rows = stockTableData.filter(r => (r.nama_produk || '').toLowerCase().includes(query));
+        if (rows.length === 0) { body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>'; return; }
+        body.innerHTML = rows.map(r => `
+            <tr>
+                <td>${r.nama_produk}</td>
+                <td style="text-align:right;">${formatNumber(r.masuk)}</td>
+                <td style="text-align:right;">${formatNumber(r.keluar)}</td>
+                <td style="text-align:right;font-weight:${r.saldo <= 0 ? 'bold;color:#dc3545' : 'bold'};">${formatNumber(r.saldo)}</td>
+            </tr>`).join('');
     }
 
     // ============================================================
