@@ -213,9 +213,10 @@
             <button class="nav-tab" onclick="switchTab('movement', this)">Stock Movement</button>
             <button class="nav-tab" onclick="switchTab('master-data', this)">Master Data</button>
             <button class="nav-tab" onclick="switchTab('pricelist', this)">Pricelist</button>
-            <button class="nav-tab" onclick="switchTab('neraca', this)">Neraca</button>
-            <button class="nav-tab" onclick="switchTab('rugilaba', this)">Rugi Laba</button>
-            <button class="nav-tab" onclick="switchTab('bukubesar', this)">Buku Besar</button>
+            <button class="nav-tab admin-only" id="navtab-neraca" onclick="switchTab('neraca', this)" style="display:none;">Neraca</button>
+            <button class="nav-tab admin-only" id="navtab-rugilaba" onclick="switchTab('rugilaba', this)" style="display:none;">Rugi Laba</button>
+            <button class="nav-tab admin-only" id="navtab-bukubesar" onclick="switchTab('bukubesar', this)" style="display:none;">Buku Besar</button>
+            <button class="nav-tab" id="navtab-adminlogin" onclick="showAdminLoginPrompt()">🔒 Admin</button>
             <button class="nav-tab" onclick="switchTab('piutanghutang', this)">Piutang & Hutang</button>
             <button class="nav-tab" onclick="switchTab('preview', this)">Preview</button>
         </div>
@@ -828,6 +829,8 @@
             const qs = new URLSearchParams();
             qs.set('action', action);
             qs.set('callback', callbackName);
+            const adminToken = sessionStorage.getItem('qfin_admin_token');
+            if (adminToken) qs.set('admin_token', adminToken);
             Object.keys(data).forEach(key => {
                 const val = data[key];
                 if (val === undefined || val === null) return;
@@ -2389,7 +2392,38 @@
 
         // Load master data
         loadMasterData();
+
+        // Restore admin session if still logged in from earlier this
+        // browser tab session (sessionStorage clears when the tab closes,
+        // so this isn't a permanent bypass).
+        if (sessionStorage.getItem('qfin_admin_token')) {
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+            document.getElementById('navtab-adminlogin').textContent = '🔓 Admin';
+        }
     });
+    async function showAdminLoginPrompt() {
+        if (sessionStorage.getItem('qfin_admin_token')) {
+            if (confirm('Sudah login sebagai admin. Logout?')) {
+                sessionStorage.removeItem('qfin_admin_token');
+                document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
+                document.getElementById('navtab-adminlogin').textContent = '🔒 Admin';
+                // If a protected tab was open, switch back to a default one.
+                switchTab('assembly', document.querySelector('.nav-tab'));
+            }
+            return;
+        }
+        const password = prompt('Masukkan password admin:');
+        if (!password) return;
+        const result = await callGAS('verifyAdminPassword', { password: password });
+        if (result.success) {
+            sessionStorage.setItem('qfin_admin_token', result.token);
+            document.querySelectorAll('.admin-only').forEach(el => el.style.display = '');
+            document.getElementById('navtab-adminlogin').textContent = '🔓 Admin';
+            alert('Login admin berhasil.');
+        } else {
+            alert('Gagal login: ' + result.message);
+        }
+    }
     function clearCacheAndReload() {
         localStorage.removeItem('qfin_gas_url');
         const cacheKeys = Object.keys(localStorage).filter(k => k.startsWith('qfin_cache_'));
