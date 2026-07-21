@@ -701,9 +701,13 @@
                                 <div class="dropdown-list" id="mdResepProdukJadi-list"></div>
                             </div>
                         </div>
-                        <div class="form-group"><label>Bahan</label><input type="text" id="mdResepBahan" placeholder="Nama bahan baku"></div>
-                        <div class="form-group"><label>Komposisi</label><input type="number" id="mdResepKomposisi" step="0.01" placeholder="0"></div>
-                        <div class="form-group"><label>Satuan</label><input type="text" id="mdResepSatuan" placeholder="kg"></div>
+                    </div>
+                    <div id="md-fields-Master_Resep-bahan-container" style="display:none;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin:8px 0;">
+                            <label style="font-weight:600;">Bahan Baku</label>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="addResepBahanRow()">+ Tambah Bahan</button>
+                        </div>
+                        <div id="mdResepBahanRows"></div>
                     </div>
 
                     <div class="form-grid" id="md-fields-Master_Customer" style="display:none;">
@@ -1387,7 +1391,18 @@
     async function calculatePenjualanHPP(id) {
         const barangInput = document.getElementById(`pen-barang-${id}`);
         const sku = barangInput?.dataset.value; if (!sku) return; // only a real dropdown selection, never partial typed text
-        const result = await callGAS('getHPP', { id_produk: sku });
+
+        // These 4 lookups are independent of each other - firing them
+        // together instead of awaiting one at a time cuts the wait from
+        // "sum of all four" down to "as slow as the single slowest one",
+        // which is what was making every product selection feel sluggish.
+        const [result, priceResult, batchResult, stockResult] = await Promise.all([
+            callGAS('getHPP', { id_produk: sku }),
+            callGAS('getPricelistPrice', { id_produk: sku }),
+            callGAS('getBatchesForProduk', { id_produk: sku }),
+            callGAS('getStock', { id_produk: sku })
+        ]);
+
         if (result.success && result.data) { const hpp = result.data.hpp_per_unit || 0; const hppInput = document.getElementById(`pen-hpp-${id}`); if (hppInput) hppInput.value = hpp; }
 
         // Harga jual: from the saved Pricelist if this product has one -
@@ -1395,12 +1410,9 @@
         // overwrites a price the user already typed or adjusted for this
         // specific sale (e.g. a discount).
         const priceInput = document.getElementById(`pen-price-${id}`);
-        if (priceInput && !priceInput.value) {
-            const priceResult = await callGAS('getPricelistPrice', { id_produk: sku });
-            if (priceResult.success && priceResult.data) {
-                priceInput.value = priceResult.data.harga_jual;
-                calculatePenjualanItemTotal(id);
-            }
+        if (priceInput && !priceInput.value && priceResult.success && priceResult.data) {
+            priceInput.value = priceResult.data.harga_jual;
+            calculatePenjualanItemTotal(id);
         }
 
         // Kemasan is a plain dropdown the user picks manually (see the
@@ -1411,7 +1423,6 @@
         // remaining (FIFO) - getBatchesForProduk only returns batches with
         // sisa > 0, sorted oldest-first, so batches[0] is exactly right.
         // If nothing comes back, every batch for this product is sold out.
-        const batchResult = await callGAS('getBatchesForProduk', { id_produk: sku });
         const datalist = document.getElementById(`pen-batch-list-${id}`);
         const batchInput = document.getElementById(`pen-batch-${id}`);
         const batches = batchResult.success ? batchResult.data : [];
@@ -1423,7 +1434,6 @@
         // Stock check: if there's nothing produced yet for this product,
         // block the row entirely (rather than just warning after the fact)
         // and point the user at Assembly instead.
-        const stockResult = await callGAS('getStock', { id_produk: sku });
         const stockLabel = document.getElementById(`pen-stock-${id}`);
         const saldo = stockResult.success && stockResult.data ? (parseFloat(stockResult.data.saldo) || 0) : 0;
         if (stockLabel) stockLabel.textContent = `Stok saat ini: ${formatNumber(saldo)}`;
@@ -1738,10 +1748,76 @@
         Object.keys(MD_NAME_FIELD).forEach(t => {
             document.getElementById('md-fields-' + t).style.display = (t === jenis) ? '' : 'none';
         });
+        const bahanContainer = document.getElementById('md-fields-Master_Resep-bahan-container');
+        if (jenis === 'Master_Resep') {
+            bahanContainer.style.display = '';
+            if (document.getElementById('mdResepBahanRows').children.length === 0) addResepBahanRow();
+        } else {
+            bahanContainer.style.display = 'none';
+        }
         loadMasterDataList();
+    }
+    let resepBahanRowId = 0;
+    function addResepBahanRow() {
+        const id = resepBahanRowId++;
+        const container = document.getElementById('mdResepBahanRows');
+        const div = document.createElement('div');
+        div.className = 'form-grid';
+        div.id = `resep-bahan-row-${id}`;
+        div.style.cssText = 'grid-template-columns:2fr 1fr 1fr auto;align-items:end;margin-bottom:8px;';
+        div.innerHTML = `
+            <div class="form-group" style="margin-bottom:0;">
+                <label>Bahan</label>
+                <div class="searchable-dropdown">
+                    <input type="text" id="resep-bahan-${id}" placeholder="Cari bahan baku..." oninput="searchDropdown('resep-bahan-${id}', 'products')" onfocus="showDropdown('resep-bahan-${id}')">
+                    <div class="dropdown-list" id="resep-bahan-${id}-list"></div>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0;"><label>Komposisi</label><input type="number" id="resep-komposisi-${id}" step="0.01" placeholder="0"></div>
+            <div class="form-group" style="margin-bottom:0;"><label>Satuan</label><input type="text" id="resep-satuan-${id}" placeholder="kg"></div>
+            <button type="button" class="btn btn-danger btn-sm" onclick="document.getElementById('resep-bahan-row-${id}').remove()">✕</button>
+        `;
+        container.appendChild(div);
     }
     async function submitMasterDataForm() {
         const jenis = document.getElementById('mdJenis').value;
+
+        if (jenis === 'Master_Resep') {
+            const namaResep = document.getElementById('mdResepNama').value;
+            const idProdukJadi = document.getElementById('mdResepProdukJadi').dataset.value || '';
+            if (!namaResep) { showAlert('danger', 'Nama Resep tidak boleh kosong', 'masterDataAlert'); return; }
+            const bahanRows = Array.from(document.getElementById('mdResepBahanRows').children);
+            if (bahanRows.length === 0) { showAlert('danger', 'Tambahkan minimal 1 bahan baku', 'masterDataAlert'); return; }
+            let successCount = 0, failMessages = [];
+            for (const row of bahanRows) {
+                const id = row.id.replace('resep-bahan-row-', '');
+                const bahan = document.getElementById(`resep-bahan-${id}`).value;
+                if (!bahan) continue; // skip empty rows silently
+                const result = await callGAS('submitMasterData', {
+                    table: 'Master_Resep',
+                    nama_resep: namaResep,
+                    id_produk_jadi: idProdukJadi,
+                    bahan: bahan,
+                    komposisi: parseFloat(document.getElementById(`resep-komposisi-${id}`).value) || 0,
+                    satuan: document.getElementById(`resep-satuan-${id}`).value
+                });
+                if (result.success) successCount++; else failMessages.push(bahan + ': ' + result.message);
+            }
+            if (successCount > 0) {
+                showAlert(failMessages.length ? 'danger' : 'success', `${successCount} bahan tersimpan.` + (failMessages.length ? ' Gagal: ' + failMessages.join('; ') : ''), 'masterDataAlert');
+                document.getElementById('mdResepNama').value = '';
+                document.getElementById('mdResepProdukJadi').value = '';
+                document.getElementById('mdResepProdukJadi').dataset.value = '';
+                document.getElementById('mdResepBahanRows').innerHTML = '';
+                addResepBahanRow();
+                localStorage.removeItem(CACHE_KEY + jenis);
+                await loadMasterData();
+                loadMasterDataList();
+            } else {
+                showAlert('danger', 'Gagal: ' + (failMessages.join('; ') || 'tidak ada bahan diisi'), 'masterDataAlert');
+            }
+            return;
+        }
         let data = { table: jenis };
         if (jenis === 'Master_Produk') {
             data = Object.assign(data, {
@@ -1759,14 +1835,6 @@
                 kapasitas: parseFloat(document.getElementById('mdKemasanKapasitas').value) || 0,
                 satuan: document.getElementById('mdKemasanSatuan').value,
                 harga: parseFloat(document.getElementById('mdKemasanHarga').value) || 0
-            });
-        } else if (jenis === 'Master_Resep') {
-            data = Object.assign(data, {
-                nama_resep: document.getElementById('mdResepNama').value,
-                id_produk_jadi: document.getElementById('mdResepProdukJadi').dataset.value || '',
-                bahan: document.getElementById('mdResepBahan').value,
-                komposisi: parseFloat(document.getElementById('mdResepKomposisi').value) || 0,
-                satuan: document.getElementById('mdResepSatuan').value
             });
         } else if (jenis === 'Master_Customer') {
             data = Object.assign(data, {
@@ -1885,7 +1953,13 @@
     }
     function printPricelist() {
         if (!pricelistData || pricelistData.length === 0) { showAlert('danger', 'Belum ada data untuk dicetak - klik Generate dulu', 'pricelistAlert'); return; }
-        const rowsHtml = pricelistData.map(r => `
+        // Items with HPP=0 usually mean the cost basis couldn't be
+        // resolved (no Assembly batch history yet) - excluded from the
+        // printed version since Rp0-based pricing looks broken to a
+        // customer, even though it's still visible/editable in the table.
+        const printableData = pricelistData.filter(r => r.hpp_per_kg > 0);
+        if (printableData.length === 0) { showAlert('danger', 'Semua produk masih HPP Rp0 - tidak ada yang bisa dicetak', 'pricelistAlert'); return; }
+        const rowsHtml = printableData.map(r => `
             <tr>
                 <td>${r.nama_produk}</td>
                 <td style="text-align:center;">${r.berat_kg} kg</td>
