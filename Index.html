@@ -612,8 +612,8 @@
                     <div id="bbCount" style="color:var(--gray);margin-bottom:8px;font-size:13px;"></div>
                     <div style="overflow-x:auto;max-height:70vh;overflow-y:auto;">
                         <table class="data-table" id="bukuBesarTable">
-                            <thead><tr><th>Tanggal</th><th>Akun Debit</th><th>Akun Kredit</th><th>Jumlah</th><th>Keterangan</th><th>Sumber</th><th>Referensi</th></tr></thead>
-                            <tbody id="bukuBesarTableBody"><tr><td colspan="7" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat</td></tr></tbody>
+                            <thead><tr><th>Tanggal</th><th>Akun Debit</th><th>Akun Kredit</th><th>Jumlah</th><th>Keterangan</th><th>Pihak</th><th>Sumber</th><th>Referensi</th></tr></thead>
+                            <tbody id="bukuBesarTableBody"><tr><td colspan="8" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -2094,7 +2094,7 @@
     // ============================================================
     let bukuBesarData = null;
     async function loadBukuBesar() {
-        document.getElementById('bukuBesarTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
+        document.getElementById('bukuBesarTableBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
         const result = await callGAS('getBukuBesar', {}, 90000);
         if (!result.success) { showAlert('danger', 'Gagal: ' + result.message, 'bukuBesarAlert'); return; }
         bukuBesarData = result.data;
@@ -2115,20 +2115,21 @@
         const filtered = bukuBesarData.filter(e => {
             if (akunFilter && e.akun_debit !== akunFilter && e.akun_kredit !== akunFilter) return false;
             if (query) {
-                const haystack = (e.keterangan + ' ' + e.sumber + ' ' + e.referensi).toLowerCase();
+                const haystack = (e.keterangan + ' ' + e.pihak + ' ' + e.sumber + ' ' + e.referensi).toLowerCase();
                 if (!haystack.includes(query)) return false;
             }
             return true;
         });
         document.getElementById('bbCount').textContent = `Menampilkan ${filtered.length} dari ${bukuBesarData.length} entri` + (akunFilter ? ` - total: Rp ${formatNumber(filtered.reduce((s, e) => s + e.jumlah, 0))}` : '');
         const body = document.getElementById('bukuBesarTableBody');
-        if (filtered.length === 0) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>'; return; }
+        if (filtered.length === 0) { body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>'; return; }
         body.innerHTML = filtered.map(e => `<tr>
             <td>${e.tanggal}</td>
             <td>${e.akun_debit}</td>
             <td>${e.akun_kredit}</td>
             <td style="text-align:right;">${formatNumber(e.jumlah)}</td>
             <td>${e.keterangan}</td>
+            <td>${e.pihak || ''}</td>
             <td>${e.sumber}</td>
             <td>${e.referensi}</td>
         </tr>`).join('');
@@ -2207,13 +2208,13 @@
         const filtered = bukuBesarData.filter(e => {
             if (akunFilter && e.akun_debit !== akunFilter && e.akun_kredit !== akunFilter) return false;
             if (query) {
-                const haystack = (e.keterangan + ' ' + e.sumber + ' ' + e.referensi).toLowerCase();
+                const haystack = (e.keterangan + ' ' + e.pihak + ' ' + e.sumber + ' ' + e.referensi).toLowerCase();
                 if (!haystack.includes(query)) return false;
             }
             return true;
         });
-        const rows = filtered.map(e => [e.tanggal, e.akun_debit, e.akun_kredit, e.jumlah, e.keterangan, e.sumber, e.referensi]);
-        downloadCsv('buku-besar.csv', ['Tanggal', 'Akun Debit', 'Akun Kredit', 'Jumlah', 'Keterangan', 'Sumber', 'Referensi'], rows);
+        const rows = filtered.map(e => [e.tanggal, e.akun_debit, e.akun_kredit, e.jumlah, e.keterangan, e.pihak, e.sumber, e.referensi]);
+        downloadCsv('buku-besar.csv', ['Tanggal', 'Akun Debit', 'Akun Kredit', 'Jumlah', 'Keterangan', 'Pihak', 'Sumber', 'Referensi'], rows);
     }
     function downloadPiutangHutangCsv(kind) {
         if (!piutangHutangData) { showAlert('danger', 'Belum ada data - klik Refresh dulu', 'piutangHutangAlert'); return; }
