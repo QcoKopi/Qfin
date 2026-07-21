@@ -211,6 +211,7 @@
             <button class="nav-tab" onclick="switchTab('stock', this)">Stock</button>
             <button class="nav-tab" onclick="switchTab('opname', this)">Stock Opname</button>
             <button class="nav-tab" onclick="switchTab('movement', this)">Stock Movement</button>
+            <button class="nav-tab" onclick="switchTab('master-data', this)">Master Data</button>
             <button class="nav-tab" onclick="switchTab('preview', this)">Preview</button>
         </div>
         <div class="content-area">
@@ -511,6 +512,105 @@
             </div>
 
             <!-- PREVIEW TAB -->
+            <!-- MASTER DATA TAB -->
+            <div class="tab-content" id="tab-master-data">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Tambah Data Master</div>
+                        <button class="btn btn-success btn-sm" onclick="submitMasterDataForm()">Simpan</button>
+                    </div>
+                    <div class="alert alert-info" id="masterDataAlert" style="display:none;"></div>
+                    <div class="form-group" style="max-width:280px;">
+                        <label>Jenis Data</label>
+                        <select id="mdJenis" onchange="onMasterDataJenisChange()">
+                            <option value="Master_Produk">Produk</option>
+                            <option value="Master_Kemasan">Kemasan</option>
+                            <option value="Master_Resep">Resep</option>
+                            <option value="Master_Customer">Customer</option>
+                            <option value="Master_Supplier">Supplier</option>
+                            <option value="Master_Salesman">Salesman</option>
+                            <option value="Master_COA">COA</option>
+                        </select>
+                    </div>
+
+                    <div class="form-grid" id="md-fields-Master_Produk">
+                        <div class="form-group"><label>Nama Produk</label><input type="text" id="mdProdukNama" placeholder="Nama produk"></div>
+                        <div class="form-group"><label>Tipe</label>
+                            <select id="mdProdukTipe"><option value="Raw Material">Raw Material</option><option value="Assembly">Assembly</option><option value="Jasa">Jasa</option></select>
+                        </div>
+                        <div class="form-group"><label>Kategori</label><input type="text" id="mdProdukKategori" placeholder="Misal: GB, RB, HB, Kemasan"></div>
+                        <div class="form-group"><label>Satuan</label><input type="text" id="mdProdukSatuan" placeholder="kg / pcs / ml"></div>
+                        <div class="form-group"><label>Harga Beli</label><input type="number" id="mdProdukHargaBeli" step="1000" placeholder="0"></div>
+                        <div class="form-group"><label>Harga Jual</label><input type="number" id="mdProdukHargaJual" step="1000" placeholder="0"></div>
+                        <div class="form-group"><label>Stok Minimum</label><input type="number" id="mdProdukStokMin" step="1" placeholder="0"></div>
+                    </div>
+
+                    <div class="form-grid" id="md-fields-Master_Kemasan" style="display:none;">
+                        <div class="form-group"><label>Nama Kemasan</label><input type="text" id="mdKemasanNama" placeholder="Misal: Flat Bottom Valve 250gr"></div>
+                        <div class="form-group"><label>Kapasitas</label><input type="number" id="mdKemasanKapasitas" step="1" placeholder="250"></div>
+                        <div class="form-group"><label>Satuan</label><input type="text" id="mdKemasanSatuan" placeholder="gr / ml / kg"></div>
+                        <div class="form-group"><label>Harga</label><input type="number" id="mdKemasanHarga" step="100" placeholder="0"></div>
+                    </div>
+
+                    <div class="form-grid" id="md-fields-Master_Resep" style="display:none;">
+                        <div class="form-group"><label>Nama Resep</label><input type="text" id="mdResepNama" placeholder="Nama resep"></div>
+                        <div class="form-group">
+                            <label>Produk Jadi</label>
+                            <div class="searchable-dropdown">
+                                <input type="text" id="mdResepProdukJadi" placeholder="Cari produk..." oninput="searchDropdown('mdResepProdukJadi', 'products')" onfocus="showDropdown('mdResepProdukJadi')">
+                                <div class="dropdown-list" id="mdResepProdukJadi-list"></div>
+                            </div>
+                        </div>
+                        <div class="form-group"><label>Bahan</label><input type="text" id="mdResepBahan" placeholder="Nama bahan baku"></div>
+                        <div class="form-group"><label>Komposisi</label><input type="number" id="mdResepKomposisi" step="0.01" placeholder="0"></div>
+                        <div class="form-group"><label>Satuan</label><input type="text" id="mdResepSatuan" placeholder="kg"></div>
+                    </div>
+
+                    <div class="form-grid" id="md-fields-Master_Customer" style="display:none;">
+                        <div class="form-group"><label>Nama Customer</label><input type="text" id="mdCustomerNama" placeholder="Nama customer"></div>
+                        <div class="form-group"><label>Alamat</label><input type="text" id="mdCustomerAlamat" placeholder="Alamat"></div>
+                        <div class="form-group"><label>Telepon</label><input type="text" id="mdCustomerTelepon" placeholder="Telepon"></div>
+                        <div class="form-group"><label>Email</label><input type="text" id="mdCustomerEmail" placeholder="Email"></div>
+                    </div>
+
+                    <div class="form-grid" id="md-fields-Master_Supplier" style="display:none;">
+                        <div class="form-group"><label>Nama Supplier</label><input type="text" id="mdSupplierNama" placeholder="Nama supplier"></div>
+                        <div class="form-group"><label>Alamat</label><input type="text" id="mdSupplierAlamat" placeholder="Alamat"></div>
+                        <div class="form-group"><label>Telepon</label><input type="text" id="mdSupplierTelepon" placeholder="Telepon"></div>
+                        <div class="form-group"><label>Email</label><input type="text" id="mdSupplierEmail" placeholder="Email"></div>
+                    </div>
+
+                    <div class="form-grid" id="md-fields-Master_Salesman" style="display:none;">
+                        <div class="form-group"><label>Nama Salesman</label><input type="text" id="mdSalesmanNama" placeholder="Nama salesman"></div>
+                        <div class="form-group"><label>Telepon</label><input type="text" id="mdSalesmanTelepon" placeholder="Telepon"></div>
+                        <div class="form-group"><label>Email</label><input type="text" id="mdSalesmanEmail" placeholder="Email"></div>
+                    </div>
+
+                    <div class="form-grid" id="md-fields-Master_COA" style="display:none;">
+                        <div class="form-group"><label>Nama COA</label><input type="text" id="mdCoaNama" placeholder="Nama akun COA"></div>
+                        <div class="form-group"><label>Tipe</label>
+                            <select id="mdCoaTipe"><option value="Pendapatan">Pendapatan</option><option value="Biaya">Biaya</option><option value="Aset">Aset</option><option value="Liabilitas">Liabilitas</option></select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Data yang Sudah Ada</div>
+                        <button class="btn btn-primary btn-sm" onclick="loadMasterDataList()">Refresh</button>
+                    </div>
+                    <div class="form-group" style="max-width:320px;">
+                        <input type="text" id="mdListSearch" placeholder="Cari..." oninput="renderMasterDataList()">
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="mdListTable">
+                            <thead id="mdListTableHead"><tr><th>Nama</th></tr></thead>
+                            <tbody id="mdListTableBody"><tr><td>Klik Refresh untuk memuat data</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
             <div class="tab-content" id="tab-preview">
                 <div class="stats-grid">
                     <div class="stat-card"><div class="stat-label">Total Produk</div><div class="stat-value" id="statTotalProduk">0</div></div>
@@ -752,6 +852,7 @@
         if (tabName === 'penjualan') autoFillNextDoc('penInvoice', 'Penjualan_App', 'no_invoice');
         if (tabName === 'kas-masuk') autoFillNextDoc('kmNoDokumen', 'Kas_Masuk', 'no_dokumen');
         if (tabName === 'stock' && stockTableData === null) loadStockTable();
+        if (tabName === 'master-data') loadMasterDataList();
     }
     async function autoFillNextDoc(inputId, table, field) {
         const input = document.getElementById(inputId);
@@ -1474,6 +1575,114 @@
     function toggleStockGroup(key) {
         if (stockExpandedGroups.has(key)) stockExpandedGroups.delete(key); else stockExpandedGroups.add(key);
         renderStockTable();
+    }
+
+    // ============================================================
+    // MASTER DATA
+    // ============================================================
+    let masterDataListCache = [];
+    const MD_NAME_FIELD = {
+        Master_Produk: 'nama_produk', Master_Kemasan: 'nama_kemasan', Master_Resep: 'nama_resep',
+        Master_Customer: 'nama_customer', Master_Supplier: 'nama_supplier', Master_Salesman: 'nama_salesman', Master_COA: 'nama_coa'
+    };
+    function onMasterDataJenisChange() {
+        const jenis = document.getElementById('mdJenis').value;
+        Object.keys(MD_NAME_FIELD).forEach(t => {
+            document.getElementById('md-fields-' + t).style.display = (t === jenis) ? '' : 'none';
+        });
+        loadMasterDataList();
+    }
+    async function submitMasterDataForm() {
+        const jenis = document.getElementById('mdJenis').value;
+        let data = { table: jenis };
+        if (jenis === 'Master_Produk') {
+            data = Object.assign(data, {
+                nama_produk: document.getElementById('mdProdukNama').value,
+                tipe: document.getElementById('mdProdukTipe').value,
+                kategori: document.getElementById('mdProdukKategori').value,
+                satuan: document.getElementById('mdProdukSatuan').value,
+                harga_beli: parseFloat(document.getElementById('mdProdukHargaBeli').value) || 0,
+                harga_jual: parseFloat(document.getElementById('mdProdukHargaJual').value) || 0,
+                stok_min: parseFloat(document.getElementById('mdProdukStokMin').value) || 0
+            });
+        } else if (jenis === 'Master_Kemasan') {
+            data = Object.assign(data, {
+                nama_kemasan: document.getElementById('mdKemasanNama').value,
+                kapasitas: parseFloat(document.getElementById('mdKemasanKapasitas').value) || 0,
+                satuan: document.getElementById('mdKemasanSatuan').value,
+                harga: parseFloat(document.getElementById('mdKemasanHarga').value) || 0
+            });
+        } else if (jenis === 'Master_Resep') {
+            data = Object.assign(data, {
+                nama_resep: document.getElementById('mdResepNama').value,
+                id_produk_jadi: document.getElementById('mdResepProdukJadi').dataset.value || '',
+                bahan: document.getElementById('mdResepBahan').value,
+                komposisi: parseFloat(document.getElementById('mdResepKomposisi').value) || 0,
+                satuan: document.getElementById('mdResepSatuan').value
+            });
+        } else if (jenis === 'Master_Customer') {
+            data = Object.assign(data, {
+                nama_customer: document.getElementById('mdCustomerNama').value,
+                alamat: document.getElementById('mdCustomerAlamat').value,
+                telepon: document.getElementById('mdCustomerTelepon').value,
+                email: document.getElementById('mdCustomerEmail').value
+            });
+        } else if (jenis === 'Master_Supplier') {
+            data = Object.assign(data, {
+                nama_supplier: document.getElementById('mdSupplierNama').value,
+                alamat: document.getElementById('mdSupplierAlamat').value,
+                telepon: document.getElementById('mdSupplierTelepon').value,
+                email: document.getElementById('mdSupplierEmail').value
+            });
+        } else if (jenis === 'Master_Salesman') {
+            data = Object.assign(data, {
+                nama_salesman: document.getElementById('mdSalesmanNama').value,
+                telepon: document.getElementById('mdSalesmanTelepon').value,
+                email: document.getElementById('mdSalesmanEmail').value
+            });
+        } else if (jenis === 'Master_COA') {
+            data = Object.assign(data, {
+                nama_coa: document.getElementById('mdCoaNama').value,
+                tipe: document.getElementById('mdCoaTipe').value
+            });
+        }
+
+        const nameField = MD_NAME_FIELD[jenis];
+        if (!data[nameField]) { showAlert('danger', 'Nama tidak boleh kosong', 'masterDataAlert'); return; }
+
+        const result = await callGAS('submitMasterData', data);
+        if (result.success) {
+            showAlert('success', data[nameField] + ' berhasil ditambahkan ke ' + jenis, 'masterDataAlert');
+            document.querySelectorAll('#md-fields-' + jenis + ' input').forEach(el => el.value = '');
+            document.getElementById('mdResepProdukJadi').dataset.value = '';
+            // Invalidate the cached copy of this table and reload it, so the
+            // new entry is immediately available in every dropdown across
+            // the app without needing a page refresh.
+            localStorage.removeItem(CACHE_KEY + jenis);
+            await loadMasterData();
+            loadMasterDataList();
+        } else {
+            showAlert('danger', 'Gagal: ' + result.message, 'masterDataAlert');
+        }
+    }
+    async function loadMasterDataList() {
+        const jenis = document.getElementById('mdJenis').value;
+        document.getElementById('mdListTableBody').innerHTML = '<tr><td>Memuat...</td></tr>';
+        const result = await callGAS('getAll', { table: jenis });
+        masterDataListCache = result.success ? result.data : [];
+        renderMasterDataList();
+    }
+    function renderMasterDataList() {
+        const jenis = document.getElementById('mdJenis').value;
+        const nameField = MD_NAME_FIELD[jenis];
+        const query = (document.getElementById('mdListSearch').value || '').toLowerCase();
+        const rows = masterDataListCache.filter(r => (r[nameField] || '').toLowerCase().includes(query));
+        const head = document.getElementById('mdListTableHead');
+        const body = document.getElementById('mdListTableBody');
+        const cols = Object.keys(masterDataListCache[0] || { [nameField]: '' }).filter(k => !['created_at', 'updated_at'].includes(k));
+        head.innerHTML = '<tr>' + cols.map(c => `<th>${c}</th>`).join('') + '</tr>';
+        if (rows.length === 0) { body.innerHTML = `<tr><td colspan="${cols.length}" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>`; return; }
+        body.innerHTML = rows.map(r => '<tr>' + cols.map(c => `<td>${r[c] !== undefined ? r[c] : ''}</td>`).join('') + '</tr>').join('');
     }
 
     // ============================================================
