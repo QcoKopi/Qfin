@@ -215,6 +215,8 @@
             <button class="nav-tab" onclick="switchTab('pricelist', this)">Pricelist</button>
             <button class="nav-tab" onclick="switchTab('neraca', this)">Neraca</button>
             <button class="nav-tab" onclick="switchTab('rugilaba', this)">Rugi Laba</button>
+            <button class="nav-tab" onclick="switchTab('bukubesar', this)">Buku Besar</button>
+            <button class="nav-tab" onclick="switchTab('piutanghutang', this)">Piutang & Hutang</button>
             <button class="nav-tab" onclick="switchTab('preview', this)">Preview</button>
         </div>
         <div class="content-area">
@@ -276,7 +278,7 @@
                         </div>
                         <div class="form-group">
                             <label>Kode Transaksi</label>
-                            <select id="pemKodeTransaksi"><option value="Pembelian">Pembelian</option><option value="Pembelian Biaya">Pembelian Biaya</option></select>
+                            <select id="pemKodeTransaksi"><option value="Pembelian">Pembelian</option><option value="Pembelian Biaya">Pembelian Biaya</option><option value="Pembayaran Hutang">Pembayaran Hutang</option></select>
                         </div>
                         <div class="form-group">
                             <label>COA</label>
@@ -549,7 +551,7 @@
                     <div class="card-header">
                         <div class="card-title">Neraca</div>
                         <div>
-                            <button class="btn btn-secondary btn-sm" onclick="loadNeracaReport()">Refresh</button>
+                            <button class="btn btn-secondary btn-sm" onclick="loadNeracaReport(true)">Refresh</button>
                             <button class="btn btn-primary btn-sm" onclick="printFinancialReport('neraca')">Cetak</button>
                         </div>
                     </div>
@@ -569,7 +571,7 @@
                     <div class="card-header">
                         <div class="card-title">Rugi Laba</div>
                         <div>
-                            <button class="btn btn-secondary btn-sm" onclick="loadRugiLabaReport()">Refresh</button>
+                            <button class="btn btn-secondary btn-sm" onclick="loadRugiLabaReport(true)">Refresh</button>
                             <button class="btn btn-primary btn-sm" onclick="printFinancialReport('rugilaba')">Cetak</button>
                         </div>
                     </div>
@@ -578,6 +580,66 @@
                         <table class="data-table" id="rugiLabaTable">
                             <thead><tr><th>Rugi Laba</th></tr></thead>
                             <tbody id="rugiLabaTableBody"><tr><td>Klik Refresh untuk memuat data</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BUKU BESAR TAB -->
+            <div class="tab-content" id="tab-bukubesar">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Buku Besar</div>
+                        <button class="btn btn-secondary btn-sm" onclick="loadBukuBesar()">Refresh</button>
+                    </div>
+                    <div class="alert alert-info" id="bukuBesarAlert" style="display:none;"></div>
+                    <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
+                        <div class="form-group" style="max-width:340px;margin-bottom:0;">
+                            <label>Filter Akun</label>
+                            <select id="bbAkunFilter" onchange="renderBukuBesar()">
+                                <option value="">Semua Akun</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="max-width:340px;margin-bottom:0;">
+                            <label>Cari (keterangan/sumber/no dokumen)</label>
+                            <input type="text" id="bbSearch" placeholder="Cari..." oninput="renderBukuBesar()">
+                        </div>
+                    </div>
+                    <div id="bbCount" style="color:var(--gray);margin-bottom:8px;font-size:13px;"></div>
+                    <div style="overflow-x:auto;max-height:70vh;overflow-y:auto;">
+                        <table class="data-table" id="bukuBesarTable">
+                            <thead><tr><th>Tanggal</th><th>Akun Debit</th><th>Akun Kredit</th><th>Jumlah</th><th>Keterangan</th><th>Sumber</th><th>Referensi</th></tr></thead>
+                            <tbody id="bukuBesarTableBody"><tr><td colspan="7" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PIUTANG & HUTANG TAB -->
+            <div class="tab-content" id="tab-piutanghutang">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Piutang Usaha (per Customer)</div>
+                        <button class="btn btn-secondary btn-sm" onclick="loadPiutangHutangDetail()">Refresh</button>
+                    </div>
+                    <div class="alert alert-info" id="piutangHutangAlert" style="display:none;"></div>
+                    <div id="piutangTotal" style="font-weight:bold;margin-bottom:8px;"></div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="piutangTable">
+                            <thead><tr><th></th><th>Customer</th><th style="text-align:right;">Saldo</th></tr></thead>
+                            <tbody id="piutangTableBody"><tr><td colspan="3" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Hutang Usaha (per Supplier)</div>
+                    </div>
+                    <div id="hutangTotal" style="font-weight:bold;margin-bottom:8px;"></div>
+                    <div style="overflow-x:auto;">
+                        <table class="data-table" id="hutangTable">
+                            <thead><tr><th></th><th>Supplier</th><th style="text-align:right;">Saldo</th></tr></thead>
+                            <tbody id="hutangTableBody"><tr><td colspan="3" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -926,6 +988,8 @@
         if (tabName === 'master-data') loadMasterDataList();
         if (tabName === 'neraca' && neracaReportData === null) loadNeracaReport();
         if (tabName === 'rugilaba' && rugiLabaReportData === null) loadRugiLabaReport();
+        if (tabName === 'bukubesar' && bukuBesarData === null) loadBukuBesar();
+        if (tabName === 'piutanghutang' && piutangHutangData === null) loadPiutangHutangDetail();
     }
     async function autoFillNextDoc(inputId, table, field) {
         const input = document.getElementById(inputId);
@@ -1852,11 +1916,21 @@
     let neracaReportData = null;
     let rugiLabaReportData = null;
 
-    async function loadNeracaReport() {
+    async function loadNeracaReport(forceRefresh) {
+        if (!forceRefresh) {
+            const cached = getCache('neracaReport');
+            if (cached) {
+                neracaReportData = cached.data;
+                renderFinancialTable('neracaTable', cached.data);
+                showAlert('info', `Data dari cache (terakhir dihitung: ${new Date(cached.timestamp).toLocaleString('id-ID')}). Klik Refresh untuk data terbaru.`, 'neracaAlert');
+                return;
+            }
+        }
         document.getElementById('neracaTableBody').innerHTML = '<tr><td>Menghitung...</td></tr>';
         const result = await callGAS('generateNeracaReport', {}, 90000);
         if (!result.success) { showAlert('danger', 'Gagal: ' + result.message, 'neracaAlert'); return; }
         neracaReportData = result;
+        setCache('neracaReport', result);
         renderFinancialTable('neracaTable', result);
         if (result.balance) {
             showAlert('success', 'Neraca balance di semua kolom (selisih Rp 0).', 'neracaAlert');
@@ -1865,11 +1939,21 @@
             showAlert('danger', 'Neraca TIDAK balance - selisih per kolom: ' + selisihText, 'neracaAlert');
         }
     }
-    async function loadRugiLabaReport() {
+    async function loadRugiLabaReport(forceRefresh) {
+        if (!forceRefresh) {
+            const cached = getCache('rugiLabaReport');
+            if (cached) {
+                rugiLabaReportData = cached.data;
+                renderFinancialTable('rugiLabaTable', cached.data);
+                showAlert('info', `Data dari cache (terakhir dihitung: ${new Date(cached.timestamp).toLocaleString('id-ID')}). Klik Refresh untuk data terbaru.`, 'rugiLabaAlert');
+                return;
+            }
+        }
         document.getElementById('rugiLabaTableBody').innerHTML = '<tr><td>Menghitung...</td></tr>';
         const result = await callGAS('generateRugiLabaReportDetailed', {}, 90000);
         if (!result.success) { showAlert('danger', 'Gagal: ' + result.message, 'rugiLabaAlert'); return; }
         rugiLabaReportData = result;
+        setCache('rugiLabaReport', result);
         renderFinancialTable('rugiLabaTable', result);
         document.getElementById('rugiLabaAlert').style.display = 'none';
     }
@@ -1919,6 +2003,100 @@
         </body></html>`;
         const win = window.open('', '_blank');
         if (win) { win.document.write(html); win.document.close(); }
+    }
+
+    // ============================================================
+    // BUKU BESAR
+    // ============================================================
+    let bukuBesarData = null;
+    async function loadBukuBesar() {
+        document.getElementById('bukuBesarTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
+        const result = await callGAS('getBukuBesar', {}, 90000);
+        if (!result.success) { showAlert('danger', 'Gagal: ' + result.message, 'bukuBesarAlert'); return; }
+        bukuBesarData = result.data;
+        // Populate the account filter with every distinct account seen,
+        // sorted by name, so picking one shows every entry touching it.
+        const akunSet = new Set();
+        bukuBesarData.forEach(e => { akunSet.add(e.akun_debit); akunSet.add(e.akun_kredit); });
+        const select = document.getElementById('bbAkunFilter');
+        const currentValue = select.value;
+        select.innerHTML = '<option value="">Semua Akun</option>' + Array.from(akunSet).sort().map(a => `<option value="${a.replace(/"/g, '&quot;')}">${a}</option>`).join('');
+        select.value = currentValue;
+        renderBukuBesar();
+    }
+    function renderBukuBesar() {
+        if (!bukuBesarData) return;
+        const akunFilter = document.getElementById('bbAkunFilter').value;
+        const query = (document.getElementById('bbSearch').value || '').toLowerCase();
+        const filtered = bukuBesarData.filter(e => {
+            if (akunFilter && e.akun_debit !== akunFilter && e.akun_kredit !== akunFilter) return false;
+            if (query) {
+                const haystack = (e.keterangan + ' ' + e.sumber + ' ' + e.referensi).toLowerCase();
+                if (!haystack.includes(query)) return false;
+            }
+            return true;
+        });
+        document.getElementById('bbCount').textContent = `Menampilkan ${filtered.length} dari ${bukuBesarData.length} entri` + (akunFilter ? ` - total: Rp ${formatNumber(filtered.reduce((s, e) => s + e.jumlah, 0))}` : '');
+        const body = document.getElementById('bukuBesarTableBody');
+        if (filtered.length === 0) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>'; return; }
+        body.innerHTML = filtered.map(e => `<tr>
+            <td>${e.tanggal}</td>
+            <td>${e.akun_debit}</td>
+            <td>${e.akun_kredit}</td>
+            <td style="text-align:right;">${formatNumber(e.jumlah)}</td>
+            <td>${e.keterangan}</td>
+            <td>${e.sumber}</td>
+            <td>${e.referensi}</td>
+        </tr>`).join('');
+    }
+
+    // ============================================================
+    // PIUTANG & HUTANG DETAIL
+    // ============================================================
+    let piutangHutangData = null;
+    let phExpanded = new Set();
+    async function loadPiutangHutangDetail() {
+        document.getElementById('piutangTableBody').innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
+        document.getElementById('hutangTableBody').innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
+        const result = await callGAS('generatePiutangHutangDetail', {}, 60000);
+        if (!result.success) { showAlert('danger', 'Gagal: ' + result.message, 'piutangHutangAlert'); return; }
+        piutangHutangData = result;
+        phExpanded.clear();
+        renderPiutangHutangDetail();
+    }
+    function togglePhRow(kind, idx) {
+        const key = kind + '-' + idx;
+        if (phExpanded.has(key)) phExpanded.delete(key); else phExpanded.add(key);
+        renderPiutangHutangDetail();
+    }
+    function renderPiutangHutangDetail() {
+        if (!piutangHutangData) return;
+        document.getElementById('piutangTotal').textContent = 'Total Piutang: Rp ' + formatNumber(piutangHutangData.total_piutang);
+        document.getElementById('hutangTotal').textContent = 'Total Hutang: Rp ' + formatNumber(piutangHutangData.total_hutang);
+
+        const renderList = (list, kind, bodyId) => {
+            const body = document.getElementById(bodyId);
+            if (list.length === 0) { body.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--gray);">Tidak ada saldo</td></tr>'; return; }
+            body.innerHTML = list.map((party, idx) => {
+                const key = kind + '-' + idx;
+                const isOpen = phExpanded.has(key);
+                let html = `<tr style="cursor:pointer;" onclick="togglePhRow('${kind}', ${idx})">
+                    <td>${isOpen ? '▼' : '▶'}</td>
+                    <td>${party.nama}</td>
+                    <td style="text-align:right;font-weight:bold;">${formatNumber(party.saldo)}</td>
+                </tr>`;
+                if (isOpen) {
+                    html += party.detail.map(d => `<tr style="background:#f9fafb;">
+                        <td></td>
+                        <td colspan="1" style="color:var(--gray);font-size:13px;">${d.keterangan}</td>
+                        <td style="text-align:right;color:var(--gray);font-size:13px;">${formatNumber(d.jumlah)}</td>
+                    </tr>`).join('');
+                }
+                return html;
+            }).join('');
+        };
+        renderList(piutangHutangData.piutang, 'p', 'piutangTableBody');
+        renderList(piutangHutangData.hutang, 'h', 'hutangTableBody');
     }
 
     // ============================================================
