@@ -590,7 +590,10 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">Buku Besar</div>
-                        <button class="btn btn-secondary btn-sm" onclick="loadBukuBesar()">Refresh</button>
+                        <div>
+                            <button class="btn btn-secondary btn-sm" onclick="loadBukuBesar()">Refresh</button>
+                            <button class="btn btn-primary btn-sm" onclick="downloadBukuBesarCsv()">Download CSV</button>
+                        </div>
                     </div>
                     <div class="alert alert-info" id="bukuBesarAlert" style="display:none;"></div>
                     <div style="display:flex;gap:16px;margin-bottom:12px;flex-wrap:wrap;">
@@ -620,7 +623,10 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">Piutang Usaha (per Customer)</div>
-                        <button class="btn btn-secondary btn-sm" onclick="loadPiutangHutangDetail()">Refresh</button>
+                        <div>
+                            <button class="btn btn-secondary btn-sm" onclick="loadPiutangHutangDetail()">Refresh</button>
+                            <button class="btn btn-primary btn-sm" onclick="downloadPiutangHutangCsv('piutang')">Download CSV</button>
+                        </div>
                     </div>
                     <div class="alert alert-info" id="piutangHutangAlert" style="display:none;"></div>
                     <div id="piutangTotal" style="font-weight:bold;margin-bottom:8px;"></div>
@@ -634,6 +640,7 @@
                 <div class="card">
                     <div class="card-header">
                         <div class="card-title">Hutang Usaha (per Supplier)</div>
+                        <button class="btn btn-primary btn-sm" onclick="downloadPiutangHutangCsv('hutang')">Download CSV</button>
                     </div>
                     <div id="hutangTotal" style="font-weight:bold;margin-bottom:8px;"></div>
                     <div style="overflow-x:auto;">
@@ -2097,6 +2104,51 @@
         };
         renderList(piutangHutangData.piutang, 'p', 'piutangTableBody');
         renderList(piutangHutangData.hutang, 'h', 'hutangTableBody');
+    }
+
+    // Shared CSV builder + download trigger - Excel-compatible (UTF-8 BOM
+    // so accented/special characters and "Rp" render correctly), values
+    // quoted and commas inside text escaped.
+    function downloadCsv(filename, headers, rows) {
+        const escape = v => {
+            const s = (v === null || v === undefined) ? '' : String(v);
+            return '"' + s.replace(/"/g, '""') + '"';
+        };
+        const lines = [headers.map(escape).join(',')].concat(rows.map(row => row.map(escape).join(',')));
+        const csv = '\uFEFF' + lines.join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    function downloadBukuBesarCsv() {
+        if (!bukuBesarData || bukuBesarData.length === 0) { showAlert('danger', 'Belum ada data - klik Refresh dulu', 'bukuBesarAlert'); return; }
+        const akunFilter = document.getElementById('bbAkunFilter').value;
+        const query = (document.getElementById('bbSearch').value || '').toLowerCase();
+        const filtered = bukuBesarData.filter(e => {
+            if (akunFilter && e.akun_debit !== akunFilter && e.akun_kredit !== akunFilter) return false;
+            if (query) {
+                const haystack = (e.keterangan + ' ' + e.sumber + ' ' + e.referensi).toLowerCase();
+                if (!haystack.includes(query)) return false;
+            }
+            return true;
+        });
+        const rows = filtered.map(e => [e.tanggal, e.akun_debit, e.akun_kredit, e.jumlah, e.keterangan, e.sumber, e.referensi]);
+        downloadCsv('buku-besar.csv', ['Tanggal', 'Akun Debit', 'Akun Kredit', 'Jumlah', 'Keterangan', 'Sumber', 'Referensi'], rows);
+    }
+    function downloadPiutangHutangCsv(kind) {
+        if (!piutangHutangData) { showAlert('danger', 'Belum ada data - klik Refresh dulu', 'piutangHutangAlert'); return; }
+        const list = kind === 'piutang' ? piutangHutangData.piutang : piutangHutangData.hutang;
+        const rows = [];
+        list.forEach(party => {
+            party.detail.forEach(d => {
+                rows.push([party.nama, party.saldo, d.keterangan, d.jumlah]);
+            });
+        });
+        const label = kind === 'piutang' ? 'Customer' : 'Supplier';
+        downloadCsv(kind + '-detail.csv', [label, 'Saldo Total', 'Keterangan Transaksi', 'Jumlah Transaksi'], rows);
     }
 
     // ============================================================
