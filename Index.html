@@ -655,7 +655,7 @@
                     <div class="card-header">
                         <div class="card-title">Piutang per Invoice (Rekonsiliasi)</div>
                         <div>
-                            <button class="btn btn-secondary btn-sm" onclick="loadPiutangReconciliationSummary()">Refresh</button>
+                            <button class="btn btn-secondary btn-sm" onclick="loadPiutangReconciliationSummary(true)">Refresh</button>
                             <button class="btn btn-primary btn-sm" onclick="downloadReconciliationCsv('piutang')">Download CSV (semua)</button>
                         </div>
                     </div>
@@ -672,7 +672,7 @@
                     <div class="card-header">
                         <div class="card-title">Hutang per Dokumen (Rekonsiliasi)</div>
                         <div>
-                            <button class="btn btn-secondary btn-sm" onclick="loadHutangReconciliationSummary()">Refresh</button>
+                            <button class="btn btn-secondary btn-sm" onclick="loadHutangReconciliationSummary(true)">Refresh</button>
                             <button class="btn btn-primary btn-sm" onclick="downloadReconciliationCsv('hutang')">Download CSV (semua)</button>
                         </div>
                     </div>
@@ -2274,9 +2274,9 @@
     let piutangReconDetailCache = {}, hutangReconDetailCache = {};
     let piutangReconExpanded = new Set(), hutangReconExpanded = new Set();
 
-    async function loadPiutangReconciliationSummary() {
+    async function loadPiutangReconciliationSummary(forceRefresh) {
         document.getElementById('piutangReconTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
-        const result = await callGAS('generatePiutangReconciliationSummary', {}, 60000);
+        const result = await callGAS('generatePiutangReconciliationSummary', forceRefresh ? { refresh: 'true' } : {}, 60000);
         if (!result.success) { showAlert('danger', 'Gagal: ' + result.message, 'piutangReconAlert'); return; }
         piutangReconSummary = result.data;
         piutangReconDetailCache = {}; piutangReconExpanded = new Set();
@@ -2328,9 +2328,9 @@
         }
     }
 
-    async function loadHutangReconciliationSummary() {
+    async function loadHutangReconciliationSummary(forceRefresh) {
         document.getElementById('hutangReconTableBody').innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
-        const result = await callGAS('generateHutangReconciliationSummary', {}, 60000);
+        const result = await callGAS('generateHutangReconciliationSummary', forceRefresh ? { refresh: 'true' } : {}, 60000);
         if (!result.success) { showAlert('danger', 'Gagal: ' + result.message, 'hutangReconAlert'); return; }
         hutangReconSummary = result.data;
         hutangReconDetailCache = {}; hutangReconExpanded = new Set();
