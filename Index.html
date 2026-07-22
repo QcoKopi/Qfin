@@ -460,8 +460,8 @@
                     </div>
                     <div style="overflow-x:auto;">
                         <table class="data-table" id="stockTable">
-                            <thead><tr><th style="width:24px;"></th><th>Produk</th><th>Batch No</th><th>Tanggal</th><th style="text-align:right;">Diproduksi</th><th style="text-align:right;">Terjual</th><th style="text-align:right;">Sisa</th></tr></thead>
-                            <tbody id="stockTableBody"><tr><td colspan="7" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat data</td></tr></tbody>
+                            <thead><tr><th style="width:24px;"></th><th>Produk</th><th>Batch No</th><th>Tanggal</th><th style="text-align:right;">Diproduksi</th><th style="text-align:right;">Terjual</th><th style="text-align:right;">Dipakai Assembly Lain</th><th style="text-align:right;">Sisa</th></tr></thead>
+                            <tbody id="stockTableBody"><tr><td colspan="8" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat data</td></tr></tbody>
                         </table>
                     </div>
                 </div>
@@ -1602,12 +1602,15 @@
             harga_satuan: parseFloat(document.getElementById(`pen-price-${id}`)?.value) || 0,
             total: parseFloat(document.getElementById(`pen-total-${id}`)?.value) || 0,
             diskon: parseFloat(document.getElementById(`pen-diskon-${id}`)?.value) || 0,
-            total_diskon: parseFloat(document.getElementById(`pen-total-${id}`)?.value) || 0,
             kemasan: document.getElementById(`pen-kemasan-${id}`)?.value || '',
             jumlah_kemasan: parseFloat(document.getElementById(`pen-jumlah-kemasan-${id}`)?.value) || 0,
             batch_no: document.getElementById(`pen-batch-${id}`)?.value || ''
         })).filter(d => d.nama_barang);
-        const totalTagihan = details.reduce((sum, d) => sum + d.total, 0);
+        // total_tagihan = total - diskon per line item, summed - total_diskon
+        // was removed entirely (it was just copying total, never actually
+        // subtracting the discount, and total_tagihan itself used to ignore
+        // diskon completely too).
+        const totalTagihan = details.reduce((sum, d) => sum + (d.total - d.diskon), 0);
         const totalBayar = parseFloat(document.getElementById('penTotalBayar')?.value) || 0;
         const data = {
             tanggal: document.getElementById('penDate').value, jatuh_tempo: '',
@@ -1830,7 +1833,7 @@
     // STOCK
     // ============================================================
     async function loadStockTable() {
-        document.getElementById('stockTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
+        document.getElementById('stockTableBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
         const result = await callGAS('getStockBreakdown', {});
         stockTableData = result.success ? result.data : [];
         const kategoriSelect = document.getElementById('stockKategoriFilter');
@@ -1842,24 +1845,25 @@
     }
     function renderStockTable() {
         const body = document.getElementById('stockTableBody');
-        if (!stockTableData) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat data</td></tr>'; return; }
+        if (!stockTableData) { body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);">Klik Refresh untuk memuat data</td></tr>'; return; }
         const query = (document.getElementById('stockSearch').value || '').toLowerCase();
         const kategoriFilter = document.getElementById('stockKategoriFilter').value;
         const rows = stockTableData.filter(r =>
             (r.nama_produk || '').toLowerCase().includes(query) &&
             (!kategoriFilter || r.kategori === kategoriFilter)
         );
-        if (rows.length === 0) { body.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>'; return; }
+        if (rows.length === 0) { body.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);">Tidak ada data</td></tr>'; return; }
 
         // Group batch-level rows by product so each product shows one
-        // summary line (total diproduksi/terjual/sisa) with its individual
-        // batches collapsed underneath, expandable on click.
+        // summary line (total diproduksi/terjual/dipakai_assembly_lain/sisa)
+        // with its individual batches collapsed underneath, expandable on click.
         const groups = {};
         rows.forEach(r => {
             const key = r.id_produk;
-            if (!groups[key]) groups[key] = { nama_produk: r.nama_produk, diproduksi: 0, terjual: 0, sisa: 0, batches: [] };
+            if (!groups[key]) groups[key] = { nama_produk: r.nama_produk, diproduksi: 0, terjual: 0, dipakai_assembly_lain: 0, sisa: 0, batches: [] };
             groups[key].diproduksi += r.diproduksi;
             groups[key].terjual += r.terjual;
+            groups[key].dipakai_assembly_lain += r.dipakai_assembly_lain || 0;
             groups[key].sisa += r.sisa;
             groups[key].batches.push(r);
         });
@@ -1878,6 +1882,7 @@
                     <td></td>
                     <td style="text-align:right;">${formatNumber(g.diproduksi)}</td>
                     <td style="text-align:right;">${formatNumber(g.terjual)}</td>
+                    <td style="text-align:right;">${formatNumber(g.dipakai_assembly_lain)}</td>
                     <td style="text-align:right;${g.sisa <= 0 ? 'color:#dc3545;' : ''}">${formatNumber(g.sisa)}</td>
                 </tr>`;
             if (isExpanded) {
@@ -1890,6 +1895,7 @@
                             <td>${b.tanggal ? new Date(b.tanggal).toLocaleDateString('id-ID') : ''}</td>
                             <td style="text-align:right;">${formatNumber(b.diproduksi)}</td>
                             <td style="text-align:right;">${formatNumber(b.terjual)}</td>
+                            <td style="text-align:right;">${formatNumber(b.dipakai_assembly_lain || 0)}</td>
                             <td style="text-align:right;font-weight:bold;${b.sisa <= 0 ? 'color:#dc3545;' : ''}">${formatNumber(b.sisa)}</td>
                         </tr>`;
                 });
@@ -2114,20 +2120,34 @@
     }
     async function savePricelistTable() {
         if (!pricelistData || pricelistData.length === 0) { showAlert('danger', 'Belum ada data untuk disimpan - klik Generate dulu', 'pricelistAlert'); return; }
-        // Only the essential/editable fields - sending every column for
-        // every product as one big JSON string risked exceeding the URL
-        // length limit (all calls go through the JSONP/GET mechanism),
-        // which is very likely why saving silently failed for a pricelist
-        // with many products. The backend re-looks-up nama_produk and
-        // other display fields from Master_Produk by id_produk.
+        // Only the essential/editable fields per item, AND split into small
+        // chunks sent as separate sequential requests - real POST can't be
+        // used at all with Apps Script (its redirect strips the request
+        // body), so every call goes through the JSONP/GET mechanism, which
+        // has a URL length limit. One big request for the whole pricelist
+        // kept silently failing regardless of how few fields were trimmed;
+        // sending it in small pieces is what actually avoids the limit
+        // regardless of how many products there are.
         const trimmed = pricelistData.map(r => ({
             id_produk: r.id_produk, berat_kg: r.berat_kg, hpp_per_kg: r.hpp_per_kg,
             nama_kemasan: r.nama_kemasan, harga_kemasan: r.harga_kemasan,
             markup_percent: r.markup_percent, harga_jual: r.harga_jual
         }));
-        const result = await callGAS('savePricelist', { items: JSON.stringify(trimmed) });
-        if (result.success) showAlert('success', pricelistData.length + ' harga tersimpan. Harga jual di Penjualan akan otomatis pakai ini.', 'pricelistAlert');
-        else showAlert('danger', 'Gagal simpan: ' + result.message, 'pricelistAlert');
+        const CHUNK_SIZE = 15;
+        const chunks = [];
+        for (let i = 0; i < trimmed.length; i += CHUNK_SIZE) chunks.push(trimmed.slice(i, i + CHUNK_SIZE));
+
+        let totalSaved = 0;
+        for (let i = 0; i < chunks.length; i++) {
+            showAlert('info', `Menyimpan bagian ${i + 1}/${chunks.length}...`, 'pricelistAlert');
+            const result = await callGAS('savePricelist', { items: JSON.stringify(chunks[i]), isFirstChunk: i === 0 ? 'true' : 'false' });
+            if (!result.success) {
+                showAlert('danger', `Gagal simpan bagian ${i + 1}/${chunks.length}: ${result.message} (${totalSaved} produk sebelumnya sudah tersimpan)`, 'pricelistAlert');
+                return;
+            }
+            totalSaved += result.saved || 0;
+        }
+        showAlert('success', totalSaved + ' harga tersimpan. Harga jual di Penjualan akan otomatis pakai ini.', 'pricelistAlert');
     }
     function printPricelist() {
         if (!pricelistData || pricelistData.length === 0) { showAlert('danger', 'Belum ada data untuk dicetak - klik Generate dulu', 'pricelistAlert'); return; }
