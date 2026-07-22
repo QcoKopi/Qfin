@@ -990,9 +990,13 @@
         // Penjualan's Nama Barang search only offers products that
         // currently have stock - selling something with zero stock isn't
         // a real option, so it shouldn't be a selectable candidate here.
+        // Also excludes "Fix Asset" and "SDM" typed entries entirely -
+        // these aren't sellable inventory even if they somehow show a
+        // nonzero stock figure.
         const isPenjualanBarang = /^pen-barang-\d+$/.test(inputId);
-        if (isPenjualanBarang && stockCache) {
-            data = data.filter(item => (stockCache[item.id_produk] || 0) > 0);
+        if (isPenjualanBarang) {
+            data = data.filter(item => item.tipe !== 'Fix Asset' && item.tipe !== 'SDM' && item.kategori !== 'Fix Asset' && item.kategori !== 'SDM');
+            if (stockCache) data = data.filter(item => (stockCache[item.id_produk] || 0) > 0);
         }
         const filtered = data.filter(item => {
             const label = (item.nama_produk || item.nama_customer || item.nama_supplier || item.nama_salesman || item.nama_akun || item.nama_cash || item.nama_resep || item.nama_kemasan || item.nama || '').toLowerCase();
@@ -1032,6 +1036,8 @@
         if (inputId === 'pemSupplier') updateAllKodeLot();
         const pemBarangMatch = inputId.match(/^pem-barang-(\d+)$/);
         if (pemBarangMatch) updateKodeLotForRow(parseInt(pemBarangMatch[1], 10));
+        const penKemasanMatch = inputId.match(/^pen-kemasan-(\d+)$/);
+        if (penKemasanMatch) calculateJumlahKemasanForRB(parseInt(penKemasanMatch[1], 10));
     }
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.searchable-dropdown')) document.querySelectorAll('.dropdown-list').forEach(l => l.classList.remove('show'));
@@ -1053,7 +1059,7 @@
         if (tabName === 'resep-mapping') loadResepMapping();
         if (tabName === 'pembelian') autoFillNextDoc('pemNoDokumen', 'Pembelian_App', 'no_dokumen');
         if (tabName === 'penjualan') { autoFillNextDoc('penInvoice', 'Penjualan_App', 'no_invoice'); loadStockCacheForPenjualan(); }
-        if (tabName === 'kas-masuk') autoFillNextDoc('kmNoDokumen', 'Kas_Masuk', 'no_dokumen');
+        if (tabName === 'kas-masuk') { /* No Dokumen now doubles as the invoice picker - left empty so the datalist of unpaid invoices isn't pre-filtered by a leftover auto-generated number */ }
         if (tabName === 'stock' && stockTableData === null) loadStockTable();
         if (tabName === 'master-data') loadMasterDataList();
         if (tabName === 'neraca' && neracaReportData === null) loadNeracaReport();
@@ -1432,7 +1438,7 @@
             <div class="alert alert-danger" id="pen-nostock-${id}" style="display:none;"></div>
             <div class="form-grid">
                 <div class="form-group"><label>Nama Barang</label><div class="searchable-dropdown"><input type="text" id="pen-barang-${id}" placeholder="Cari barang..." oninput="searchDropdown('pen-barang-${id}', 'products')" onfocus="showDropdown('pen-barang-${id}')"><div class="dropdown-list" id="pen-barang-${id}-list"></div></div></div>
-                <div class="form-group"><label>Jumlah</label><input type="number" id="pen-qty-${id}" step="0.01" placeholder="0" onchange="calculatePenjualanItemTotal(${id})"></div>
+                <div class="form-group"><label>Jumlah</label><input type="number" id="pen-qty-${id}" step="0.01" placeholder="0" onchange="validateQtyAgainstStock(${id}); calculatePenjualanItemTotal(${id}); calculateJumlahKemasanForRB(${id})"></div>
                 <div class="form-group"><label>Harga Satuan</label><input type="number" id="pen-price-${id}" step="1000" placeholder="0" onchange="calculatePenjualanItemTotal(${id})"></div>
                 <div class="form-group"><label>Total</label><input type="number" id="pen-total-${id}" readonly placeholder="0"></div>
                 <div class="form-group"><label>Diskon</label><input type="number" id="pen-diskon-${id}" step="1000" value="0" onchange="calculatePenjualanItemTotal(${id})"></div>
@@ -1505,6 +1511,8 @@
         const stockLabel = document.getElementById(`pen-stock-${id}`);
         const saldo = stockResult.success && stockResult.data ? (parseFloat(stockResult.data.saldo) || 0) : 0;
         if (stockLabel) stockLabel.textContent = `Stok saat ini: ${formatNumber(saldo)}`;
+        const qtyInputForMax = document.getElementById(`pen-qty-${id}`);
+        if (qtyInputForMax) qtyInputForMax.max = saldo;
 
         const nostockBanner = document.getElementById(`pen-nostock-${id}`);
         const fieldsToToggle = ['pen-qty', 'pen-price', 'pen-diskon', 'pen-batch'].map(p => document.getElementById(`${p}-${id}`));
@@ -1532,6 +1540,37 @@
             }
         } else {
             totalBayarGroup.style.display = 'none';
+        }
+    }
+    function calculateJumlahKemasanForRB(id) {
+        const barangInput = document.getElementById(`pen-barang-${id}`);
+        const namaBarang = (barangInput?.value || '').trim();
+        if (!namaBarang.toUpperCase().startsWith('RB ')) return; // only auto-calculated for RB products
+        const kemasanInput = document.getElementById(`pen-kemasan-${id}`);
+        const kemasanId = kemasanInput?.dataset.value;
+        if (!kemasanId) return;
+        const kemasanItem = (masterData.kemasan || []).find(k => k.id_kemasan === kemasanId);
+        if (!kemasanItem) return;
+        const kapasitas = parseFloat(kemasanItem.kapasitas) || 0;
+        if (kapasitas <= 0) return;
+        const satuan = (kemasanItem.satuan || '').toString().toLowerCase();
+        const kapasitasGram = satuan.startsWith('kg') ? kapasitas * 1000 : kapasitas;
+
+        const qty = parseFloat(document.getElementById(`pen-qty-${id}`)?.value) || 0;
+        if (qty <= 0) return;
+        const jumlahKemasanInput = document.getElementById(`pen-jumlah-kemasan-${id}`);
+        if (jumlahKemasanInput) jumlahKemasanInput.value = Math.ceil((qty * 1000) / kapasitasGram);
+    }
+    function validateQtyAgainstStock(id) {
+        const barangInput = document.getElementById(`pen-barang-${id}`);
+        const sku = barangInput?.dataset.value;
+        const qtyInput = document.getElementById(`pen-qty-${id}`);
+        if (!sku || !stockCache || !qtyInput) return;
+        const maxStok = stockCache[sku] || 0;
+        const entered = parseFloat(qtyInput.value) || 0;
+        if (entered > maxStok) {
+            qtyInput.value = maxStok;
+            showAlert('warning', `Jumlah dibatasi ke ${formatNumber(maxStok)} - itu sisa stok untuk barang ini.`, 'penjualanAlert');
         }
     }
     function calculatePenjualanItemTotal(id) {
@@ -1785,7 +1824,6 @@
         document.getElementById('kmSumberDana').value = '';
         document.getElementById('kmTerminGroup').style.display = 'none';
         kmDefaultJumlah = null;
-        autoFillNextDoc('kmNoDokumen', 'Kas_Masuk', 'no_dokumen');
     }
 
     // ============================================================
@@ -2076,7 +2114,18 @@
     }
     async function savePricelistTable() {
         if (!pricelistData || pricelistData.length === 0) { showAlert('danger', 'Belum ada data untuk disimpan - klik Generate dulu', 'pricelistAlert'); return; }
-        const result = await callGAS('savePricelist', { items: JSON.stringify(pricelistData) });
+        // Only the essential/editable fields - sending every column for
+        // every product as one big JSON string risked exceeding the URL
+        // length limit (all calls go through the JSONP/GET mechanism),
+        // which is very likely why saving silently failed for a pricelist
+        // with many products. The backend re-looks-up nama_produk and
+        // other display fields from Master_Produk by id_produk.
+        const trimmed = pricelistData.map(r => ({
+            id_produk: r.id_produk, berat_kg: r.berat_kg, hpp_per_kg: r.hpp_per_kg,
+            nama_kemasan: r.nama_kemasan, harga_kemasan: r.harga_kemasan,
+            markup_percent: r.markup_percent, harga_jual: r.harga_jual
+        }));
+        const result = await callGAS('savePricelist', { items: JSON.stringify(trimmed) });
         if (result.success) showAlert('success', pricelistData.length + ' harga tersimpan. Harga jual di Penjualan akan otomatis pakai ini.', 'pricelistAlert');
         else showAlert('danger', 'Gagal simpan: ' + result.message, 'pricelistAlert');
     }
