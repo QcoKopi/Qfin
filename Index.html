@@ -2270,7 +2270,7 @@
     let piutangReconData = null, hutangReconData = null;
     async function loadPiutangReconciliation() {
         document.getElementById('piutangReconTableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
-        const result = await callGAS('generatePiutangReconciliation', {}, 60000);
+        const result = await callGAS('generatePiutangReconciliation', {}, 120000);
         if (!result.success) { showAlert('danger', 'Gagal: ' + result.message, 'piutangHutangAlert'); return; }
         piutangReconData = result.data;
         renderPiutangReconciliation();
@@ -2287,12 +2287,12 @@
             <td>${r.tanggal}</td>
             <td style="text-align:right;">${formatNumber(r.jumlah)}</td>
             <td>${r.no_invoice_pembayaran || '-'}</td>
-            <td style="font-weight:bold;color:${r.status === 'Lunas' ? 'var(--success)' : 'var(--danger)'};">${r.status}</td>
+            <td style="font-weight:bold;color:${r.status === 'Lunas' ? 'var(--success)' : (r.status === 'CEK JUMLAH' ? 'var(--warning)' : 'var(--danger)')};">${r.status}</td>
         </tr>`).join('');
     }
     async function loadHutangReconciliation() {
         document.getElementById('hutangReconTableBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
-        const result = await callGAS('generateHutangReconciliation', {}, 60000);
+        const result = await callGAS('generateHutangReconciliation', {}, 120000);
         if (!result.success) { showAlert('danger', 'Gagal: ' + result.message, 'hutangReconAlert'); return; }
         hutangReconData = result.data;
         renderHutangReconciliation();
