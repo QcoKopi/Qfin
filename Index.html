@@ -358,9 +358,16 @@
                                 <div class="dropdown-list" id="penSalesman-list"></div>
                             </div>
                         </div>
+                    </div>
+                    <div class="card-header" style="margin-top:20px;">
+                        <div class="card-title">Detail Barang</div>
+                        <button class="btn btn-primary btn-sm" onclick="addPenjualanDetail()">+ Tambah Barang</button>
+                    </div>
+                    <div id="penjualanDetails"></div>
+                    <div class="form-grid" id="penPembayaranSection" style="display:none;margin-top:16px;">
                         <div class="form-group">
                             <label>Type Pembayaran</label>
-                            <select id="penTypeBayar">
+                            <select id="penTypeBayar" onchange="onPenTypeBayarChange()">
                                 <option value="Lunas Transfer">Lunas Transfer</option>
                                 <option value="Lunas Tunai">Lunas Tunai</option>
                                 <option value="Hutang">Hutang</option>
@@ -372,14 +379,13 @@
                         </div>
                         <div class="form-group">
                             <label>Status</label>
-                            <select id="penStatus"><option value="Pending">Pending</option><option value="LUNAS">LUNAS</option><option value="Batal">Batal</option></select>
+                            <select id="penStatus"><option value="Piutang">Piutang</option><option value="LUNAS">LUNAS</option><option value="Batal">Batal</option></select>
+                        </div>
+                        <div class="form-group" id="penTotalBayarGroup" style="display:none;">
+                            <label>Total Pembayaran</label>
+                            <input type="number" id="penTotalBayar" step="1000" placeholder="0">
                         </div>
                     </div>
-                    <div class="card-header" style="margin-top:20px;">
-                        <div class="card-title">Detail Barang</div>
-                        <button class="btn btn-primary btn-sm" onclick="addPenjualanDetail()">+ Tambah Barang</button>
-                    </div>
-                    <div id="penjualanDetails"></div>
                     <div class="hpp-display" id="penjualanSummary" style="display:none;">
                         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;">
                             <div><div class="hpp-label">Total Tagihan</div><div class="hpp-value" id="penTotalTagihan">Rp 0</div></div>
@@ -421,7 +427,8 @@
                         </div>
                         <div class="form-group" id="kmInvoiceGroup">
                             <label>No Invoice</label>
-                            <input type="text" id="kmNoInvoiceRef" placeholder="No Invoice yang dibayar" onchange="lookupInvoiceForPayment()">
+                            <input type="text" id="kmNoInvoiceRef" placeholder="No Invoice yang dibayar" list="kmInvoiceList" onfocus="loadUnpaidInvoicesList()" onchange="lookupInvoiceForPayment()">
+                            <datalist id="kmInvoiceList"></datalist>
                             <small id="kmInvoiceInfo" style="color:var(--gray);font-size:11px;"></small>
                         </div>
                         <div class="form-group" id="kmSumberDanaGroup" style="display:none;">
@@ -1431,6 +1438,12 @@
         const barangInput = document.getElementById(`pen-barang-${id}`);
         const sku = barangInput?.dataset.value; if (!sku) return; // only a real dropdown selection, never partial typed text
 
+        // Type Pembayaran/Kode Transaksi/Status only matter once there's
+        // actually something being sold - hidden until the first product
+        // is picked, in any detail row.
+        const pembayaranSection = document.getElementById('penPembayaranSection');
+        if (pembayaranSection && pembayaranSection.style.display === 'none') pembayaranSection.style.display = '';
+
         // These 4 lookups are independent of each other - firing them
         // together instead of awaiting one at a time cuts the wait from
         // "sum of all four" down to "as slow as the single slowest one",
@@ -1487,6 +1500,27 @@
             fieldsToToggle.forEach(f => { if (f) f.disabled = false; });
         }
     }
+    function onPenTypeBayarChange() {
+        const tipe = document.getElementById('penTypeBayar').value;
+        const totalBayarGroup = document.getElementById('penTotalBayarGroup');
+        const statusSelect = document.getElementById('penStatus');
+        if (tipe === 'Lunas Transfer' || tipe === 'Lunas Tunai') {
+            totalBayarGroup.style.display = '';
+            statusSelect.value = 'LUNAS';
+            // Prefill with the current total tagihan as a sensible default
+            // (a Lunas sale is usually paid in full) - the user can still
+            // adjust it manually before submitting.
+            const totalBayarInput = document.getElementById('penTotalBayar');
+            if (totalBayarInput && !totalBayarInput.value) {
+                let totalTagihan = 0;
+                penjualanDetails.forEach(id => { totalTagihan += parseFloat(document.getElementById(`pen-total-${id}`)?.value) || 0; });
+                totalBayarInput.value = totalTagihan;
+            }
+        } else {
+            totalBayarGroup.style.display = 'none';
+            statusSelect.value = 'Piutang';
+        }
+    }
     function calculatePenjualanItemTotal(id) {
         const qty = parseFloat(document.getElementById(`pen-qty-${id}`)?.value) || 0;
         const price = parseFloat(document.getElementById(`pen-price-${id}`)?.value) || 0;
@@ -1521,13 +1555,15 @@
             batch_no: document.getElementById(`pen-batch-${id}`)?.value || ''
         })).filter(d => d.nama_barang);
         const totalTagihan = details.reduce((sum, d) => sum + d.total, 0);
+        const totalBayar = parseFloat(document.getElementById('penTotalBayar')?.value) || 0;
         const data = {
             tanggal: document.getElementById('penDate').value, jatuh_tempo: '',
             cost_center: 'Q.Co', salesman: document.getElementById('penSalesman').value,
             no_invoice: document.getElementById('penInvoice').value, kode_transaksi: document.getElementById('penKodeTransaksi').value,
             customer: document.getElementById('penCustomer').value, total_tagihan: totalTagihan,
             type_pembayaran: document.getElementById('penTypeBayar').value,
-            status: document.getElementById('penStatus').value, total_bayar: 0, tanggal_pembayaran: '',
+            status: document.getElementById('penStatus').value, total_bayar: totalBayar,
+            tanggal_pembayaran: totalBayar > 0 ? document.getElementById('penDate').value : '',
             status_bayar: document.getElementById('penStatus').value === 'LUNAS' ? 'LUNAS' : 'Hutang',
             details: details
         };
@@ -1645,6 +1681,9 @@
         document.getElementById('penInvoice').value = ''; document.getElementById('penCustomer').value = '';
         document.getElementById('penSalesman').value = ''; document.getElementById('penjualanDetails').innerHTML = '';
         document.getElementById('penKodeTransaksi').value = 'Penjualan';
+        document.getElementById('penTotalBayar').value = '';
+        document.getElementById('penTotalBayarGroup').style.display = 'none';
+        document.getElementById('penPembayaranSection').style.display = 'none';
         penjualanDetails = []; document.getElementById('penjualanSummary').style.display = 'none';
         autoFillNextDoc('penInvoice', 'Penjualan_App', 'no_invoice');
     }
@@ -1675,6 +1714,17 @@
         const isPiutang = document.getElementById('kmKodeTransaksi').value.toLowerCase().includes('piutang');
         document.getElementById('kmInvoiceGroup').style.display = isPiutang ? '' : 'none';
         document.getElementById('kmSumberDanaGroup').style.display = isPiutang ? 'none' : '';
+    }
+    let unpaidInvoicesCache = null;
+    async function loadUnpaidInvoicesList() {
+        if (unpaidInvoicesCache) return; // fetched once per page session already
+        const result = await callGAS('getUnpaidInvoices', {}, 30000);
+        if (!result.success) return;
+        unpaidInvoicesCache = result.data;
+        const datalist = document.getElementById('kmInvoiceList');
+        datalist.innerHTML = unpaidInvoicesCache.map(inv =>
+            `<option value="${inv.no_invoice}">${inv.customer} — Rp${formatNumber(inv.total_tagihan)}</option>`
+        ).join('');
     }
     async function lookupInvoiceForPayment() {
         const noInvoice = document.getElementById('kmNoInvoiceRef').value;
