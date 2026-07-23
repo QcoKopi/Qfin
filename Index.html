@@ -1703,21 +1703,28 @@
     }
 
     async function lookupInvoiceForPayment() {
-        const noInv = document.getElementById('kmNoDokumen').value;
-        if (!noInv) return;
-        const result = await callGAS('getInvoiceDetail', { no_invoice: noInv });
-        if (result.success && result.data) {
-            const inv = result.data;
-            const salesInput = document.getElementById('kmSales');
-            if (salesInput) salesInput.value = inv.salesman || '';
-            const lawanInput = document.getElementById('kmLawan');
-            if (lawanInput) lawanInput.value = inv.customer || '';
-            const jumlahInput = document.getElementById('kmJumlah');
-            if (jumlahInput) jumlahInput.value = inv.sisa_tagihan || inv.total_tagihan || 0;
-            const infoEl = document.getElementById('kmInvoiceInfo');
-            if (infoEl) infoEl.textContent = `Customer: ${inv.customer} | Total Tagihan: Rp ${formatNumber(inv.total_tagihan)}`;
+    const noInv = document.getElementById('kmNoDokumen').value.trim();
+    if (!noInv) return;
+    
+    const result = await callGAS('getInvoiceForPayment', { no_invoice: noInv });
+    
+    if (result.success && result.data) {
+        const inv = result.data;
+        const salesInput = document.getElementById('kmSales');
+        if (salesInput) salesInput.value = inv.salesman || '';
+        
+        const lawanInput = document.getElementById('kmLawan');
+        if (lawanInput) lawanInput.value = inv.customer || '';
+        
+        const jumlahInput = document.getElementById('kmJumlah');
+        if (jumlahInput) jumlahInput.value = inv.sisa || 0;
+        
+        const infoEl = document.getElementById('kmInvoiceInfo');
+        if (infoEl) {
+            infoEl.textContent = `Customer: ${inv.customer} | Total Tagihan: Rp ${formatNumber(inv.total_tagihan)} | Sisa: Rp ${formatNumber(inv.sisa)}`;
         }
     }
+}
 
     async function submitKasMasuk() {
         clearMandatoryErrors('tab-kas-masuk');
