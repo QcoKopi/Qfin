@@ -352,6 +352,7 @@
                         <div class="form-group">
                             <label class="mandatory-label">Type Pembayaran</label>
                             <select id="penTypeBayar" onchange="onPenTypeBayarChange()">
+                                <option value="" disabled selected>-- Pilih Tipe Pembayaran --</option>
                                 <option value="Lunas Transfer">Lunas Transfer</option>
                                 <option value="Lunas Tunai">Lunas Tunai</option>
                                 <option value="Hutang">Hutang</option>
@@ -1557,6 +1558,10 @@
             }
             lastSubmittedSaleData = data;
             document.getElementById('btnPrintInvoice').style.display = '';
+            
+            // Otomatis membuka invoice setelah berhasil submit
+            printInvoice(data);
+
             clearPenjualanForm();
         } else {
             showAlert('danger', 'Gagal: ' + result.message, 'penjualanAlert');
@@ -1653,6 +1658,7 @@
         document.getElementById('penInvoice').value = ''; document.getElementById('penCustomer').value = '';
         document.getElementById('penSalesman').value = ''; document.getElementById('penjualanDetails').innerHTML = '';
         document.getElementById('penKodeTransaksi').value = 'Penjualan';
+        document.getElementById('penTypeBayar').selectedIndex = 0;
         document.getElementById('penTotalBayar').value = '';
         document.getElementById('penTotalBayarGroup').style.display = 'none';
         document.getElementById('penPembayaranSection').style.display = 'none';
