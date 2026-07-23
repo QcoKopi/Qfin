@@ -978,16 +978,22 @@
         if (inputId === 'asmSku') { document.getElementById('asmNamaBarang').value = label.split(' (')[0]; loadRecipeForProduct(value); autoFillBatchNo(); }
         if (inputId === 'opProduk') fetchStockQty();
         const penBarangMatch = inputId.match(/^pen-barang-(\d+)$/);
-        if (penBarangMatch) {
-            calculatePenjualanHPP(parseInt(penBarangMatch[1], 10));
-            updateKemasanDropdownForRow(parseInt(penBarangMatch[1], 10));
-        }
+if (penBarangMatch) {
+    calculatePenjualanHPP(parseInt(penBarangMatch[1], 10));
+    // Reset kemasan saat ganti barang
+    const rowId = parseInt(penBarangMatch[1], 10);
+    const kemasanInput = document.getElementById(`pen-kemasan-${rowId}`);
+    const jumlahKemasanInput = document.getElementById(`pen-jumlah-kemasan-${rowId}`);
+    if (kemasanInput) { kemasanInput.value = ''; kemasanInput.dataset.value = ''; }
+    if (jumlahKemasanInput) jumlahKemasanInput.value = '';
+}
         if (inputId === 'pemSupplier') updateAllKodeLot();
         const pemBarangMatch = inputId.match(/^pem-barang-(\d+)$/);
         if (pemBarangMatch) updateKodeLotForRow(parseInt(pemBarangMatch[1], 10));
         const penKemasanMatch = inputId.match(/^pen-kemasan-(\d+)$/);
-        if (penKemasanMatch) calculateJumlahKemasanForRow(parseInt(penKemasanMatch[1], 10));
-    }
+if (penKemasanMatch) {
+    // Legacy: tidak lagi dipakai, kemasan sekarang pakai selectKemasan()
+}
     document.addEventListener('click', function(e) {
         if (!e.target.closest('.searchable-dropdown')) document.querySelectorAll('.dropdown-list').forEach(l => l.classList.remove('show'));
     });
@@ -1043,32 +1049,59 @@
     // MANDATORY FIELD VALIDATION
     // ============================================================
     function validateMandatory(containerId, alertId) {
-        const container = document.getElementById(containerId);
-        if (!container) return true;
-        const mandatoryInputs = container.querySelectorAll('input.mandatory-empty, select.mandatory-empty');
-        mandatoryInputs.forEach(el => el.classList.remove('mandatory-empty'));
-        const inputs = container.querySelectorAll('input, select');
-        let missing = [];
-        inputs.forEach(el => {
-            // Skip readonly, hidden, and elements inside hidden parents
-            if (el.readOnly || el.disabled) return;
-            if (el.offsetParent === null) return; // hidden
-            const label = el.closest('.form-group')?.querySelector('label');
-            if (!label || !label.classList.contains('mandatory-label')) return;
-            const val = (el.value || '').trim();
+    const container = document.getElementById(containerId);
+    if (!container) return true;
+    
+    // Clear previous errors
+    container.querySelectorAll('.mandatory-empty').forEach(el => el.classList.remove('mandatory-empty'));
+    
+    let missing = [];
+    
+    // Cari semua .form-group yang punya label.mandatory-label
+    const formGroups = container.querySelectorAll('.form-group');
+    formGroups.forEach(group => {
+        const label = group.querySelector('label.mandatory-label');
+        if (!label) return; // bukan field mandatory
+        
+        // Cari input atau select di dalam form-group ini
+        const input = group.querySelector('input:not([readonly]):not([type="hidden"])');
+        const select = group.querySelector('select');
+        const el = input || select;
+        if (!el) return;
+        
+        // Skip kalau element atau parent-nya hidden
+        if (el.offsetParent === null) return;
+        if (el.disabled) return;
+        
+        const labelText = label.textContent.replace(' *', '').trim();
+        
+        // Untuk searchable dropdown: cek dataset.value (bukan cuma .value)
+        const isDropdown = el.closest('.searchable-dropdown');
+        if (isDropdown) {
             const datasetVal = (el.dataset.value || '').trim();
-            if (!val && !datasetVal) {
+            const textVal = (el.value || '').trim();
+            // Wajib punya dataset.value (artinya user benar-benar pilih dari dropdown)
+            // ATAU kalau bukan dropdown tapi input biasa, cek value
+            if (!datasetVal && !textVal) {
                 el.classList.add('mandatory-empty');
-                const labelText = label.textContent.replace(' *', '').trim();
                 missing.push(labelText);
             }
-        });
-        if (missing.length > 0) {
-            showAlert('danger', 'Field wajib belum diisi: ' + missing.join(', '), alertId);
-            return false;
+        } else {
+            // Input biasa / select biasa
+            const val = (el.value || '').trim();
+            if (!val) {
+                el.classList.add('mandatory-empty');
+                missing.push(labelText);
+            }
         }
-        return true;
+    });
+    
+    if (missing.length > 0) {
+        showAlert('danger', 'Field wajib belum diisi: ' + missing.join(', '), alertId);
+        return false;
     }
+    return true;
+}
     function clearMandatoryErrors(containerId) {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -1296,114 +1329,127 @@
         autoFillNextDoc('pemNoDokumen', 'Pembelian_App', 'no_dokumen');
     }
 
-    // ============================================================
-    // PENJUALAN — KEMASAN BARU
-    // ============================================================
-    // Extract berat (gram) dari nama barang. Contoh: "RB 500" → 500, "RB09 250gr" → 250, "RB" → 1000 (default)
-    function extractBeratDariNama(namaBarang) {
-        if (!namaBarang) return 0;
-        const upper = namaBarang.toUpperCase();
-        // Cari angka diikuti gr/gram/kg (case insensitive)
-        const matchGr = namaBarang.match(/(\d+)\s*(gr|gram)/i);
-        if (matchGr) return parseFloat(matchGr[1]);
-        const matchKg = namaBarang.match(/(\d+(?:\.\d+)?)\s*kg/i);
-        if (matchKg) return parseFloat(matchKg[1]) * 1000;
-        // Kalau nama mengandung angka murni (misal "500", "250") → anggap gram
-        const matchNum = namaBarang.match(/(\d{2,4})/);
-        if (matchNum) return parseFloat(matchNum[1]);
-        // Default: RB = 1kg = 1000gr
-        if (upper.includes('RB')) return 1000;
-        return 0;
+     ============================================================
+// KEMASAN LOGIC BARU
+// ============================================================
+
+// Ekstrak berat dalam GRAM dari nama barang
+function extractBeratGramDariNama(namaBarang) {
+    if (!namaBarang) return 0;
+    const nama = namaBarang.toString();
+    // Cari pola: angka diikuti gr/gram (case insensitive)
+    const matchGr = nama.match(/(\d+)\s*(gr|gram)/i);
+    if (matchGr) return parseInt(matchGr[1], 10);
+    // Cari pola: angka diikuti kg
+    const matchKg = nama.match(/(\d+(?:\.\d+)?)\s*kg/i);
+    if (matchKg) return Math.round(parseFloat(matchKg[1]) * 1000);
+    // Cari angka murni 2-4 digit (misal "500", "250", "1000")
+    const matchNum = nama.match(/\b(\d{2,4})\b/);
+    if (matchNum) return parseInt(matchNum[1], 10);
+    // Default: RB = 1kg = 1000gr
+    if (nama.toUpperCase().includes('RB')) return 1000;
+    return 0;
+}
+
+// Filter dropdown kemasan berdasarkan barang + jumlah yang dipilih
+function filterKemasanDropdown(id) {
+    const barangInput = document.getElementById(`pen-barang-${id}`);
+    const kemasanInput = document.getElementById(`pen-kemasan-${id}`);
+    const list = document.getElementById(`pen-kemasan-${id}-list`);
+    if (!barangInput || !kemasanInput || !list) return;
+
+    const namaBarang = (barangInput.value || '').trim();
+    const qty = parseFloat(document.getElementById(`pen-qty-${id}`)?.value) || 0;
+    const beratGram = extractBeratGramDariNama(namaBarang);
+    const totalGram = beratGram * qty;
+
+    // Jika belum pilih barang, tampilkan semua kemasan
+    const barangId = barangInput.dataset.value;
+    if (!barangId) {
+        list.innerHTML = '<div class="dropdown-item disabled">Pilih barang dulu</div>';
+        list.classList.add('show');
+        return;
     }
-    // Update dropdown kemasan berdasarkan nama barang + jumlah yang dipilih
-    function updateKemasanDropdownForRow(id) {
-        const barangInput = document.getElementById(`pen-barang-${id}`);
-        const namaBarang = (barangInput?.value || '').trim();
-        const qty = parseFloat(document.getElementById(`pen-qty-${id}`)?.value) || 0;
-        const beratGram = extractBeratDariNama(namaBarang);
-        const totalGram = beratGram * qty;
 
-        const kemasanInput = document.getElementById(`pen-kemasan-${id}`);
-        const list = document.getElementById(`pen-kemasan-${id}-list`);
-        if (!kemasanInput || !list) return;
+    // Filter kemasan: kapasitas ≤ totalGram
+    let kemasanList = masterData.kemasan || [];
+    if (totalGram > 0) {
+        kemasanList = kemasanList.filter(k => {
+            const kap = parseFloat(k.kapasitas) || 0;
+            const sat = (k.satuan || '').toString().toLowerCase();
+            const kapGram = sat.startsWith('kg') ? kap * 1000 : kap;
+            return kapGram <= totalGram;
+        });
+    }
 
-        // Filter kemasan: kapasitas ≤ totalGram (kecuali kalau totalGram=0, tampilkan semua)
-        let kemasanList = masterData.kemasan || [];
-        if (totalGram > 0) {
-            kemasanList = kemasanList.filter(k => {
-                const kap = parseFloat(k.kapasitas) || 0;
-                const sat = (k.satuan || '').toString().toLowerCase();
-                const kapGram = sat.startsWith('kg') ? kap * 1000 : kap;
-                return kapGram <= totalGram;
-            });
-        }
-
-        // Render dropdown
+    // Render dropdown
+    if (kemasanList.length === 0) {
+        list.innerHTML = '<div class="dropdown-item disabled">Tidak ada kemasan yang cocok</div>';
+    } else {
         list.innerHTML = kemasanList.map(k => {
             const kap = parseFloat(k.kapasitas) || 0;
             const sat = (k.satuan || '').toString().toLowerCase();
             const kapGram = sat.startsWith('kg') ? kap * 1000 : kap;
-            const jumlahKemasan = (totalGram > 0 && kapGram > 0) ? Math.ceil(totalGram / kapGram) : '';
-            const jumlahText = jumlahKemasan ? ` → ${jumlahKemasan} pcs` : '';
-            return `<div class="dropdown-item" onclick="selectDropdown('pen-kemasan-${id}', '${k.id_kemasan}', '${k.nama_kemasan.replace(/'/g, "\\'")}')">${k.nama_kemasan} (${k.kapasitas}${k.satuan})${jumlahText}</div>`;
+            const jumlahKemasan = (totalGram > 0 && kapGram > 0) ? Math.ceil(totalGram / kapGram) : '?';
+            return `<div class="dropdown-item" onclick="selectKemasan(${id}, '${k.id_kemasan}', '${k.nama_kemasan.replace(/'/g, "\\'")}', ${kapGram}, ${jumlahKemasan})">${k.nama_kemasan} (${k.kapasitas}${k.satuan}) → ${jumlahKemasan} pcs</div>`;
         }).join('');
-
-        // Auto-calculate jumlah kemasan kalau sudah ada kemasan yang dipilih
-        calculateJumlahKemasanForRow(id);
     }
-    function calculateJumlahKemasanForRow(id) {
-        const barangInput = document.getElementById(`pen-barang-${id}`);
-        const namaBarang = (barangInput?.value || '').trim();
-        const qty = parseFloat(document.getElementById(`pen-qty-${id}`)?.value) || 0;
-        const beratGram = extractBeratDariNama(namaBarang);
-        const totalGram = beratGram * qty;
+    list.classList.add('show');
+}
 
-        const kemasanInput = document.getElementById(`pen-kemasan-${id}`);
-        const kemasanId = kemasanInput?.dataset.value;
-        if (!kemasanId) return;
+// Handler khusus saat memilih kemasan
+function selectKemasan(id, kemasanId, namaKemasan, kapasitasGram, jumlahAuto) {
+    const kemasanInput = document.getElementById(`pen-kemasan-${id}`);
+    const jumlahInput = document.getElementById(`pen-jumlah-kemasan-${id}`);
+    const list = document.getElementById(`pen-kemasan-${id}-list`);
+    
+    if (kemasanInput) {
+        kemasanInput.value = namaKemasan;
+        kemasanInput.dataset.value = kemasanId;
+    }
+    if (jumlahInput) {
+        jumlahInput.value = jumlahAuto;
+    }
+    if (list) list.classList.remove('show');
+}
 
-        const kemasanItem = (masterData.kemasan || []).find(k => k.id_kemasan === kemasanId);
-        if (!kemasanItem) return;
-
-        const kapasitas = parseFloat(kemasanItem.kapasitas) || 0;
-        if (kapasitas <= 0) return;
-        const satuan = (kemasanItem.satuan || '').toString().toLowerCase();
-        const kapasitasGram = satuan.startsWith('kg') ? kapasitas * 1000 : kapasitas;
-
-        const jumlahKemasanInput = document.getElementById(`pen-jumlah-kemasan-${id}`);
-        if (!jumlahKemasanInput) return;
-
-        if (totalGram > 0 && kapasitasGram > 0) {
-            jumlahKemasanInput.value = Math.ceil(totalGram / kapasitasGram);
-        } else {
-            jumlahKemasanInput.value = '';
-        }
+// Dipanggil saat jumlah berubah (bukan saat pilih kemasan)
+function onPenjualanQtyChange(id) {
+    // Reset kemasan karena jumlah berubah
+    const kemasanInput = document.getElementById(`pen-kemasan-${id}`);
+    const jumlahKemasanInput = document.getElementById(`pen-jumlah-kemasan-${id}`);
+    if (kemasanInput) {
+        kemasanInput.value = '';
+        kemasanInput.dataset.value = '';
+    }
+    if (jumlahKemasanInput) jumlahKemasanInput.value = '';
+}
     }
     function addPenjualanDetail() {
-        const id = penjualanDetails.length;
-        const div = document.createElement('div'); div.className = 'detail-row'; div.id = `pen-detail-${id}`;
-        div.innerHTML = `
-            <div class="detail-row-header"><span><strong>Barang #${id + 1}</strong></span><button class="btn-remove" onclick="removePenjualanDetail(${id})">Hapus</button></div>
-            <div class="alert alert-danger" id="pen-nostock-${id}" style="display:none;"></div>
-            <div class="form-grid">
-                <div class="form-group"><label class="mandatory-label">Nama Barang</label><div class="searchable-dropdown"><input type="text" id="pen-barang-${id}" placeholder="Cari barang..." oninput="searchDropdown('pen-barang-${id}', 'products')" onfocus="showDropdown('pen-barang-${id}')"><div class="dropdown-list" id="pen-barang-${id}-list"></div></div></div>
-                <div class="form-group"><label class="mandatory-label">Jumlah</label><input type="number" id="pen-qty-${id}" step="0.01" placeholder="0" onchange="validateQtyAgainstStock(${id}); calculatePenjualanItemTotal(${id}); updateKemasanDropdownForRow(${id})"></div>
-                <div class="form-group"><label class="mandatory-label">Harga Satuan</label><input type="number" id="pen-price-${id}" step="1000" placeholder="0" onchange="calculatePenjualanItemTotal(${id})"></div>
-                <div class="form-group"><label>Total</label><input type="number" id="pen-total-${id}" readonly placeholder="0"></div>
-                <div class="form-group"><label>Diskon</label><input type="number" id="pen-diskon-${id}" step="1000" value="0" onchange="calculatePenjualanItemTotal(${id})"></div>
-                <div class="form-group"><label>HPP (Auto)</label><input type="number" id="pen-hpp-${id}" readonly placeholder="0"></div>
-                <div class="form-group"><label class="mandatory-label">Kemasan</label><div class="searchable-dropdown"><input type="text" id="pen-kemasan-${id}" placeholder="Pilih kemasan..." oninput="searchDropdown('pen-kemasan-${id}', 'kemasan')" onfocus="showDropdown('pen-kemasan-${id}'); updateKemasanDropdownForRow(${id})"><div class="dropdown-list" id="pen-kemasan-${id}-list"></div></div></div>
-                <div class="form-group"><label class="mandatory-label">Jumlah Kemasan</label><input type="number" id="pen-jumlah-kemasan-${id}" step="1" placeholder="0"></div>
-                <div class="form-group">
-                    <label class="mandatory-label">Batch No</label>
-                    <input type="text" id="pen-batch-${id}" placeholder="Batch No" list="pen-batch-list-${id}">
-                    <datalist id="pen-batch-list-${id}"></datalist>
-                    <small id="pen-stock-${id}" style="color:var(--gray);font-size:11px;"></small>
-                </div>
-            </div>`;
-        document.getElementById('penjualanDetails').appendChild(div);
-        penjualanDetails.push(id);
-    }
+    const id = penjualanDetails.length;
+    const div = document.createElement('div'); div.className = 'detail-row'; div.id = `pen-detail-${id}`;
+    div.innerHTML = `
+        <div class="detail-row-header"><span><strong>Barang #${id + 1}</strong></span><button class="btn-remove" onclick="removePenjualanDetail(${id})">Hapus</button></div>
+        <div class="alert alert-danger" id="pen-nostock-${id}" style="display:none;"></div>
+        <div class="form-grid">
+            <div class="form-group"><label class="mandatory-label">Nama Barang</label><div class="searchable-dropdown"><input type="text" id="pen-barang-${id}" placeholder="Cari barang..." oninput="searchDropdown('pen-barang-${id}', 'products')" onfocus="showDropdown('pen-barang-${id}')"><div class="dropdown-list" id="pen-barang-${id}-list"></div></div></div>
+            <div class="form-group"><label class="mandatory-label">Jumlah</label><input type="number" id="pen-qty-${id}" step="0.01" placeholder="0" onchange="validateQtyAgainstStock(${id}); calculatePenjualanItemTotal(${id}); onPenjualanQtyChange(${id})"></div>
+            <div class="form-group"><label class="mandatory-label">Harga Satuan</label><input type="number" id="pen-price-${id}" step="1000" placeholder="0" onchange="calculatePenjualanItemTotal(${id})"></div>
+            <div class="form-group"><label>Total</label><input type="number" id="pen-total-${id}" readonly placeholder="0"></div>
+            <div class="form-group"><label>Diskon</label><input type="number" id="pen-diskon-${id}" step="1000" value="0" onchange="calculatePenjualanItemTotal(${id})"></div>
+            <div class="form-group"><label>HPP (Auto)</label><input type="number" id="pen-hpp-${id}" readonly placeholder="0"></div>
+            <div class="form-group"><label class="mandatory-label">Kemasan</label><div class="searchable-dropdown"><input type="text" id="pen-kemasan-${id}" placeholder="Pilih kemasan..." oninput="filterKemasanDropdown(${id})" onfocus="filterKemasanDropdown(${id})"><div class="dropdown-list" id="pen-kemasan-${id}-list"></div></div></div>
+            <div class="form-group"><label class="mandatory-label">Jumlah Kemasan</label><input type="number" id="pen-jumlah-kemasan-${id}" step="1" placeholder="0" readonly style="background:#f8f9fa;"></div>
+            <div class="form-group">
+                <label class="mandatory-label">Batch No</label>
+                <input type="text" id="pen-batch-${id}" placeholder="Batch No" list="pen-batch-list-${id}">
+                <datalist id="pen-batch-list-${id}"></datalist>
+                <small id="pen-stock-${id}" style="color:var(--gray);font-size:11px;"></small>
+            </div>
+        </div>`;
+    document.getElementById('penjualanDetails').appendChild(div);
+    penjualanDetails.push(id);
+}
     function removePenjualanDetail(id) { const el = document.getElementById(`pen-detail-${id}`); if (el) el.remove(); penjualanDetails = penjualanDetails.filter(i => i !== id); calculatePenjualanSummary(); }
     async function calculatePenjualanHPP(id) {
         const barangInput = document.getElementById(`pen-barang-${id}`);
