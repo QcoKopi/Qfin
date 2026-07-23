@@ -192,6 +192,7 @@
         }
     </style>
 <base target="_blank">
+<base target="_blank">
 </head>
 <body>
     <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
@@ -270,7 +271,7 @@
                     <div class="alert alert-info" id="pembelianAlert" style="display:none;"></div>
                     <div class="form-grid">
                         <div class="form-group"><label class="mandatory-label">Tanggal</label><input type="date" id="pemDate" onchange="updateAllKodeLot()"></div>
-                        <div class="form-group"><label class="mandatory-label">No Dokumen</label><input type="text" id="pemNoDokumen" placeholder="FP-XXXX"></div>
+                        <div class="form-group"><label class="mandatory-label">No Dokumen</label><input type="text" id="pemNoDokumen" placeholder="FP-XXXX" autocomplete="off"></div>
                         <div class="form-group"><label class="mandatory-label">Cost Center</label><input type="text" id="pemCostCenter" value="Q.Co"></div>
                         <div class="form-group">
                             <label class="mandatory-label">Salesman</label>
@@ -327,7 +328,7 @@
                     <div class="alert alert-info" id="penjualanAlert" style="display:none;"></div>
                     <div class="form-grid">
                         <div class="form-group"><label class="mandatory-label">Tanggal</label><input type="date" id="penDate"></div>
-                        <div class="form-group"><label class="mandatory-label">No Invoice</label><input type="text" id="penInvoice" placeholder="INV-XXXX"></div>
+                        <div class="form-group"><label class="mandatory-label">No Invoice</label><input type="text" id="penInvoice" placeholder="INV-XXXX" autocomplete="off"></div>
                         <div class="form-group">
                             <label class="mandatory-label">Customer</label>
                             <div class="searchable-dropdown">
@@ -1005,8 +1006,8 @@
         if (btn) btn.classList.add('active');
         setDefaultDates();
         if (tabName === 'preview') updatePreviewStats();
-        if (tabName === 'pembelian') autoFillNextDoc('pemNoDokumen', 'Pembelian_App', 'no_dokumen');
-        if (tabName === 'penjualan') { autoFillNextDoc('penInvoice', 'Penjualan_App', 'no_invoice'); loadStockCacheForPenjualan(); }
+        if (tabName === 'pembelian') { clearPembelianForm(); }
+        if (tabName === 'penjualan') { clearPenjualanForm(); autoFillNextDoc('penInvoice', 'Penjualan_App', 'no_invoice'); loadStockCacheForPenjualan(); }
         if (tabName === 'stock' && stockTableData === null) loadStockTable();
         if (tabName === 'master-data') { loadMasterDataList(); onMasterDataJenisChange(); }
         if (tabName === 'neraca' && neracaReportData === null) loadNeracaReport();
@@ -1018,9 +1019,16 @@
     }
     async function autoFillNextDoc(inputId, table, field) {
         const input = document.getElementById(inputId);
-        if (!input || input.value) return;
+        if (!input) return;
         const result = await callGAS('getNextDocNumber', { table, field });
-        if (result.success && result.next) input.value = result.next;
+        if (!result.success || !result.next) return;
+        const currentVal = input.value.trim();
+        const isInvoiceFormat = /^INV/i.test(currentVal);
+        const isPembelianFormat = /^(FP|PB|PH|STOK)/i.test(currentVal);
+        const shouldFill = !currentVal ||
+            (table === 'Pembelian_App' && isInvoiceFormat) ||
+            (table === 'Penjualan_App' && isPembelianFormat);
+        if (shouldFill) input.value = result.next;
     }
     function setDefaultDates() {
         const today = new Date().toISOString().split('T')[0];
@@ -1305,7 +1313,7 @@
         document.getElementById('pemNoDokumen').value = ''; document.getElementById('pemSupplier').value = '';
         document.getElementById('pemCOA').value = ''; document.getElementById('pembelianDetails').innerHTML = '';
         pembelianDetails = [];
-        autoFillNextDoc('pemNoDokumen', 'Pembelian_App', 'no_dokumen');
+        setTimeout(() => autoFillNextDoc('pemNoDokumen', 'Pembelian_App', 'no_dokumen'), 50);
     }
 
     // ============================================================
