@@ -800,25 +800,6 @@
         </div>
     </div>
 
-    <!-- Modal / Area Preview Invoice -->
-    <div class="modal fade" id="modalInvoice" tabindex="-1" aria-hidden="true" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:10000; justify-content:center; align-items:center;">
-        <div class="modal-dialog" style="background:white; padding:20px; border-radius:8px; max-width:500px; width:100%; box-shadow:0 4px 15px rgba(0,0,0,0.2);">
-            <div class="modal-content">
-                <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
-                    <h5 class="modal-title" style="font-weight:600;">Invoice Penjualan</h5>
-                    <button type="button" class="btn-close" onclick="closeInvoiceModal()" style="background:none; border:none; font-size:16px; cursor:pointer;">&times;</button>
-                </div>
-                <div class="modal-body" id="kontenInvoice" style="margin:15px 0; font-size:14px; line-height:1.5;">
-                    <!-- Konten Invoice akan di-generate otomatis via JS -->
-                </div>
-                <div class="card-header" style="border-top:1px solid #eee; border-bottom:none; margin-bottom:0; padding-bottom:0; justify-content:flex-end; gap:10px;">
-                    <button type="button" class="btn btn-secondary btn-sm" onclick="closeInvoiceModal()">Tutup</button>
-                    <button type="button" class="btn btn-primary btn-sm" onclick="window.print()">Cetak</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
     // ============================================================
     // CONFIGURATION & CACHE
@@ -1344,9 +1325,8 @@
 
     function filterKemasanDropdown(id) {
         const barangInput = document.getElementById(`pen-barang-${id}`);
-        const kemasanInput = document.getElementById(`pen-kemasan-${id}`);
         const list = document.getElementById(`pen-kemasan-${id}-list`);
-        if (!barangInput || !kemasanInput || !list) return;
+        if (!barangInput || !list) return;
 
         const namaBarang = (barangInput.value || '').trim();
         const qty = parseFloat(document.getElementById(`pen-qty-${id}`)?.value) || 0;
@@ -1363,7 +1343,7 @@
         let kemasanList = masterData.kemasan || [];
         if (totalGram > 0) {
             kemasanList = kemasanList.filter(k => {
-                const kap = parseFloat(k.kapasitas) || 0;
+                const kap = parseFloat(k.kapasitas || k.kapasitas_gram || 0);
                 const sat = (k.satuan || '').toString().toLowerCase();
                 const kapGram = sat.startsWith('kg') ? kap * 1000 : kap;
                 return kapGram <= totalGram;
@@ -1374,11 +1354,13 @@
             list.innerHTML = '<div class="dropdown-item disabled">Tidak ada kemasan yang cocok</div>';
         } else {
             list.innerHTML = kemasanList.map(k => {
-                const kap = parseFloat(k.kapasitas) || 0;
+                const kemasanId = k.id_kemasan || k.id;
+                const namaKemasan = k.nama_kemasan || k.nama;
+                const kap = parseFloat(k.kapasitas || k.kapasitas_gram || 0);
                 const sat = (k.satuan || '').toString().toLowerCase();
                 const kapGram = sat.startsWith('kg') ? kap * 1000 : kap;
                 const jumlahKemasan = (totalGram > 0 && kapGram > 0) ? Math.ceil(totalGram / kapGram) : '?';
-                return `<div class="dropdown-item" onclick="selectKemasan(${id}, '${k.id_kemasan}', '${k.nama_kemasan.replace(/'/g, "\\'")}', ${kapGram}, ${jumlahKemasan})">${k.nama_kemasan} (${k.kapasitas}${k.satuan}) → ${jumlahKemasan} pcs</div>`;
+                return `<div class="dropdown-item" onclick="selectKemasan(${id}, '${kemasanId}', '${namaKemasan.replace(/'/g, "\\'")}', ${kapGram}, ${jumlahKemasan})">${namaKemasan} (${kap}${k.satuan || ''}) → ${jumlahKemasan} pcs</div>`;
             }).join('');
         }
         list.classList.add('show');
@@ -1424,81 +1406,118 @@
                 <div class="form-group"><label>HPP (Auto)</label><input type="number" id="pen-hpp-${id}" readonly placeholder="0"></div>
                 <div class="form-group"><label class="mandatory-label">Kemasan</label><div class="searchable-dropdown"><input type="text" id="pen-kemasan-${id}" placeholder="Pilih kemasan..." oninput="filterKemasanDropdown(${id})" onfocus="filterKemasanDropdown(${id})"><div class="dropdown-list" id="pen-kemasan-${id}-list"></div></div></div>
                 <div class="form-group"><label class="mandatory-label">Jumlah Kemasan</label><input type="number" id="pen-jumlah-kemasan-${id}" step="1" placeholder="0" readonly style="background:#f8f9fa;"></div>
-                <div class="form-group"><label class="mandatory-label">Batch No</label><input type="text" id="pen-batch-${id}" placeholder="Batch No"></div>
+                <div class="form-group">
+                    <label class="mandatory-label">Batch No</label>
+                    <input type="text" id="pen-batch-${id}" placeholder="Batch No" list="pen-batch-list-${id}">
+                    <datalist id="pen-batch-list-${id}"></datalist>
+                    <small id="pen-stock-${id}" style="color:var(--gray);font-size:11px;"></small>
+                </div>
             </div>`;
         document.getElementById('penjualanDetails').appendChild(div);
         penjualanDetails.push(id);
-        document.getElementById('penPembayaranSection').style.display = 'grid';
-        document.getElementById('penjualanSummary').style.display = 'block';
     }
-    function removePenjualanDetail(id) {
-        const el = document.getElementById(`pen-detail-${id}`); if (el) el.remove();
-        penjualanDetails = penjualanDetails.filter(i => i !== id);
-        if (penjualanDetails.length === 0) {
-            document.getElementById('penPembayaranSection').style.display = 'none';
-            document.getElementById('penjualanSummary').style.display = 'none';
-        }
-        calculatePenjualanSummary();
-    }
-    function validateQtyAgainstStock(id) {
-        const barangId = document.getElementById(`pen-barang-${id}`)?.dataset.value;
-        const qty = parseFloat(document.getElementById(`pen-qty-${id}`)?.value) || 0;
-        const alertEl = document.getElementById(`pen-nostock-${id}`);
-        if (!barangId || !stockCache) return;
-        const available = stockCache[barangId] || 0;
-        if (qty > available) {
-            alertEl.textContent = `Peringatan: Stok tersedia hanya ${formatNumber(available)}. Qty melebihi stok!`;
-            alertEl.style.display = 'flex';
-        } else {
-            alertEl.style.display = 'none';
-        }
-    }
+
+    function removePenjualanDetail(id) { const el = document.getElementById(`pen-detail-${id}`); if (el) el.remove(); penjualanDetails = penjualanDetails.filter(i => i !== id); calculatePenjualanSummary(); }
+    
     async function calculatePenjualanHPP(id) {
-        const barangId = document.getElementById(`pen-barang-${id}`)?.dataset.value;
-        if (!barangId) return;
-        const result = await callGAS('getHppForProduct', { id_produk: barangId });
-        if (result.success && result.hpp !== undefined) {
-            document.getElementById(`pen-hpp-${id}`).value = result.hpp;
-            calculatePenjualanSummary();
+        const barangInput = document.getElementById(`pen-barang-${id}`);
+        const sku = barangInput?.dataset.value; if (!sku) return;
+
+        const pembayaranSection = document.getElementById('penPembayaranSection');
+        if (pembayaranSection && pembayaranSection.style.display === 'none') pembayaranSection.style.display = '';
+
+        const [result, priceResult, batchResult, stockResult] = await Promise.all([
+            callGAS('getHPP', { id_produk: sku }),
+            callGAS('getPricelistPrice', { id_produk: sku }),
+            callGAS('getBatchesForProduk', { id_produk: sku }),
+            callGAS('getStock', { id_produk: sku })
+        ]);
+
+        if (result.success && result.data) { const hpp = result.data.hpp_per_unit || 0; const hppInput = document.getElementById(`pen-hpp-${id}`); if (hppInput) hppInput.value = hpp; }
+
+        const priceInput = document.getElementById(`pen-price-${id}`);
+        if (priceInput && !priceInput.value && priceResult.success && priceResult.data) {
+            priceInput.value = priceResult.data.harga_jual;
+            calculatePenjualanItemTotal(id);
+        }
+
+        const datalist = document.getElementById(`pen-batch-list-${id}`);
+        const batchInput = document.getElementById(`pen-batch-${id}`);
+        const batches = batchResult.success ? batchResult.data : [];
+        if (datalist) {
+            datalist.innerHTML = batches.map(b => `<option value="${b.batch_no}">${b.tanggal || ''} — sisa ${formatNumber(b.sisa)} dari ${formatNumber(b.jumlah_produksi)}</option>`).join('');
+        }
+        if (batchInput) batchInput.value = batches.length > 0 ? batches[0].batch_no : '';
+
+        const stockLabel = document.getElementById(`pen-stock-${id}`);
+        const saldo = stockResult.success && stockResult.data ? (parseFloat(stockResult.data.saldo) || 0) : 0;
+        if (stockLabel) stockLabel.textContent = `Stok saat ini: ${formatNumber(saldo)}`;
+        const qtyInputForMax = document.getElementById(`pen-qty-${id}`);
+        if (qtyInputForMax) qtyInputForMax.max = saldo;
+
+        const nostockBanner = document.getElementById(`pen-nostock-${id}`);
+        const fieldsToToggle = ['pen-qty', 'pen-price', 'pen-diskon', 'pen-batch'].map(p => document.getElementById(`${p}-${id}`));
+        if (saldo <= 0) {
+            if (nostockBanner) { nostockBanner.style.display = ''; nostockBanner.textContent = `Stok kosong. Buat Assembly dulu sebelum menjual.`; }
+            fieldsToToggle.forEach(f => { if (f) { f.disabled = true; f.value = ''; } });
+        } else {
+            if (nostockBanner) nostockBanner.style.display = 'none';
+            fieldsToToggle.forEach(f => { if (f) f.disabled = false; });
         }
     }
+
+    function onPenTypeBayarChange() {
+        const tipe = document.getElementById('penTypeBayar').value;
+        const totalBayarGroup = document.getElementById('penTotalBayarGroup');
+        if (tipe === 'Lunas Transfer' || tipe === 'Lunas Tunai') {
+            totalBayarGroup.style.display = '';
+            const totalBayarInput = document.getElementById('penTotalBayar');
+            if (totalBayarInput && !totalBayarInput.value) {
+                let totalTagihan = 0;
+                penjualanDetails.forEach(id => { totalTagihan += parseFloat(document.getElementById(`pen-total-${id}`)?.value) || 0; });
+                totalBayarInput.value = totalTagihan;
+            }
+        } else {
+            totalBayarGroup.style.display = 'none';
+        }
+    }
+
+    function validateQtyAgainstStock(id) {
+        const barangInput = document.getElementById(`pen-barang-${id}`);
+        const sku = barangInput?.dataset.value;
+        const qtyInput = document.getElementById(`pen-qty-${id}`);
+        if (!sku || !stockCache || !qtyInput) return;
+        const maxStok = stockCache[sku] || 0;
+        const entered = parseFloat(qtyInput.value) || 0;
+        if (entered > maxStok) {
+            qtyInput.value = maxStok;
+            showAlert('warning', `Jumlah dibatasi ke ${formatNumber(maxStok)} - sisa stok untuk barang ini.`, 'penjualanAlert');
+        }
+    }
+
     function calculatePenjualanItemTotal(id) {
         const qty = parseFloat(document.getElementById(`pen-qty-${id}`)?.value) || 0;
         const price = parseFloat(document.getElementById(`pen-price-${id}`)?.value) || 0;
         const diskon = parseFloat(document.getElementById(`pen-diskon-${id}`)?.value) || 0;
         const total = (qty * price) - diskon;
-        document.getElementById(`pen-total-${id}`).value = total > 0 ? total : 0;
+        const totalInput = document.getElementById(`pen-total-${id}`); if (totalInput) totalInput.value = total;
         calculatePenjualanSummary();
     }
+
     function calculatePenjualanSummary() {
         let totalTagihan = 0, totalHPP = 0;
         penjualanDetails.forEach(id => {
             const total = parseFloat(document.getElementById(`pen-total-${id}`)?.value) || 0;
             const qty = parseFloat(document.getElementById(`pen-qty-${id}`)?.value) || 0;
-            const hppSatuan = parseFloat(document.getElementById(`pen-hpp-${id}`)?.value) || 0;
-            totalTagihan += total;
-            totalHPP += qty * hppSatuan;
+            const hpp = parseFloat(document.getElementById(`pen-hpp-${id}`)?.value) || 0;
+            totalTagihan += total; totalHPP += qty * hpp;
         });
-        const margin = totalTagihan - totalHPP;
+        document.getElementById('penjualanSummary').style.display = 'block';
         document.getElementById('penTotalTagihan').textContent = 'Rp ' + formatNumber(totalTagihan);
         document.getElementById('penTotalHPP').textContent = 'Rp ' + formatNumber(totalHPP);
-        document.getElementById('penMargin').textContent = 'Rp ' + formatNumber(margin);
-        const typeBayar = document.getElementById('penTypeBayar')?.value;
-        if (typeBayar === 'Lunas Tunai' || typeBayar === 'Lunas Transfer') {
-            const totalBayarInput = document.getElementById('penTotalBayar');
-            if (totalBayarInput) totalBayarInput.value = totalTagihan;
-        }
+        document.getElementById('penMargin').textContent = 'Rp ' + formatNumber(totalTagihan - totalHPP);
     }
-    function onPenTypeBayarChange() {
-        const type = document.getElementById('penTypeBayar').value;
-        const group = document.getElementById('penTotalBayarGroup');
-        if (type === 'Lunas Tunai' || type === 'Lunas Transfer') {
-            group.style.display = 'flex';
-            calculatePenjualanSummary();
-        } else {
-            group.style.display = 'none';
-        }
-    }
+
     async function submitPenjualan() {
         clearMandatoryErrors('tab-penjualan');
         if (!validateMandatory('tab-penjualan', 'penjualanAlert')) return;
@@ -1512,332 +1531,169 @@
             harga_satuan: parseFloat(document.getElementById(`pen-price-${id}`)?.value) || 0,
             total: parseFloat(document.getElementById(`pen-total-${id}`)?.value) || 0,
             diskon: parseFloat(document.getElementById(`pen-diskon-${id}`)?.value) || 0,
-            hpp_satuan: parseFloat(document.getElementById(`pen-hpp-${id}`)?.value) || 0,
             kemasan: document.getElementById(`pen-kemasan-${id}`)?.value || '',
-            id_kemasan: document.getElementById(`pen-kemasan-${id}`)?.dataset.value || '',
             jumlah_kemasan: parseFloat(document.getElementById(`pen-jumlah-kemasan-${id}`)?.value) || 0,
             batch_no: document.getElementById(`pen-batch-${id}`)?.value || ''
         })).filter(d => d.nama_barang);
-
-        const totalTagihan = details.reduce((sum, d) => sum + d.total, 0);
-        const totalHpp = details.reduce((sum, d) => sum + (d.jumlah * d.hpp_satuan), 0);
+        const totalTagihan = details.reduce((sum, d) => sum + (d.total - d.diskon), 0);
+        const totalBayar = parseFloat(document.getElementById('penTotalBayar')?.value) || 0;
         const data = {
-            tanggal: document.getElementById('penDate').value, no_invoice: document.getElementById('penInvoice').value,
-            customer: document.getElementById('penCustomer').value, salesman: document.getElementById('penSalesman').value,
-            type_pembayaran: document.getElementById('penTypeBayar').value,
-            kode_transaksi: document.getElementById('penKodeTransaksi').value,
-            total_pembayaran: parseFloat(document.getElementById('penTotalBayar')?.value) || 0,
-            total_tagihan: totalTagihan, total_hpp: totalHpp, details: details
+            tanggal: document.getElementById('penDate').value, jatuh_tempo: '',
+            cost_center: 'Q.Co', salesman: document.getElementById('penSalesman').value,
+            no_invoice: document.getElementById('penInvoice').value, kode_transaksi: document.getElementById('penKodeTransaksi').value,
+            customer: document.getElementById('penCustomer').value, total_tagihan: totalTagihan,
+            type_pembayaran: document.getElementById('penTypeBayar').value, total_bayar: totalBayar,
+            tanggal_pembayaran: totalBayar > 0 ? document.getElementById('penDate').value : '',
+            status_bayar: (document.getElementById('penTypeBayar').value === 'Lunas Transfer' || document.getElementById('penTypeBayar').value === 'Lunas Tunai') ? 'LUNAS' : 'Piutang',
+            details: details
         };
-
         const result = await callGAS('submitPenjualan', data);
         if (result.success) {
-            showAlert('success', 'Penjualan berhasil! ID: ' + result.id_penjualan, 'penjualanAlert');
-            lastSubmittedSaleData = { id: result.id_penjualan, ...data };
-            document.getElementById('btnPrintInvoice').style.display = 'inline-flex';
-            
-            // Tampilkan Modal Invoice otomatis
-            cetakInvoice(result.id_penjualan, data);
-            
+            let msg = 'Penjualan berhasil! ID: ' + result.id_penjualan;
+            if (result.stock_warnings && result.stock_warnings.length > 0) {
+                showAlert('warning', 'Tersimpan, tapi stok kurang untuk: ' + result.stock_warnings.join('; '), 'penjualanAlert');
+            } else {
+                showAlert('success', msg, 'penjualanAlert');
+            }
+            lastSubmittedSaleData = data;
+            document.getElementById('btnPrintInvoice').style.display = '';
             clearPenjualanForm();
         } else {
             showAlert('danger', 'Gagal: ' + result.message, 'penjualanAlert');
         }
     }
-    function clearPenjualanForm() {
-        document.getElementById('penInvoice').value = ''; document.getElementById('penCustomer').value = '';
-        document.getElementById('penjualanDetails').innerHTML = ''; penjualanDetails = [];
-        document.getElementById('penPembayaranSection').style.display = 'none';
-        document.getElementById('penjualanSummary').style.display = 'none';
-        autoFillNextDoc('penInvoice', 'Penjualan_App', 'no_invoice');
-    }
+
     function printLastInvoice() {
         if (!lastSubmittedSaleData) {
-            showAlert('warning', 'Belum ada transaksi penjualan yang disubmit pada sesi ini.', 'penjualanAlert');
+            showAlert('danger', 'Belum ada penjualan yang tersimpan di sesi ini.', 'penjualanAlert');
             return;
         }
-        cetakInvoice(lastSubmittedSaleData.id, lastSubmittedSaleData);
+        printInvoice(lastSubmittedSaleData);
     }
-    function cetakInvoice(idTransaksi, data) {
-        const nama = data ? data.customer : document.getElementById('penCustomer').value;
-        const pembayaran = data ? data.type_pembayaran : document.getElementById('penTypeBayar').value;
-        const total = data ? data.total_tagihan : (parseFloat(document.getElementById('penTotalTagihan').textContent.replace(/[^0-9]/g, '')) || 0);
 
-        let detailsHtml = '<ul style="list-style:none; padding:0; margin:10px 0;">';
-        if (data && data.details) {
-            data.details.forEach(item => {
-                detailsHtml += `<li style="border-bottom:1px dashed #ddd; padding:5px 0;">${item.nama_barang} (${item.jumlah}x @ Rp ${formatNumber(item.harga_satuan)}) = <strong>Rp ${formatNumber(item.total)}</strong></li>`;
-            });
+    function printInvoice(saleData) {
+        const customer = (masterData.customers || []).find(c => c.nama_customer === saleData.customer) || {};
+        const items = saleData.details || [];
+        const subTotal = items.reduce((sum, d) => sum + (d.total || 0), 0);
+        const diskon = items.reduce((sum, d) => sum + (d.diskon || 0), 0);
+        const ppn = 0;
+        const totalInvoice = subTotal - diskon + ppn;
+        const tglInv = saleData.tanggal ? new Date(saleData.tanggal).toLocaleDateString('id-ID') : '';
+
+        const rowsHtml = items.map((d, i) => `
+            <tr>
+                <td style="text-align:center; padding: 6px; border-bottom: 1px solid #ddd;">${i + 1}</td>
+                <td style="padding: 6px; border-bottom: 1px solid #ddd;">${d.nama_barang}${d.kemasan ? ' (' + d.kemasan + ')' : ''}</td>
+                <td style="text-align:center; padding: 6px; border-bottom: 1px solid #ddd;">${d.jumlah}</td>
+                <td style="text-align:right; padding: 6px; border-bottom: 1px solid #ddd;">${(d.harga_satuan || 0).toLocaleString('id-ID')}</td>
+                <td style="text-align:right; padding: 6px; border-bottom: 1px solid #ddd;">${(d.total || 0).toLocaleString('id-ID')}</td>
+            </tr>`).join('');
+
+        const win = window.open('', '_blank');
+        if (win) {
+            win.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Invoice ${saleData.no_invoice}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                        h2, h3 { margin: 0 0 5px 0; }
+                        .header-inv { display: flex; justify-content: space-between; margin-bottom: 20px; border-bottom: 2px solid #2c3e50; padding-bottom: 15px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13px; }
+                        th { background: #2c3e50; color: white; padding: 8px; text-align: left; }
+                        .totals { margin-top: 20px; float: right; width: 300px; font-size: 14px; }
+                        .totals div { display: flex; justify-content: space-between; padding: 4px 0; }
+                        .totals div.grand { font-weight: bold; border-top: 2px solid #2c3e50; margin-top: 5px; padding-top: 5px; }
+                    </style>
+                </head>
+                <body>
+                    <div class="header-inv">
+                        <div>
+                            <h2>QFin — Q.Co</h2>
+                            <p style="font-size: 12px; color: #666;">Financial Management System</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <h3>INVOICE</h3>
+                            <p><strong>No:</strong> ${saleData.no_invoice}</p>
+                            <p><strong>Tanggal:</strong> ${tglInv}</p>
+                        </div>
+                    </div>
+                    <p><strong>Kepada Yth:</strong><br>${saleData.customer}<br>${customer.alamat || ''}</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 40px; text-align: center;">No</th>
+                                <th>Nama Barang & Kemasan</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th style="text-align: right;">Harga Satuan</th>
+                                <th style="text-align: right;">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml}
+                        </tbody>
+                    </table>
+                    <div class="totals">
+                        <div><span>Subtotal:</span><span>Rp ${subTotal.toLocaleString('id-ID')}</span></div>
+                        <div><span>Diskon:</span><span>Rp ${diskon.toLocaleString('id-ID')}</span></div>
+                        <div class="grand"><span>Total Tagihan:</span><span>Rp ${totalInvoice.toLocaleString('id-ID')}</span></div>
+                    </div>
+                    <script>
+                        window.onload = function() { window.print(); }
+                    <\/script>
+                </body>
+                </html>
+            `);
+            win.document.close();
         }
-        detailsHtml += '</ul>';
-
-        const konten = `
-            <p><strong>No. Transaksi / Invoice:</strong> ${idTransaksi}</p>
-            <p><strong>Nama Pelanggan:</strong> ${nama}</p>
-            <p><strong>Type Pembayaran:</strong> ${pembayaran}</p>
-            <hr style="border:0; border-top:1px solid #eee; margin:10px 0;">
-            <p><strong>Detail Barang:</strong></p>
-            ${detailsHtml}
-            <p style="font-size:16px; margin-top:10px;"><strong>Total Tagihan:</strong> Rp ${formatNumber(total)}</p>
-        `;
-        document.getElementById('kontenInvoice').innerHTML = konten;
-        document.getElementById('modalInvoice').style.display = 'flex';
     }
-    function closeInvoiceModal() {
-        document.getElementById('modalInvoice').style.display = 'none';
+
+    function clearPenjualanForm() {
+        document.getElementById('penInvoice').value = ''; document.getElementById('penCustomer').value = '';
+        document.getElementById('penSalesman').value = ''; document.getElementById('penjualanDetails').innerHTML = '';
+        document.getElementById('penKodeTransaksi').value = 'Penjualan';
+        document.getElementById('penTotalBayar').value = '';
+        document.getElementById('penTotalBayarGroup').style.display = 'none';
+        document.getElementById('penPembayaranSection').style.display = 'none';
+        penjualanDetails = []; document.getElementById('penjualanSummary').style.display = 'none';
+        autoFillNextDoc('penInvoice', 'Penjualan_App', 'no_invoice');
     }
 
     // ============================================================
-    // KAS MASUK, STOCK, OPNAME, MOVEMENT, PRICELIST, DLL.
+    // KAS MASUK
     // ============================================================
-    async function loadUnpaidInvoicesList() {
-        const result = await callGAS('getUnpaidInvoices', {});
-        const datalist = document.getElementById('kmInvoiceList');
-        if (result.success && result.data) {
-            datalist.innerHTML = result.data.map(inv => `<option value="${inv.no_invoice}">${inv.customer} — Sisa: Rp ${formatNumber(inv.sisa)}</option>`).join('');
-        }
-    }
-    async function lookupInvoiceForPayment() {
-        const noInvoice = document.getElementById('kmNoDokumen').value;
-        if (!noInvoice) return;
-        const result = await callGAS('getInvoiceDetail', { no_invoice: noInvoice });
-        if (result.success && result.data) {
-            const inv = result.data;
-            document.getElementById('kmSales').value = inv.salesman;
-            document.getElementById('kmSales').dataset.value = inv.salesman_id || '';
-            document.getElementById('kmLawan').value = inv.customer;
-            document.getElementById('kmJumlah').value = inv.sisa;
-            document.getElementById('kmInvoiceInfo').textContent = `Customer: ${inv.customer}, Total: Rp ${formatNumber(inv.total)}, Terbayar: Rp ${formatNumber(inv.terbayar)}, Sisa: Rp ${formatNumber(inv.sisa)}`;
-        }
-    }
-    function onKasKodeTransaksiChange() {
-        const kode = document.getElementById('kmKodeTransaksi').value;
-        const sumberGroup = document.getElementById('kmSumberDanaGroup');
-        const terminGroup = document.getElementById('kmTerminGroup');
-        if (kode === 'Pendapatan Lain') {
-            sumberGroup.style.display = 'flex';
-            terminGroup.style.display = 'none';
-        } else {
-            sumberGroup.style.display = 'none';
-            terminGroup.style.display = 'flex';
-        }
-    }
-    function onKmJumlahChange() {}
     async function submitKasMasuk() {
         clearMandatoryErrors('tab-kas-masuk');
         if (!validateMandatory('tab-kas-masuk', 'kasMasukAlert')) return;
+        const isPiutang = document.getElementById('kmKodeTransaksi').value.toLowerCase().includes('piutang');
+        const terminVisible = document.getElementById('kmTerminGroup').style.display !== 'none';
         const data = {
-            tanggal: document.getElementById('kmDate').value, no_dokumen: document.getElementById('kmNoDokumen').value,
-            salesman: document.getElementById('kmSales').value, cash_account: document.getElementById('kmCash').value,
+            tanggal: document.getElementById('kmDate').value, sales: document.getElementById('kmSales').value,
+            no_dokumen: document.getElementById('kmNoDokumen').value, cash_account: document.getElementById('kmCash').value,
             kode_transaksi: document.getElementById('kmKodeTransaksi').value,
-            sumber_dana: document.getElementById('kmSumberDana').value, lawan_transaksi: document.getElementById('kmLawan').value,
-            jumlah: parseFloat(document.getElementById('kmJumlah').value) || 0,
-            termin: document.getElementById('kmTermin').value, keterangan: document.getElementById('kmKeterangan').value
+            lawan_transaksi: document.getElementById('kmLawan').value,
+            no_invoice_ref: isPiutang ? document.getElementById('kmNoDokumen').value : '',
+            sumber_dana: !isPiutang ? document.getElementById('kmSumberDana').value : '',
+            termin: terminVisible ? document.getElementById('kmTermin').value : '',
+            kas_masuk: parseFloat(document.getElementById('kmJumlah').value) || 0, keterangan: document.getElementById('kmKeterangan').value
         };
         const result = await callGAS('submitKasMasuk', data);
-        if (result.success) { showAlert('success', 'Kas Masuk berhasil disimpan!', 'kasMasukAlert'); }
-        else { showAlert('danger', 'Gagal: ' + result.message, 'kasMasukAlert'); }
-    }
-
-    async function loadStockTable() {
-        const result = await callGAS('getStockTable', {});
-        if (result.success && result.data) {
-            stockTableData = result.data;
-            populateStockKategoriFilter();
-            renderStockTable();
-        }
-    }
-    function populateStockKategoriFilter() {
-        if (!stockTableData) return;
-        const setKat = new Set();
-        stockTableData.forEach(row => { if (row.kategori) setKat.add(row.kategori); });
-        const select = document.getElementById('stockKategoriFilter');
-        select.innerHTML = '<option value="">Semua Kategori</option>' + Array.from(setKat).map(k => `<option value="${k}">${k}</option>`).join('');
-    }
-    function renderStockTable() {
-        if (!stockTableData) return;
-        const search = (document.getElementById('stockSearch').value || '').toLowerCase();
-        const katFilter = document.getElementById('stockKategoriFilter').value;
-        const tbody = document.getElementById('stockTableBody');
-        
-        const filtered = stockTableData.filter(row => {
-            const matchSearch = (row.nama_produk || '').toLowerCase().includes(search) || (row.id_produk || '').toLowerCase().includes(search);
-            const matchKat = !katFilter || row.kategori === katFilter;
-            return matchSearch && matchKat;
-        });
-
-        if (filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);">Tidak ada data stock</td></tr>';
-            return;
-        }
-
-        tbody.innerHTML = filtered.map(row => `
-            <tr>
-                <td></td>
-                <td><strong>${row.nama_produk}</strong> (${row.id_produk})</td>
-                <td>${row.batch_no || '-'}</td>
-                <td>${row.tanggal || '-'}</td>
-                <td style="text-align:right;">${formatNumber(row.diproduksi)}</td>
-                <td style="text-align:right;">${formatNumber(row.terjual)}</td>
-                <td style="text-align:right;">${formatNumber(row.dipakai)}</td>
-                <td style="text-align:right;font-weight:bold;">${formatNumber(row.sisa)}</td>
-            </tr>
-        `).join('');
-    }
-
-    async function fetchStockQty() {
-        const produkId = document.getElementById('opProduk').dataset.value;
-        if (!produkId) return;
-        const result = await callGAS('getStockQty', { id_produk: produkId });
         if (result.success) {
-            document.getElementById('opQtySistem').value = result.qty_sistem || 0;
-            calculateSelisih();
+            showAlert('success', 'Kas Masuk berhasil! ID: ' + result.id_kas, 'kasMasukAlert');
+        } else {
+            showAlert('danger', 'Gagal: ' + result.message, 'kasMasukAlert');
         }
     }
-    function calculateSelisih() {
-        const sistem = parseFloat(document.getElementById('opQtySistem').value) || 0;
-        const fisik = parseFloat(document.getElementById('opQtyFisik').value) || 0;
-        document.getElementById('opSelisih').value = (fisik - sistem).toFixed(2);
-    }
-    async function submitOpname() {
-        clearMandatoryErrors('tab-opname');
-        if (!validateMandatory('tab-opname', 'opnameAlert')) return;
-        const data = {
-            tanggal: document.getElementById('opDate').value,
-            id_produk: document.getElementById('opProduk').dataset.value || document.getElementById('opProduk').value,
-            nama_produk: document.getElementById('opProduk').value,
-            qty_sistem: parseFloat(document.getElementById('opQtySistem').value) || 0,
-            qty_fisik: parseFloat(document.getElementById('opQtyFisik').value) || 0,
-            selisih: parseFloat(document.getElementById('opSelisih').value) || 0,
-            keterangan: document.getElementById('opKeterangan').value
-        };
-        const result = await callGAS('submitStockOpname', data);
-        if (result.success) showAlert('success', 'Stock Opname berhasil disubmit!', 'opnameAlert');
-        else showAlert('danger', 'Gagal: ' + result.message, 'opnameAlert');
+
+    function onKasKodeTransaksiChange() {
+        const isPiutang = document.getElementById('kmKodeTransaksi').value.toLowerCase().includes('piutang');
+        document.getElementById('kmSumberDanaGroup').style.display = isPiutang ? 'none' : '';
     }
 
-    async function submitMovement() {
-        clearMandatoryErrors('tab-movement');
-        if (!validateMandatory('tab-movement', 'movementAlert')) return;
-        const data = {
-            tanggal: document.getElementById('movDate').value,
-            id_produk: document.getElementById('movProduk').dataset.value || document.getElementById('movProduk').value,
-            tipe: document.getElementById('movTipe').value,
-            qty_in: parseFloat(document.getElementById('movQtyIn').value) || 0,
-            qty_out: parseFloat(document.getElementById('movQtyOut').value) || 0,
-            referensi: document.getElementById('movRef').value,
-            keterangan: document.getElementById('movKeterangan').value
-        };
-        const result = await callGAS('submitStockMovement', data);
-        if (result.success) showAlert('success', 'Stock Movement berhasil disubmit!', 'movementAlert');
-        else showAlert('danger', 'Gagal: ' + result.message, 'movementAlert');
-    }
-
-    // Pricelist, Neraca, Rugi Laba, Buku Besar, Piutang Hutang, Master Data placeholders
-    function generatePricelistTable() { showAlert('info', 'Pricelist generated', 'pricelistAlert'); }
-    function renderPricelistTable() {}
-    function savePricelistTable() {}
-    function printPricelist() { window.print(); }
-
-    let neracaReportData = null;
-    let rugiLabaReportData = null;
-    let bukuBesarData = null;
-    let piutangHutangData = null;
-    let piutangReconSummary = null;
-    let hutangReconSummary = null;
-
-    async function loadNeracaReport(force = false) {
-        if (!force && neracaReportData) return;
-        const res = await callGAS('getNeracaReport', {});
-        if (res.success) {
-            neracaReportData = res.data;
-            document.getElementById('neracaTableBody').innerHTML = `<tr><td>${res.data}</td></tr>`;
-        }
-    }
-    async function loadRugiLabaReport(force = false) {
-        if (!force && rugiLabaReportData) return;
-        const res = await callGAS('getRugiLabaReport', {});
-        if (res.success) {
-            rugiLabaReportData = res.data;
-            document.getElementById('rugiLabaTableBody').innerHTML = `<tr><td>${res.data}</td></tr>`;
-        }
-    }
-    function printFinancialReport(type) { window.print(); }
-
-    async function loadBukuBesar() {
-        const res = await callGAS('getBukuBesar', {});
-        if (res.success && res.data) {
-            bukuBesarData = res.data;
-            renderBukuBesar();
-        }
-    }
-    function renderBukuBesar() {
-        if (!bukuBesarData) return;
-        const tbody = document.getElementById('bukuBesarTableBody');
-        tbody.innerHTML = bukuBesarData.map(row => `
-            <tr>
-                <td>${row.tanggal || ''}</td>
-                <td>${row.akun_debit || ''}</td>
-                <td>${row.akun_kredit || ''}</td>
-                <td style="text-align:right;">${formatNumber(row.jumlah)}</td>
-                <td>${row.keterangan || ''}</td>
-                <td>${row.pihak || ''}</td>
-                <td>${row.sumber || ''}</td>
-                <td>${row.referensi || ''}</td>
-            </tr>
-        `).join('');
-    }
-    function downloadBukuBesarCsv() {}
-
-    async function loadPiutangHutangDetail() {
-        const res = await callGAS('getPiutangHutang', {});
-        if (res.success) {
-            piutangHutangData = res.data;
-            document.getElementById('piutangTableBody').innerHTML = '<tr><td colspan="3">Data piutang termuat</td></tr>';
-            document.getElementById('hutangTableBody').innerHTML = '<tr><td colspan="3">Data hutang termuat</td></tr>';
-        }
-    }
-    async function loadPiutangReconciliationSummary(force = false) {}
-    function renderPiutangReconciliationSummary() {}
-    async function loadHutangReconciliationSummary(force = false) {}
-    function renderHutangReconciliationSummary() {}
-    function downloadPiutangHutangCsv(type) {}
-    function downloadReconciliationCsv(type) {}
-
-    function onMasterDataJenisChange() {
-        const jenis = document.getElementById('mdJenis').value;
-        ['Master_Produk', 'Master_Kemasan', 'Master_Resep', 'Master_Customer', 'Master_Supplier', 'Master_Salesman', 'Master_COA'].forEach(j => {
-            const el = document.getElementById('md-fields-' + j);
-            if (el) el.style.display = (j === jenis) ? 'grid' : 'none';
-        });
-        const resepBahan = document.getElementById('md-fields-Master_Resep-bahan-container');
-        if (resepBahan) resepBahan.style.display = (jenis === 'Master_Resep') ? 'block' : 'none';
-    }
-    function addResepBahanRow() {}
-    async function submitMasterDataForm() {
-        showAlert('success', 'Master data berhasil disimpan!', 'masterDataAlert');
-    }
-    function loadMasterDataList() {}
-    function renderMasterDataList() {}
-
-    function updatePreviewStats() {
-        document.getElementById('statTotalProduk').textContent = masterData.products.length || 0;
-    }
-    function showAdminLoginPrompt() {
-        const token = prompt('Masukkan Admin Token:');
-        if (token) {
-            sessionStorage.setItem('qfin_admin_token', token);
-            document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
-            showAlert('success', 'Admin mode diaktifkan.');
-        }
-    }
     function clearCacheAndReload() {
         localStorage.clear();
         location.reload();
-    }
-    async function loadAllData() {
-        await loadMasterData();
-        showAlert('success', 'Data berhasil direfresh!');
     }
 
     window.onload = function() {
