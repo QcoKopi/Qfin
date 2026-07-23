@@ -932,6 +932,8 @@
     // DROPDOWNS
     // ============================================================
     let stockCache = null;
+    let hppCache = {};
+    const HPP_CACHE_TTL = 5 * 60 * 1000;
     async function loadStockCacheForPenjualan() {
         const result = await callGAS('getAllStock', {}, 30000);
         if (result.success) {
@@ -1017,10 +1019,12 @@
         if (tabName === 'piutanghutang' && piutangReconSummary === null) loadPiutangReconciliationSummary();
         if (tabName === 'piutanghutang' && hutangReconSummary === null) loadHutangReconciliationSummary();
     }
-    async function autoFillNextDoc(inputId, table, field) {
+    async function autoFillNextDoc(inputId, table, field, filterExpr) {
         const input = document.getElementById(inputId);
         if (!input) return;
-        const result = await callGAS('getNextDocNumber', { table, field });
+        const params = { table, field };
+        if (filterExpr) params.filter = filterExpr;
+        const result = await callGAS('getNextDocNumber', params);
         if (!result.success || !result.next) return;
         const currentVal = input.value.trim();
         const isInvoiceFormat = /^INV/i.test(currentVal);
@@ -1313,7 +1317,7 @@
         document.getElementById('pemNoDokumen').value = ''; document.getElementById('pemSupplier').value = '';
         document.getElementById('pemCOA').value = ''; document.getElementById('pembelianDetails').innerHTML = '';
         pembelianDetails = [];
-        setTimeout(() => autoFillNextDoc('pemNoDokumen', 'Pembelian_App', 'no_dokumen'), 50);
+        setTimeout(() => autoFillNextDoc('pemNoDokumen', 'Pembelian_App', 'no_dokumen', 'NOT_SAMPLE'), 50);
     }
 
     // ============================================================
@@ -1322,13 +1326,16 @@
     function extractBeratGramDariNama(namaBarang) {
         if (!namaBarang) return 0;
         const nama = namaBarang.toString();
-        const matchGr = nama.match(/(\d+)\s*(gr|gram)/i);
-        if (matchGr) return parseInt(matchGr[1], 10);
-        const matchKg = nama.match(/(\d+(?:\.\d+)?)\s*kg/i);
+        // Support: "250g", "250 g", "250gr", "250 gr", "250gram", "250 gram" (dengan/tanpa spasi)
+        const matchG = nama.match(/(\d+(?:\.\d+)?)\s*(?:gram|gr|g)\b/i);
+        if (matchG) return Math.round(parseFloat(matchG[1]));
+        // Support: "0.5kg", "0.5 kg", "1kg", "1 kg"
+        const matchKg = nama.match(/(\d+(?:\.\d+)?)\s*kg\b/i);
         if (matchKg) return Math.round(parseFloat(matchKg[1]) * 1000);
+        // Fallback: angka 2-4 digit di nama
         const matchNum = nama.match(/\b(\d{2,4})\b/);
         if (matchNum) return parseInt(matchNum[1], 10);
-        // FIX #1: Houseblend diperlakukan sama dengan RB (1kg = 1000gr)
+        // RB/Houseblend/HB = 1kg
         const upperNama = nama.toUpperCase();
         if (upperNama.includes('RB') || upperNama.includes('HOUSEBLEND') || upperNama.includes('HOUSE BLEND') || upperNama.includes('HB')) return 1000;
         return 0;
@@ -1376,7 +1383,22 @@
         }
 
         if (kemasanList.length === 0) {
-            list.innerHTML = '<div class="dropdown-item disabled">Tidak ada kemasan yang cocok</div>';
+            // Fallback: tampilkan semua kemasan aktif
+            const allKemasan = masterData.kemasan || [];
+            if (allKemasan.length === 0) {
+                list.innerHTML = '<div class="dropdown-item disabled">Tidak ada kemasan yang cocok</div>';
+            } else {
+                list.innerHTML = '<div class="dropdown-item disabled" style="font-style:italic;">Filter terlalu ketat — menampilkan semua kemasan:</div>' +
+                allKemasan.map(k => {
+                    const kemasanId = k.id_kemasan || k.id;
+                    const namaKemasan = k.nama_kemasan || k.nama;
+                    const kap = parseFloat(k.kapasitas || k.kapasitas_gram || 0);
+                    const sat = (k.satuan || '').toString().toLowerCase();
+                    const kapGram = sat.startsWith('kg') ? kap * 1000 : kap;
+                    const jumlahKemasan = (totalGram > 0 && kapGram > 0) ? Math.ceil(totalGram / kapGram) : '?';
+                    return `<div class="dropdown-item" onclick="selectKemasan(${id}, '${kemasanId}', '${namaKemasan.replace(/'/g, "\\'")}', ${kapGram}, ${jumlahKemasan})">${namaKemasan} (${kap}${k.satuan || ''}) &rarr; ${jumlahKemasan} pcs</div>`;
+                }).join('');
+            }
         } else {
             list.innerHTML = kemasanList.map(k => {
                 const kemasanId = k.id_kemasan || k.id;
@@ -1385,7 +1407,7 @@
                 const sat = (k.satuan || '').toString().toLowerCase();
                 const kapGram = sat.startsWith('kg') ? kap * 1000 : kap;
                 const jumlahKemasan = (totalGram > 0 && kapGram > 0) ? Math.ceil(totalGram / kapGram) : '?';
-                return `<div class="dropdown-item" onclick="selectKemasan(${id}, '${kemasanId}', '${namaKemasan.replace(/'/g, "\\'")}', ${kapGram}, ${jumlahKemasan})">${namaKemasan} (${kap}${k.satuan || ''}) → ${jumlahKemasan} pcs</div>`;
+                return `<div class="dropdown-item" onclick="selectKemasan(${id}, '${kemasanId}', '${namaKemasan.replace(/'/g, "\\'")}', ${kapGram}, ${jumlahKemasan})">${namaKemasan} (${kap}${k.satuan || ''}) &rarr; ${jumlahKemasan} pcs</div>`;
             }).join('');
         }
         list.classList.add('show');
@@ -1443,47 +1465,80 @@
     }
 
     function removePenjualanDetail(id) { const el = document.getElementById(`pen-detail-${id}`); if (el) el.remove(); penjualanDetails = penjualanDetails.filter(i => i !== id); calculatePenjualanSummary(); }
-    
     async function calculatePenjualanHPP(id) {
         const barangInput = document.getElementById(`pen-barang-${id}`);
-        const sku = barangInput?.dataset.value; if (!sku) return;
+        const sku = barangInput?.dataset.value; 
+        if (!sku) return;
 
         const pembayaranSection = document.getElementById('penPembayaranSection');
         if (pembayaranSection && pembayaranSection.style.display === 'none') pembayaranSection.style.display = '';
 
-        const [result, priceResult, batchResult, stockResult] = await Promise.all([
-            callGAS('getHPP', { id_produk: sku }),
-            callGAS('getPricelistPrice', { id_produk: sku }),
-            callGAS('getBatchesForProduk', { id_produk: sku }),
-            callGAS('getStock', { id_produk: sku })
-        ]);
+        // Cek cache dulu
+        const now = Date.now();
+        let result, priceResult, batchResult, stockResult;
 
-        if (result.success && result.data) { const hpp = result.data.hpp_per_unit || 0; const hppInput = document.getElementById(`pen-hpp-${id}`); if (hppInput) hppInput.value = hpp; }
+        if (hppCache[sku] && (now - hppCache[sku].timestamp) < HPP_CACHE_TTL) {
+            const cached = hppCache[sku];
+            result = cached.hppResult;
+            priceResult = cached.priceResult;
+            batchResult = cached.batchResult;
+            stockResult = cached.stockResult;
+        } else {
+            // Batch call semua sekaligus
+            [result, priceResult, batchResult, stockResult] = await Promise.all([
+                callGAS('getHPP', { id_produk: sku }),
+                callGAS('getPricelistPrice', { id_produk: sku }),
+                callGAS('getBatchesForProduk', { id_produk: sku }),
+                callGAS('getStock', { id_produk: sku })
+            ]);
+            // Simpan ke cache
+            hppCache[sku] = {
+                hppResult: result,
+                priceResult: priceResult,
+                batchResult: batchResult,
+                stockResult: stockResult,
+                timestamp: now
+            };
+        }
 
+        // Apply HPP
+        if (result.success && result.data) { 
+            const hpp = result.data.hpp_per_unit || 0; 
+            const hppInput = document.getElementById(`pen-hpp-${id}`); 
+            if (hppInput) hppInput.value = hpp; 
+        }
+
+        // Apply harga jual
         const priceInput = document.getElementById(`pen-price-${id}`);
         if (priceInput && priceResult.success && priceResult.data && priceResult.data.harga_jual) {
             priceInput.value = priceResult.data.harga_jual;
             calculatePenjualanItemTotal(id);
         }
 
+        // Apply batch list
         const datalist = document.getElementById(`pen-batch-list-${id}`);
         const batchInput = document.getElementById(`pen-batch-${id}`);
         const batches = batchResult.success ? batchResult.data : [];
         if (datalist) {
-            datalist.innerHTML = batches.map(b => `<option value="${b.batch_no}">${b.tanggal || ''} — sisa ${formatNumber(b.sisa)} dari ${formatNumber(b.jumlah_produksi)}</option>`).join('');
+            datalist.innerHTML = batches.map(b => `<option value="${b.batch_no}">${b.tanggal || ''} &mdash; sisa ${formatNumber(b.sisa)} dari ${formatNumber(b.jumlah_produksi)}</option>`).join('');
         }
         if (batchInput) batchInput.value = batches.length > 0 ? batches[0].batch_no : '';
 
+        // Apply stock info
         const stockLabel = document.getElementById(`pen-stock-${id}`);
         const saldo = stockResult.success && stockResult.data ? (parseFloat(stockResult.data.saldo) || 0) : 0;
         if (stockLabel) stockLabel.textContent = `Stok saat ini: ${formatNumber(saldo)}`;
         const qtyInputForMax = document.getElementById(`pen-qty-${id}`);
         if (qtyInputForMax) qtyInputForMax.max = saldo;
 
+        // Stock warning
         const nostockBanner = document.getElementById(`pen-nostock-${id}`);
         const fieldsToToggle = ['pen-qty', 'pen-price', 'pen-diskon', 'pen-batch'].map(p => document.getElementById(`${p}-${id}`));
         if (saldo <= 0) {
-            if (nostockBanner) { nostockBanner.style.display = ''; nostockBanner.textContent = `Stok kosong. Buat Assembly dulu sebelum menjual.`; }
+            if (nostockBanner) { 
+                nostockBanner.style.display = ''; 
+                nostockBanner.textContent = `Stok kosong. Buat Assembly dulu sebelum menjual.`; 
+            }
             fieldsToToggle.forEach(f => { if (f) { f.disabled = true; f.value = ''; } });
         } else {
             if (nostockBanner) nostockBanner.style.display = 'none';
@@ -1491,7 +1546,6 @@
         }
     }
 
-    // FIX #2: Type pembayaran - reset placeholder saat clear form
     function onPenTypeBayarChange() {
         const tipe = document.getElementById('penTypeBayar').value;
         const totalBayarGroup = document.getElementById('penTotalBayarGroup');
@@ -2044,12 +2098,21 @@
     // ============================================================
     let pricelistData = null;
     async function generatePricelistTable() {
+        // Coba load dari cache dulu
+        const cached = getCache('pricelist_data');
+        if (cached) {
+            pricelistData = cached;
+            renderPricelistTable();
+            showAlert('info', 'Pricelist dimuat dari cache. Klik Generate untuk data terbaru.', 'pricelistAlert');
+            return;
+        }
         document.getElementById('pricelistTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--gray);">Menghitung...</td></tr>';
         const result = await callGAS('generatePricelist', {
             markup_percent: document.getElementById('plMarkupDefault').value
         });
         if (result.success) {
             pricelistData = result.data;
+            setCache('pricelist_data', pricelistData);
             renderPricelistTable();
         } else {
             showAlert('danger', 'Gagal generate: ' + result.message, 'pricelistAlert');
@@ -2103,6 +2166,7 @@
             totalSaved += result.saved || 0;
         }
         showAlert('success', totalSaved + ' harga tersimpan. Harga jual di Penjualan akan otomatis pakai ini.', 'pricelistAlert');
+        setCache('pricelist_data', pricelistData);
     }
     function printPricelist() {
         if (!pricelistData || pricelistData.length === 0) { showAlert('danger', 'Belum ada data untuk dicetak - klik Generate dulu', 'pricelistAlert'); return; }
@@ -2236,7 +2300,7 @@
     // BUKU BESAR
     // ============================================================
     let bukuBesarData = null;
-    async function loadBukuBesar() {
+        async function loadBukuBesar() {
         document.getElementById('bukuBesarTableBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--gray);">Memuat...</td></tr>';
         const result = await callGAS('getBukuBesar', {}, 90000);
         if (!result.success) { showAlert('danger', 'Gagal: ' + result.message, 'bukuBesarAlert'); return; }
@@ -2647,3 +2711,4 @@
     </script>
 </body>
 </html>
+    
