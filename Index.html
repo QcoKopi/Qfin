@@ -1309,7 +1309,7 @@
     }
 
     // ============================================================
-    // KEMASAN LOGIC BARU & PENJUALAN
+    // REVISI LOGIC: KEMASAN, HARGA SATUAN, & KAS MASUK
     // ============================================================
     function extractBeratGramDariNama(namaBarang) {
         if (!namaBarang) return 0;
@@ -1330,11 +1330,17 @@
         if (!barangInput || !list) return;
 
         const namaBarang = (barangInput.value || '').trim();
+        const barangId = barangInput.dataset.value;
+        
+        // Cek kategori produk apakah KOPI (Revisi 2)
+        const selectedProductObj = (masterData.products || []).find(p => (p.id_produk || p.id) === barangId || (p.nama_produk || p.nama) === namaBarang);
+        const kategoriBarang = ((selectedProductObj && selectedProductObj.kategori) || '').toString().toUpperCase();
+        const isKopi = kategoriBarang.includes('KOPI') || namaBarang.toUpperCase().includes('KOPI');
+
         const qty = parseFloat(document.getElementById(`pen-qty-${id}`)?.value) || 0;
         const beratGram = extractBeratGramDariNama(namaBarang);
         const totalGram = beratGram * qty;
 
-        const barangId = barangInput.dataset.value;
         if (!barangId) {
             list.innerHTML = '<div class="dropdown-item disabled">Pilih barang dulu</div>';
             list.classList.add('show');
@@ -1342,6 +1348,16 @@
         }
 
         let kemasanList = masterData.kemasan || [];
+        
+        // Revisi 2: Filter agar kemasan "Botol 250 ml" (atau yang mengandung 250ml/250 ml) tidak muncul jika kategori KOPI
+        if (isKopi) {
+            kemasanList = kemasanList.filter(k => {
+                const namaKemasan = (k.nama_kemasan || k.nama || '').toString().toLowerCase();
+                const is250Ml = namaKemasan.includes('250') && (namaKemasan.includes('ml') || namaKemasan.includes('botol'));
+                return !is250Ml;
+            });
+        }
+
         if (totalGram > 0) {
             kemasanList = kemasanList.filter(k => {
                 const kap = parseFloat(k.kapasitas || k.kapasitas_gram || 0);
@@ -1401,6 +1417,7 @@
             <div class="form-grid">
                 <div class="form-group"><label class="mandatory-label">Nama Barang</label><div class="searchable-dropdown"><input type="text" id="pen-barang-${id}" placeholder="Cari barang..." oninput="searchDropdown('pen-barang-${id}', 'products')" onfocus="showDropdown('pen-barang-${id}')"><div class="dropdown-list" id="pen-barang-${id}-list"></div></div></div>
                 <div class="form-group"><label class="mandatory-label">Jumlah</label><input type="number" id="pen-qty-${id}" step="0.01" placeholder="0" onchange="validateQtyAgainstStock(${id}); calculatePenjualanItemTotal(${id}); onPenjualanQtyChange(${id})"></div>
+                <!-- Revisi 1: Harga satuan mengambil data dari pricelist tetapi tetap editable -->
                 <div class="form-group"><label class="mandatory-label">Harga Satuan</label><input type="number" id="pen-price-${id}" step="1000" placeholder="0" onchange="calculatePenjualanItemTotal(${id})"></div>
                 <div class="form-group"><label>Total</label><input type="number" id="pen-total-${id}" readonly placeholder="0"></div>
                 <div class="form-group"><label>Diskon</label><input type="number" id="pen-diskon-${id}" step="1000" value="0" onchange="calculatePenjualanItemTotal(${id})"></div>
@@ -1436,8 +1453,9 @@
 
         if (result.success && result.data) { const hpp = result.data.hpp_per_unit || 0; const hppInput = document.getElementById(`pen-hpp-${id}`); if (hppInput) hppInput.value = hpp; }
 
+        // Revisi 1: Mengisi harga satuan otomatis dari pricelist, namun elemen input TIDAK readonly sehingga tetap bisa diedit manual oleh user.
         const priceInput = document.getElementById(`pen-price-${id}`);
-        if (priceInput && !priceInput.value && priceResult.success && priceResult.data) {
+        if (priceInput && priceResult.success && priceResult.data && priceResult.data.harga_jual) {
             priceInput.value = priceResult.data.harga_jual;
             calculatePenjualanItemTotal(id);
         }
@@ -1559,9 +1577,7 @@
             lastSubmittedSaleData = data;
             document.getElementById('btnPrintInvoice').style.display = '';
             
-            // Otomatis membuka invoice setelah berhasil submit
             printInvoice(data);
-
             clearPenjualanForm();
         } else {
             showAlert('danger', 'Gagal: ' + result.message, 'penjualanAlert');
@@ -1676,6 +1692,33 @@
     // ============================================================
     // KAS MASUK
     // ============================================================
+    // Revisi 3: Di KAS Masuk, No Dokumen (DropDown) hanya memuat No Invoice yang status bayarnya PIUTANG di Penjualan_INV
+    async function loadUnpaidInvoicesList() {
+        const datalist = document.getElementById('kmInvoiceList');
+        if (!datalist) return;
+        const result = await callGAS('getUnpaidInvoices', {});
+        if (result.success && result.data) {
+            datalist.innerHTML = result.data.map(inv => `<option value="${inv.no_invoice}">${inv.customer} - Sisa: Rp ${formatNumber(inv.sisa)}</option>`).join('');
+        }
+    }
+
+    async function lookupInvoiceForPayment() {
+        const noInv = document.getElementById('kmNoDokumen').value;
+        if (!noInv) return;
+        const result = await callGAS('getInvoiceDetail', { no_invoice: noInv });
+        if (result.success && result.data) {
+            const inv = result.data;
+            const salesInput = document.getElementById('kmSales');
+            if (salesInput) salesInput.value = inv.salesman || '';
+            const lawanInput = document.getElementById('kmLawan');
+            if (lawanInput) lawanInput.value = inv.customer || '';
+            const jumlahInput = document.getElementById('kmJumlah');
+            if (jumlahInput) jumlahInput.value = inv.sisa_tagihan || inv.total_tagihan || 0;
+            const infoEl = document.getElementById('kmInvoiceInfo');
+            if (infoEl) infoEl.textContent = `Customer: ${inv.customer} | Total Tagihan: Rp ${formatNumber(inv.total_tagihan)}`;
+        }
+    }
+
     async function submitKasMasuk() {
         clearMandatoryErrors('tab-kas-masuk');
         if (!validateMandatory('tab-kas-masuk', 'kasMasukAlert')) return;
